@@ -260,34 +260,6 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
           )}
         </div>
 
-        {/* Toolbar */}
-        {!showArchived && (
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Filter chips */}
-            
-
-            {/* View toggle */}
-            <div className="flex rounded-lg border bg-muted/50 p-1">
-              <button
-                onClick={() => setViewMode("list")}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  viewMode === "list" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
-                }`}
-              >
-                Vue liste
-              </button>
-              <button
-                onClick={() => setViewMode("priorities")}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  viewMode === "priorities" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
-                }`}
-              >
-                Vue priorites
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Table */}
         <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
           <Table>
