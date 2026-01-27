@@ -79,23 +79,30 @@ export function Sidebar({
       </div>
       <nav className="flex-1 overflow-y-auto p-4">
         <div className="space-y-1">
-          {navigation.map((item) => {
-            return (
-              <button
-                key={item.name}
-                onClick={() => onViewChange(item.view)}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
-                  "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                  isCollapsed && "justify-center",
-                )}
-                title={isCollapsed ? item.name : undefined}
-              >
-                <item.icon className="h-5 w-5 flex-shrink-0" />
-                {!isCollapsed && item.name}
-              </button>
-            )
-          })}
+          <button
+            onClick={() => onViewChange("dashboard")}
+            className={cn(
+              "flex w-full items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors",
+              "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              isCollapsed && "justify-center",
+            )}
+            title={isCollapsed ? "Tableau de bord" : undefined}
+          >
+            <User className="h-5 w-5 flex-shrink-0" />
+            {!isCollapsed && <span className="font-medium">Tableau de bord</span>}
+          </button>
+          <button
+            onClick={() => onViewChange("clients")}
+            className={cn(
+              "flex w-full items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors",
+              "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              isCollapsed && "justify-center",
+            )}
+            title={isCollapsed ? "Clients" : undefined}
+          >
+            <User className="h-5 w-5 flex-shrink-0" />
+            {!isCollapsed && <span className="font-medium">Clients</span>}
+          </button>
         </div>
 
         {/* Client tabs section */}

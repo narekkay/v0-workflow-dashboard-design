@@ -416,9 +416,11 @@ export default function HomePage() {
               })()
             ) : activeTab?.type === "add-client" ? (
               <AddClientPage
-                onSuccess={() => {
+                onSuccess={(createdClient) => {
                   loadClients()
                   handleCloseTab(activeTab.id)
+                  // Navigate to the created client's dashboard
+                  handleClientSelect(createdClient as Client)
                 }}
                 onCancel={() => handleCloseTab(activeTab.id)}
               />
