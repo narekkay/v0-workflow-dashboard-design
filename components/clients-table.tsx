@@ -1,0 +1,541 @@
+"use client"
+
+import { useState, useEffect, useMemo } from "react"
+import { Plus, MoreVertical, Archive, Trash2, Search, FolderOpen, Mail, FileText, Users } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Progress } from "@/components/ui/progress"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Skeleton } from "@/components/ui/skeleton"
+import type { Client } from "@/lib/types"
+import { createClient } from "@/lib/supabase/client"
+import { AddClientDialog } from "@/components/add-client-dialog" // Declare the AddClientDialog variable
+
+interface ClientsTableProps {
+  clients: Client[]
+  onClientSelect: (client: Client) => void
+  onClientAdded: () => void
+  onAddClientClick: () => void
+  showArchived?: boolean
+}
+
+type StatusFilter = "all" | "action" | "incomplete" | "complete"
+type ViewMode = "list" | "priorities"
+
+// Utility functions for UI-only computations
+// Use client ID to deterministically assign progress so 80% of clients show as completed
+function computeProgress(client: Client): number {
+  // Use a hash of the client id to get a deterministic value
+  const hash = client.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  const mod = hash % 10
+  
+  // 80% of clients (mod 0-7) get high progress (80-100%)
+  // 20% of clients (mod 8-9) get lower progress
+  if (mod <= 7) {
+    return 80 + (mod * 2.5) // 80%, 82.5%, 85%, 87.5%, 90%, 92.5%, 95%, 97.5%
+  } else if (mod === 8) {
+    return 55 // Incomplete
+  } else {
+    return 30 // Action required
+  }
+}
+
+function computeStatus(client: Client): "complete" | "incomplete" | "action" {
+  const progress = computeProgress(client)
+  if (progress >= 75) return "complete"
+  if (progress >= 50) return "incomplete"
+  return "action"
+}
+
+function getStatusBadgeConfig(status: string) {
+  switch (status) {
+    case "complete":
+      return { label: "Complet", className: "bg-emerald-50 text-emerald-700 border-emerald-200" }
+    case "incomplete":
+      return { label: "Incomplet", className: "bg-amber-50 text-amber-700 border-amber-200" }
+    case "action":
+      return { label: "Action requise", className: "bg-orange-50 text-orange-700 border-orange-200" }
+    default:
+      return { label: "Actif", className: "bg-slate-50 text-slate-700 border-slate-200" }
+  }
+}
+
+function getProgressColor(progress: number): string {
+  if (progress >= 80) return "bg-emerald-500"
+  if (progress >= 40) return "bg-amber-500"
+  return "bg-red-500"
+}
+
+function getInitials(firstName: string, lastName: string): string {
+  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
+}
+
+export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClientClick, showArchived = false }: ClientsTableProps) {
+  const [displayClients, setDisplayClients] = useState<Client[]>([])
+  const [clientToArchive, setClientToArchive] = useState<Client | null>(null)
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false)
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
+  const [viewMode, setViewMode] = useState<ViewMode>("list")
+  const [isLoading, setIsLoading] = useState(true)
+  const [isDialogOpen, setIsDialogOpen] = useState(false) // Declare the setIsDialogOpen variable
+
+  useEffect(() => {
+    async function loadDisplayClients() {
+      setIsLoading(true)
+      if (showArchived) {
+        const supabase = createClient()
+        const { data } = await supabase
+          .from("clients")
+          .select("*")
+          .eq("archived", true)
+          .order("created_at", { ascending: false })
+        setDisplayClients(data || [])
+      } else {
+        setDisplayClients(clients)
+      }
+      setIsLoading(false)
+    }
+    loadDisplayClients()
+  }, [clients, showArchived])
+
+  const filteredClients = useMemo(() => {
+    let result = displayClients
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter(
+        (client) =>
+          `${client.first_name} ${client.last_name}`.toLowerCase().includes(query) ||
+          client.email.toLowerCase().includes(query) ||
+          (client.phone && client.phone.includes(query))
+      )
+    }
+
+    // Status filter
+    if (statusFilter !== "all") {
+      result = result.filter((client) => computeStatus(client) === statusFilter)
+    }
+
+    // View mode - priorities shows non "complete" first
+    if (viewMode === "priorities") {
+      result = [...result].sort((a, b) => {
+        const statusA = computeStatus(a)
+        const statusB = computeStatus(b)
+        if (statusA === "complete" && statusB !== "complete") return 1
+        if (statusA !== "complete" && statusB === "complete") return -1
+        return 0
+      })
+    }
+
+    return result
+  }, [displayClients, searchQuery, statusFilter, viewMode])
+
+  const handleArchiveClient = async () => {
+    if (!clientToArchive) return
+
+    const supabase = createClient()
+    const { error } = await supabase.from("clients").update({ archived: !showArchived }).eq("id", clientToArchive.id)
+
+    if (!error) {
+      setShowArchiveDialog(false)
+      setClientToArchive(null)
+      onClientAdded()
+    }
+  }
+
+  const handleDeleteClient = async () => {
+    if (!clientToDelete) return
+
+    const supabase = createClient()
+    const { error } = await supabase.from("clients").delete().eq("id", clientToDelete.id)
+
+    if (!error) {
+      setShowDeleteDialog(false)
+      setClientToDelete(null)
+      onClientAdded()
+    }
+  }
+
+  const filterChips: { key: StatusFilter; label: string }[] = [
+    { key: "all", label: "Tous" },
+    { key: "action", label: "Action requise" },
+    { key: "incomplete", label: "Incomplet" },
+    { key: "complete", label: "Complet" },
+  ]
+
+  return (
+    <TooltipProvider>
+      <div className="space-y-6">
+        {/* Premium Header */}
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Clients
+            </h1>
+            
+          </div>
+          {!showArchived && (
+            <Button onClick={onAddClientClick} className="shrink-0">
+              <Plus className="mr-2 h-4 w-4" />
+              Nouveau client
+            </Button>
+          )}
+        </div>
+
+        {/* Toolbar */}
+        {!showArchived && (
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            {/* Search */}
+            <div className="relative w-full lg:max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher un client (nom, email, telephone)"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 bg-background"
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Filter chips */}
+              <div className="flex flex-wrap gap-2">
+                {filterChips.map((chip) => (
+                  <button
+                    key={chip.key}
+                    onClick={() => setStatusFilter(chip.key)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                      statusFilter === chip.key
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* View toggle */}
+              <div className="flex rounded-lg border bg-muted/50 p-1">
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    viewMode === "list" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                  }`}
+                >
+                  Vue liste
+                </button>
+                <button
+                  onClick={() => setViewMode("priorities")}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    viewMode === "priorities" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                  }`}
+                >
+                  Vue priorites
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Table */}
+        <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/30 hover:bg-muted/30">
+                <TableHead className="py-4 px-6 font-semibold">Client</TableHead>
+                <TableHead className="py-4 px-6 font-semibold">Dossiers</TableHead>
+                <TableHead className="py-4 px-6 font-semibold">Avancement</TableHead>
+                
+                <TableHead className="py-4 px-6 font-semibold">Statut</TableHead>
+                <TableHead className="py-4 px-6 font-semibold text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                // Skeleton loading state
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="py-5 px-6">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-10 w-10 rounded-full" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-40" />
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-5 px-6"><Skeleton className="h-6 w-16" /></TableCell>
+                    <TableCell className="py-5 px-6"><Skeleton className="h-4 w-24" /></TableCell>
+                    <TableCell className="py-5 px-6"><Skeleton className="h-4 w-28" /></TableCell>
+                    <TableCell className="py-5 px-6"><Skeleton className="h-6 w-20" /></TableCell>
+                    <TableCell className="py-5 px-6"><Skeleton className="h-8 w-24" /></TableCell>
+                  </TableRow>
+                ))
+              ) : filteredClients.length === 0 ? (
+                // Empty state
+                <TableRow>
+                  <TableCell colSpan={6} className="py-16 px-6">
+                    <div className="flex flex-col items-center justify-center text-center">
+                      <div className="rounded-full bg-muted p-4 mb-4">
+                        <Users className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <h3 className="text-lg font-medium text-foreground mb-1">
+                        {searchQuery || statusFilter !== "all"
+                          ? "Aucun client trouve"
+                          : "Aucun client pour l'instant"}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+                        {searchQuery || statusFilter !== "all"
+                          ? "Essayez de modifier vos criteres de recherche ou filtres."
+                          : "Ajoutez votre premier client pour demarrer un dossier fiscal."}
+                      </p>
+                      {!showArchived && !searchQuery && statusFilter === "all" && (
+                        <Button onClick={() => setIsDialogOpen(true)} size="sm">
+                          <Plus className="mr-2 h-4 w-4" />
+                          Nouveau client
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredClients.map((client) => {
+                  const progress = computeProgress(client)
+                  const status = showArchived ? "archived" : computeStatus(client)
+                  const statusConfig = showArchived
+                    ? { label: "Archive", className: "bg-slate-100 text-slate-600 border-slate-200" }
+                    : getStatusBadgeConfig(status)
+
+                  return (
+                    <TableRow
+                      key={client.id}
+                      className="cursor-pointer hover:bg-muted/40 transition-colors"
+                      onClick={() => onClientSelect(client)}
+                    >
+                      {/* Client */}
+                      <TableCell className="py-5 px-6">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
+                                {getInitials(client.first_name, client.last_name)}
+                              </div>
+                              <div>
+                                <p className="font-medium text-foreground">
+                                  {client.first_name} {client.last_name}
+                                </p>
+                                <p className="text-sm text-muted-foreground">{client.email}</p>
+                              </div>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-xs">
+                            <div className="space-y-1 text-sm">
+                              <p><span className="font-medium">Tel:</span> {client.phone || "Non renseigne"}</p>
+                              <p><span className="font-medium">Adresse:</span> {client.address || "Non renseignee"}</p>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+
+                      {/* Dossiers */}
+                      <TableCell className="py-5 px-6">
+                        <span className="text-sm text-muted-foreground">-</span>
+                      </TableCell>
+
+                      {/* Avancement */}
+                      <TableCell className="py-5 px-6">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center gap-3 min-w-[120px]">
+                              <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all ${getProgressColor(progress)}`}
+                                  style={{ width: `${progress}%` }}
+                                />
+                              </div>
+                              <span className="text-sm font-medium text-muted-foreground w-10">{progress}%</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Completude estimee du dossier</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+
+                      {/* Prochaine echeance */}
+                      
+
+                      {/* Statut */}
+                      <TableCell className="py-5 px-6">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className={`${statusConfig.className} font-medium`}>
+                              {statusConfig.label}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              {status === "complete" && "Le dossier est complet"}
+                              {status === "incomplete" && "Certaines informations sont manquantes"}
+                              {status === "action" && "Des actions sont requises sur ce dossier"}
+                              {status === "archived" && "Ce client est archive"}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+
+                      {/* Actions */}
+                      <TableCell className="py-5 px-6">
+                        <div className="flex items-center justify-end gap-1">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onClientSelect(client)
+                                }}
+                              >
+                                <FolderOpen className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Ouvrir dossier</TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Mail className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Relancer client</TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <FileText className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Ajouter declaration</TooltipContent>
+                          </Tooltip>
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setClientToArchive(client)
+                                  setShowArchiveDialog(true)
+                                }}
+                              >
+                                <Archive className="mr-2 h-4 w-4" />
+                                {showArchived ? "Desarchiver" : "Archiver"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-red-600 focus:text-red-600"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setClientToDelete(client)
+                                  setShowDeleteDialog(true)
+                                }}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Supprimer
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{showArchived ? "Desarchiver ce client ?" : "Archiver ce client ?"}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {showArchived
+                  ? `Le client ${clientToArchive?.first_name} ${clientToArchive?.last_name} sera restaure dans la liste des clients actifs.`
+                  : `Le client ${clientToArchive?.first_name} ${clientToArchive?.last_name} sera deplace vers les archives. Vous pourrez le restaurer depuis le menu Parametres > Archives clients.`}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction onClick={handleArchiveClient}>
+                {showArchived ? "Desarchiver" : "Archiver"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Supprimer ce client ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Cette action est irreversible. Le client {clientToDelete?.first_name} {clientToDelete?.last_name} et
+                toutes ses donnees associees (revenus, documents, profils fiscaux) seront definitivement supprimes.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteClient} className="bg-red-600 hover:bg-red-700">
+                Supprimer definitivement
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Add Client Dialog */}
+        {isDialogOpen && (
+          <AddClientDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} onClientAdded={onClientAdded} />
+        )}
+      </div>
+    </TooltipProvider>
+  )
+}

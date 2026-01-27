@@ -1,0 +1,758 @@
+"use client"
+
+import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { CardTitle } from "@/components/ui/card"
+import { CardHeader } from "@/components/ui/card"
+import { useRef } from "react"
+import type React from "react"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ArrowLeft, FileText, Clock, FolderOpen, Check, X, FileUp, ChevronRight, Save, Eye, CheckCircle2, Loader2 } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
+import { uploadDocument } from "@/app/actions/upload-document"
+import { createBrowserClient } from "@/lib/supabase/client"
+import { ConventionEditor } from "@/components/convention-editor"
+
+interface AddClientPageProps {
+  onSuccess: () => void
+  onCancel: () => void
+}
+
+type ConventionType = "forfait" | "temps_passe" | "existant"
+
+interface Convention {
+  id: ConventionType
+  title: string
+  icon: React.ElementType
+  description: string
+}
+
+const conventions: Convention[] = [
+  {
+    id: "forfait",
+    title: "Honoraires au forfait",
+    icon: FileText,
+    description: "Tarification fixe pour une prestation définie",
+  },
+  {
+    id: "temps_passe",
+    title: "Honoraires au temps passé",
+    icon: Clock,
+    description: "Facturation basée sur le temps consacré au dossier",
+  },
+  {
+    id: "existant",
+    title: "Contrat existant",
+    icon: FolderOpen,
+    description: "Utiliser une convention déjà établie",
+  },
+]
+
+// Sample data for pre-filling
+const firstNames = ["Jean", "Marie", "Pierre", "Sophie", "Luc", "Anne", "Marc", "Claire", "François", "Isabelle"]
+const lastNames = ["Dupont", "Martin", "Bernard", "Laurent", "Simon", "Michel", "Garcia", "David", "Petit", "Lefevre"]
+const domains = ["gmail.com", "outlook.com", "yahoo.fr", "example.com", "business.fr"]
+const cities = ["Paris", "Lyon", "Marseille", "Toulouse", "Nice", "Nantes", "Bordeaux", "Lille", "Rennes", "Montpellier"]
+
+function generateRandomData() {
+  const firstName = firstNames[Math.floor(Math.random() * firstNames.length)]
+  const lastName = lastNames[Math.floor(Math.random() * lastNames.length)]
+  const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${domains[Math.floor(Math.random() * domains.length)]}`
+  const phone = `+33 ${Math.floor(Math.random() * 9) + 1} ${String(Math.floor(Math.random() * 99)).padStart(2, "0")} ${String(Math.floor(Math.random() * 99)).padStart(2, "0")} ${String(Math.floor(Math.random() * 99)).padStart(2, "0")}`
+  const city = cities[Math.floor(Math.random() * cities.length)]
+  const streetNum = Math.floor(Math.random() * 999) + 1
+  const address = `${streetNum} Rue de la République, 75001 ${city}`
+
+  return { firstName, lastName, email, phone, address }
+}
+
+export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
+  const [selectedConvention, setSelectedConvention] = useState<ConventionType | null>(null)
+  const [uploadedFiles, setUploadedFiles] = useState<any[]>([])
+  const [existantFile, setExistantFile] = useState<any | null>(null)
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null)
+  const [uploadSuccess, setUploadSuccess] = useState(false)
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [hasResultClause, setHasResultClause] = useState(false)
+  const [conventionSkipped, setConventionSkipped] = useState(false)
+  const [showConventionEditor, setShowConventionEditor] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const existantFileInputRef = useRef<HTMLInputElement | null>(null)
+  const randomData = generateRandomData()
+  const [formData, setFormData] = useState({
+    firstName: randomData.firstName,
+    lastName: randomData.lastName,
+    email: randomData.email,
+    phone: randomData.phone,
+    address: randomData.address,
+    notes: "Client créé via le dashboard",
+  })
+  const [currentStep, setCurrentStep] = useState(1)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const { toast } = useToast()
+
+  const steps = [
+    { id: 1, title: "Informations" },
+    { id: 2, title: "Convention" },
+    { id: 3, title: "Edition" },
+    { id: 4, title: "Récapitulatif" },
+  ]
+
+  const handleSelectConvention = (type: ConventionType) => {
+    // Allow selecting "existant" only if a file has been uploaded
+    if (type === "existant" && !existantFile) {
+      return
+    }
+    setSelectedConvention(type)
+    console.log("[v0] Convention selected:", type)
+  }
+
+  const handleUploadExistantFile = async (files: FileList) => {
+    if (files.length === 0) return
+    
+    setShowUploadModal(true)
+    setUploadSuccess(false)
+    setIsUploading(true)
+    
+    try {
+      const file = files[0]
+      console.log("[v0] Starting upload for:", file.name)
+      
+      // Create FormData for server action
+      const formData = new FormData()
+      formData.append("file", file)
+      
+      const result = await uploadDocument(formData)
+      console.log("[v0] Upload result:", result)
+      
+      if (result.success && result.data) {
+        setExistantFile(result.data)
+        setPdfPreviewUrl(result.data.url)
+        setSelectedConvention("existant")
+        setUploadSuccess(true)
+        
+        console.log("[v0] File uploaded successfully:", result.data.url)
+        
+        // Auto-close modal after 2 seconds
+        setTimeout(() => {
+          setShowUploadModal(false)
+        }, 2000)
+      } else {
+        throw new Error(result.error || "Upload failed")
+      }
+    } catch (error) {
+      console.error("[v0] Upload error:", error)
+      setShowUploadModal(false)
+      toast({
+        title: "Erreur d'upload",
+        description: error instanceof Error ? error.message : "Une erreur est survenue",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleFileUpload = async (files: FileList) => {
+    setIsUploading(true)
+
+    for (const file of files) {
+      try {
+        const formData = new FormData()
+        formData.append("file", file)
+        
+        const result = await uploadDocument(formData)
+        console.log("[v0] Upload successful:", result.data?.url)
+
+        // Add to uploaded files list
+        if (result.success && result.data) {
+          setUploadedFiles(prev => [
+            ...prev,
+            result.data,
+          ])
+
+          toast({
+            title: "✓ Fichier uploadé",
+            description: `${result.data.name} a été ajouté avec succès`,
+          })
+        } else {
+          throw new Error(result.error || "Upload failed")
+        }
+      } catch (error) {
+        console.error("[v0] Upload error:", error)
+        toast({
+          title: "Erreur d'upload",
+          description: error instanceof Error ? error.message : "Une erreur est survenue",
+          variant: "destructive",
+        })
+      }
+    }
+
+    setIsUploading(false)
+  }
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragging(false)
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileUpload(e.dataTransfer.files)
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(uploadedFiles.filter((_, i) => i !== index))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    console.log("[v0] Form submitted", formData)
+    setIsLoading(true)
+
+    const supabase = createBrowserClient()
+
+    try {
+      console.log("[v0] Inserting client into database...")
+      
+      const { data: client, error: clientError } = await supabase
+        .from("clients")
+        .insert({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email: formData.email,
+          phone: formData.phone || null,
+          address: formData.address || null,
+        })
+        .select()
+        .single()
+
+      if (clientError) {
+        console.error("[v0] Client creation error:", clientError)
+        throw clientError
+      }
+
+      console.log("[v0] Client created successfully:", client)
+
+      // Create convention record in the conventions table
+      if (selectedConvention || conventionSkipped) {
+        console.log("[v0] Creating convention record...")
+        
+        const { error: conventionError } = await supabase
+          .from("conventions")
+          .insert({
+            client_id: client.id,
+            type: selectedConvention || 'forfait', // Default to forfait if skipped
+            status: conventionSkipped ? 'brouillon' : 'pret',
+            has_result_clause: hasResultClause,
+            skipped: conventionSkipped,
+            document_url: existantFile?.url || null,
+            document_name: existantFile?.name || null,
+            content: {}, // Will be populated from convention editor later
+          })
+
+        if (conventionError) {
+          console.error("[v0] Convention creation error:", conventionError)
+          toast({
+            title: "Attention",
+            description: "Le client a été créé mais la convention n'a pas pu être sauvegardée",
+            variant: "destructive",
+          })
+        } else {
+          console.log("[v0] Convention created successfully")
+        }
+      }
+
+      // Save uploaded documents to database
+      if (uploadedFiles.length > 0) {
+        console.log("[v0] Saving", uploadedFiles.length, "documents to database")
+        
+        const documentInserts = uploadedFiles.map((file) => ({
+          client_id: client.id,
+          name: file.name,
+          url: file.url,
+          type: file.type,
+          size: file.size,
+        }))
+
+        const { error: docError } = await supabase.from("documents").insert(documentInserts)
+
+        if (docError) {
+          console.error("[v0] Document save error:", docError)
+          toast({
+            title: "Attention",
+            description: "Le client a été créé mais certains documents n'ont pas pu être sauvegardés",
+            variant: "destructive",
+          })
+        } else {
+          console.log("[v0] Documents saved successfully")
+        }
+      }
+
+      toast({
+        title: "✓ Client créé",
+        description: uploadedFiles.length > 0 
+          ? `Le client et ${uploadedFiles.length} document(s) ont été ajoutés avec succès`
+          : "Le client a été ajouté avec succès",
+      })
+
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        address: "",
+        notes: "",
+      })
+      setUploadedFiles([])
+
+      onSuccess()
+    } catch (error) {
+      console.error("[v0] Error creating client:", error)
+      toast({
+        title: "Erreur",
+        description: error instanceof Error ? error.message : "Une erreur est survenue",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Show Convention Editor as full-screen overlay
+  if (showConventionEditor) {
+    return (
+      <ConventionEditor
+        conventionType={selectedConvention}
+        hasResultClause={hasResultClause}
+        clientData={{
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+        }}
+        onBack={() => setShowConventionEditor(false)}
+        onValidate={() => {
+          setShowConventionEditor(false)
+          setCurrentStep(4)
+        }}
+      />
+    )
+  }
+
+  return (
+    <div className="p-6 max-w-4xl mx-auto">
+      {/* Upload Modal */}
+      <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
+        <DialogContent className="flex flex-col items-center gap-6 border-none shadow-lg">
+          {uploadSuccess ? (
+            <>
+              <div className="rounded-full bg-green-100 p-6">
+                <CheckCircle2 className="h-12 w-12 text-green-600" />
+              </div>
+              <h2 className="text-xl font-semibold">Contrat uploadé avec succès</h2>
+            </>
+          ) : (
+            <>
+              <div className="rounded-full bg-primary/10 p-6">
+                <Loader2 className="h-12 w-12 text-primary animate-spin" />
+              </div>
+              <div className="text-center space-y-2">
+                <h2 className="text-xl font-semibold">Upload en cours...</h2>
+                <p className="text-sm text-muted-foreground">Veuillez patienter</p>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={onCancel}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Nouveau client</h1>
+          </div>
+        </div>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between relative">
+          {/* Progress Line */}
+          <div className="absolute top-5 left-0 right-0 h-0.5 bg-muted z-0">
+            <div
+              className="h-full bg-primary transition-all duration-300"
+              style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
+            />
+          </div>
+
+          {/* Steps */}
+          {steps.map((step) => {
+            const canNavigate = step.id === 1 || (step.id > 1 && formData.firstName && formData.lastName && formData.email)
+            
+            return (
+              <button
+                key={step.id}
+                type="button"
+                onClick={() => canNavigate && setCurrentStep(step.id)}
+                disabled={!canNavigate}
+                className="flex flex-col items-center relative z-10 group disabled:cursor-not-allowed cursor-pointer"
+              >
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
+                    currentStep > step.id
+                      ? "bg-primary border-primary text-primary-foreground group-hover:scale-110"
+                      : currentStep === step.id
+                        ? "bg-primary border-primary text-primary-foreground"
+                        : canNavigate
+                          ? "bg-background border-muted-foreground/30 text-muted-foreground group-hover:border-primary/50 group-hover:scale-105"
+                          : "bg-background border-muted-foreground/20 text-muted-foreground/50"
+                  }`}
+                >
+                  {currentStep > step.id ? (
+                    <Check className="h-5 w-5" />
+                  ) : (
+                    <span className="text-sm font-semibold">{step.id}</span>
+                  )}
+                </div>
+                <span
+                  className={`text-xs mt-2 font-medium transition-colors ${
+                    currentStep >= step.id 
+                      ? "text-foreground" 
+                      : canNavigate 
+                        ? "text-muted-foreground group-hover:text-foreground" 
+                        : "text-muted-foreground/50"
+                  }`}
+                >
+                  {step.title}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Form */}
+      <form onSubmit={handleSubmit}>
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {currentStep === 1 && "Informations du client"}
+              {currentStep === 2 && "Choisir la convention"}
+              {currentStep === 3 && "Edition de la convention"}
+              {currentStep === 4 && "Récapitulatif"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Step 1: Profile Information */}
+            {currentStep === 1 && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">Prénom *</Label>
+                    <Input
+                      id="firstName"
+                      required
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      placeholder="Jean"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Nom *</Label>
+                    <Input
+                      id="lastName"
+                      required
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      placeholder="Dupont"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="jean.dupont@example.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Téléphone</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="+33 6 12 34 56 78"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="address">Adresse</Label>
+                  <Input
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    placeholder="123 Rue de la Paix, 75001 Paris"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    rows={4}
+                    placeholder="Ajoutez des notes ou informations supplémentaires..."
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Step 2: Convention Selection */}
+            {currentStep === 2 && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {conventions.map((convention) => {
+                    const Icon = convention.icon
+                    const isSelected = selectedConvention === convention.id
+                    const isExistant = convention.id === "existant"
+                    const hasFile = isExistant && existantFile
+                    
+                    return (
+                      <Card
+                        key={convention.id}
+                        className={`transition-all duration-300 ${
+                          (!isExistant || hasFile) && 'cursor-pointer hover:shadow-lg'
+                        } ${
+                          isSelected ? 'ring-2 ring-primary shadow-lg' : (
+                            (!isExistant || hasFile) ? 'hover:border-primary/50' : ''
+                          )
+                        }`}
+                        onClick={() => (!isExistant || hasFile) && handleSelectConvention(convention.id)}
+                      >
+                        <CardContent className="flex flex-col h-full p-6 space-y-4">
+                          <div className="flex-1 flex flex-col items-center text-center space-y-4">
+                            <div className="rounded-full bg-primary/10 p-4">
+                              <Icon className="h-10 w-10 text-primary" />
+                            </div>
+                            <h3 className="text-lg font-semibold">{convention.title}</h3>
+                            <p className="text-sm text-muted-foreground leading-relaxed">
+                              {convention.description}
+                            </p>
+                            {hasFile && (
+                              <div className="w-full mt-2 p-3 bg-green-50 rounded-lg border border-green-200 flex items-center gap-2">
+                                <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                                <p className="text-sm font-medium text-green-700 truncate">{existantFile.name}</p>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Buttons at bottom */}
+                          <div className="flex flex-col gap-2 pt-4 border-t">
+                            {isExistant ? (
+                              <>
+                                <input
+                                  ref={existantFileInputRef}
+                                  type="file"
+                                  accept=".pdf"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    if (e.target.files && e.target.files.length > 0) {
+                                      handleUploadExistantFile(e.target.files)
+                                    }
+                                  }}
+                                />
+                                <Button
+                                  type="button"
+                                  variant={hasFile ? "outline" : "default"}
+                                  size="sm"
+                                  className="w-full gap-2"
+                                  onClick={() => existantFileInputRef.current?.click()}
+                                  disabled={isUploading}
+                                >
+                                  <FileUp className="h-4 w-4" />
+                                  {isUploading ? "Upload..." : "Importer"}
+                                </Button>
+                                {hasFile && pdfPreviewUrl && (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full gap-2 bg-transparent"
+                                    onClick={() => window.open(pdfPreviewUrl, "_blank")}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                    Voir le PDF
+                                  </Button>
+                                )}
+                              </>
+                            ) : (
+                              <Button
+                                type="button"
+                                variant={isSelected ? "default" : "outline"}
+                                size="sm"
+                                className="w-full"
+                                onClick={() => handleSelectConvention(convention.id)}
+                              >
+                                Sélectionner
+                              </Button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </div>
+
+                {/* Options below cards */}
+                <div className="flex items-center justify-between pt-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="resultClause" 
+                      checked={hasResultClause}
+                      onCheckedChange={(checked) => setHasResultClause(checked === true)}
+                    />
+                    <label
+                      htmlFor="resultClause"
+                      className="text-sm font-medium leading-none cursor-pointer peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Clause d'honoraires complémentaires de résultat
+                    </label>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setConventionSkipped(true)
+                      setSelectedConvention(null)
+                      setCurrentStep(3)
+                    }}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    Passer
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Convention Editor placeholder - Editor opens as full-screen overlay */}
+            {currentStep === 3 && !showConventionEditor && (
+              <div className="text-center py-12">
+                <div className="rounded-full bg-primary/10 p-6 w-fit mx-auto mb-6">
+                  <FileText className="h-12 w-12 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Éditer la convention d'honoraires</h3>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  Configurez et personnalisez la convention d'honoraires pour votre client. Le document se met à jour en temps réel.
+                </p>
+                <Button
+                  type="button"
+                  size="lg"
+                  onClick={() => setShowConventionEditor(true)}
+                >
+                  Ouvrir l'éditeur
+                </Button>
+              </div>
+            )}
+
+            {/* Step 4: Summary */}
+            {currentStep === 4 && (
+              <div className="space-y-4">
+                <h3 className="font-semibold">Récapitulatif des informations</h3>
+                <div className="grid gap-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Nom complet:</span>
+                    <span className="font-medium">
+                      {formData.firstName} {formData.lastName}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Email:</span>
+                    <span className="font-medium">{formData.email}</span>
+                  </div>
+                  {formData.phone && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Téléphone:</span>
+                      <span className="font-medium">{formData.phone}</span>
+                    </div>
+                  )}
+                  {formData.address && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Adresse:</span>
+                      <span className="font-medium">{formData.address}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4 border-t justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  if (currentStep === 1) {
+                    onCancel()
+                  } else {
+                    setCurrentStep(currentStep - 1)
+                  }
+                }}
+                disabled={isLoading}
+              >
+                {currentStep === 1 ? "Annuler" : "Précédent"}
+              </Button>
+              <div className="flex gap-3">
+                {currentStep < 4 ? (
+                  <Button
+                    type="button"
+                    onClick={() => setCurrentStep(currentStep + 1)}
+                    disabled={
+                      isLoading ||
+                      (currentStep === 1 && (!formData.firstName || !formData.lastName || !formData.email)) ||
+                      (currentStep === 2 && !selectedConvention && !conventionSkipped)
+                    }
+                    className="gap-2"
+                  >
+                    Suivant
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button type="submit" disabled={isLoading} className="gap-2">
+                    <Save className="h-4 w-4" />
+                    {isLoading ? "Création..." : "Créer le client"}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </form>
+    </div>
+  )
+}
