@@ -44,6 +44,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { createBrowserClient } from "@/lib/supabase/client"
 import { AddRevenueDialog } from "./add-revenue-dialog"
 import { SendEmailDialog } from "./send-email-dialog"
@@ -1154,6 +1155,13 @@ export function ClientTabs({
     <div className="p-6">
       {activeTab === "overview" && (
             <div className="space-y-6">
+              {/* Convention pending signature alert */}
+              <Alert className="bg-amber-50 border-amber-200">
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <AlertTitle className="text-amber-800">Convention en attente de signature.</AlertTitle>
+                
+              </Alert>
+
               <div className="grid gap-6 md:grid-cols-2">
                 <Card>
                   <CardHeader>

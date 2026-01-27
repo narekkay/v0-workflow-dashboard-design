@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Plus, MoreVertical, Archive, Trash2, Search, FolderOpen, Mail, FileText, Users } from "lucide-react"
+import { Plus, MoreVertical, Archive, Trash2, Search, FolderOpen, Mail, FileText, Users, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -94,6 +94,8 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
   const [viewMode, setViewMode] = useState<ViewMode>("list")
   const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false) // Declare the setIsDialogOpen variable
+  const [sortColumn, setSortColumn] = useState<"name" | "status" | null>(null)
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
   useEffect(() => {
     async function loadDisplayClients() {
@@ -113,6 +115,32 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
     }
     loadDisplayClients()
   }, [clients, showArchived])
+
+  const handleSort = (column: "name" | "status") => {
+    if (sortColumn === column) {
+      // Toggle direction or reset
+      if (sortDirection === "asc") {
+        setSortDirection("desc")
+      } else {
+        setSortColumn(null)
+        setSortDirection("asc")
+      }
+    } else {
+      setSortColumn(column)
+      setSortDirection("asc")
+    }
+  }
+
+  const getSortIcon = (column: "name" | "status") => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+    }
+    return sortDirection === "asc" ? (
+      <ArrowUp className="h-4 w-4 text-foreground" />
+    ) : (
+      <ArrowDown className="h-4 w-4 text-foreground" />
+    )
+  }
 
   const filteredClients = useMemo(() => {
     let result = displayClients
@@ -144,8 +172,28 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
       })
     }
 
+    // Sort logic
+    if (sortColumn) {
+      result = [...result].sort((a, b) => {
+        let comparison = 0
+        
+        if (sortColumn === "name") {
+          const nameA = a.last_name.toLowerCase()
+          const nameB = b.last_name.toLowerCase()
+          comparison = nameA.localeCompare(nameB)
+        } else if (sortColumn === "status") {
+          const statusA = computeStatus(a)
+          const statusB = computeStatus(b)
+          const statusOrder = { action: 0, incomplete: 1, complete: 2 }
+          comparison = statusOrder[statusA] - statusOrder[statusB]
+        }
+        
+        return sortDirection === "asc" ? comparison : -comparison
+      })
+    }
+
     return result
-  }, [displayClients, searchQuery, statusFilter, viewMode])
+  }, [displayClients, searchQuery, statusFilter, viewMode, sortColumn, sortDirection])
 
   const handleArchiveClient = async () => {
     if (!clientToArchive) return
@@ -184,72 +232,58 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
     <TooltipProvider>
       <div className="space-y-6">
         {/* Premium Header */}
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              Clients
+              Tableau de bord
             </h1>
-            
           </div>
+          
           {!showArchived && (
-            <Button onClick={onAddClientClick} className="shrink-0">
-              <Plus className="mr-2 h-4 w-4" />
-              Nouveau client
-            </Button>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              {/* Search */}
+              <div className="relative w-full sm:w-80">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher un client..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 bg-background"
+                />
+              </div>
+              
+              <Button onClick={onAddClientClick} className="shrink-0">
+                <Plus className="mr-2 h-4 w-4" />
+                Nouveau client
+              </Button>
+            </div>
           )}
         </div>
 
         {/* Toolbar */}
         {!showArchived && (
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            {/* Search */}
-            <div className="relative w-full lg:max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher un client (nom, email, telephone)"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-background"
-              />
-            </div>
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Filter chips */}
+            
 
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Filter chips */}
-              <div className="flex flex-wrap gap-2">
-                {filterChips.map((chip) => (
-                  <button
-                    key={chip.key}
-                    onClick={() => setStatusFilter(chip.key)}
-                    className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                      statusFilter === chip.key
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
-                    }`}
-                  >
-                    {chip.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* View toggle */}
-              <div className="flex rounded-lg border bg-muted/50 p-1">
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                    viewMode === "list" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
-                  }`}
-                >
-                  Vue liste
-                </button>
-                <button
-                  onClick={() => setViewMode("priorities")}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                    viewMode === "priorities" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
-                  }`}
-                >
-                  Vue priorites
-                </button>
-              </div>
+            {/* View toggle */}
+            <div className="flex rounded-lg border bg-muted/50 p-1">
+              <button
+                onClick={() => setViewMode("list")}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  viewMode === "list" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
+              >
+                Vue liste
+              </button>
+              <button
+                onClick={() => setViewMode("priorities")}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  viewMode === "priorities" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
+              >
+                Vue priorites
+              </button>
             </div>
           </div>
         )}
@@ -259,11 +293,24 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
-                <TableHead className="py-4 px-6 font-semibold">Client</TableHead>
-                <TableHead className="py-4 px-6 font-semibold">Dossiers</TableHead>
-                <TableHead className="py-4 px-6 font-semibold">Avancement</TableHead>
-                
-                <TableHead className="py-4 px-6 font-semibold">Statut</TableHead>
+                <TableHead className="py-4 px-6 font-semibold">
+                  <button
+                    onClick={() => handleSort("name")}
+                    className="flex items-center gap-2 hover:text-foreground transition-colors"
+                  >
+                    Client
+                    {getSortIcon("name")}
+                  </button>
+                </TableHead>
+                <TableHead className="py-4 px-6 font-semibold">
+                  <button
+                    onClick={() => handleSort("status")}
+                    className="flex items-center gap-2 hover:text-foreground transition-colors"
+                  >
+                    Statut
+                    {getSortIcon("status")}
+                  </button>
+                </TableHead>
                 <TableHead className="py-4 px-6 font-semibold text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -281,17 +328,14 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="py-5 px-6"><Skeleton className="h-6 w-16" /></TableCell>
-                    <TableCell className="py-5 px-6"><Skeleton className="h-4 w-24" /></TableCell>
                     <TableCell className="py-5 px-6"><Skeleton className="h-4 w-28" /></TableCell>
-                    <TableCell className="py-5 px-6"><Skeleton className="h-6 w-20" /></TableCell>
                     <TableCell className="py-5 px-6"><Skeleton className="h-8 w-24" /></TableCell>
                   </TableRow>
                 ))
               ) : filteredClients.length === 0 ? (
                 // Empty state
                 <TableRow>
-                  <TableCell colSpan={6} className="py-16 px-6">
+                  <TableCell colSpan={3} className="py-16 px-6">
                     <div className="flex flex-col items-center justify-center text-center">
                       <div className="rounded-full bg-muted p-4 mb-4">
                         <Users className="h-8 w-8 text-muted-foreground" />
@@ -339,7 +383,7 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
                               </div>
                               <div>
                                 <p className="font-medium text-foreground">
-                                  {client.first_name} {client.last_name}
+                                  {client.last_name.toUpperCase()} {client.first_name}
                                 </p>
                                 <p className="text-sm text-muted-foreground">{client.email}</p>
                               </div>
@@ -353,34 +397,6 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
                           </TooltipContent>
                         </Tooltip>
                       </TableCell>
-
-                      {/* Dossiers */}
-                      <TableCell className="py-5 px-6">
-                        <span className="text-sm text-muted-foreground">-</span>
-                      </TableCell>
-
-                      {/* Avancement */}
-                      <TableCell className="py-5 px-6">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="flex items-center gap-3 min-w-[120px]">
-                              <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full transition-all ${getProgressColor(progress)}`}
-                                  style={{ width: `${progress}%` }}
-                                />
-                              </div>
-                              <span className="text-sm font-medium text-muted-foreground w-10">{progress}%</span>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Completude estimee du dossier</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TableCell>
-
-                      {/* Prochaine echeance */}
-                      
 
                       {/* Statut */}
                       <TableCell className="py-5 px-6">
@@ -471,17 +487,7 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
                                 <Archive className="mr-2 h-4 w-4" />
                                 {showArchived ? "Desarchiver" : "Archiver"}
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-red-600 focus:text-red-600"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setClientToDelete(client)
-                                  setShowDeleteDialog(true)
-                                }}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Supprimer
-                              </DropdownMenuItem>
+                              
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>

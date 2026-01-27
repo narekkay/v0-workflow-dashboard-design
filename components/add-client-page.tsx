@@ -19,7 +19,7 @@ import { createBrowserClient } from "@/lib/supabase/client"
 import { ConventionEditor } from "@/components/convention-editor"
 
 interface AddClientPageProps {
-  onSuccess: () => void
+  onSuccess: (client: { id: string; first_name: string; last_name: string; email: string }) => void
   onCancel: () => void
 }
 
@@ -312,17 +312,13 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
           : "Le client a été ajouté avec succès",
       })
 
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        address: "",
-        notes: "",
+      // Pass the created client back to parent for navigation
+      onSuccess({
+        id: client.id,
+        first_name: client.first_name,
+        last_name: client.last_name,
+        email: client.email,
       })
-      setUploadedFiles([])
-
-      onSuccess()
     } catch (error) {
       console.error("[v0] Error creating client:", error)
       toast({
