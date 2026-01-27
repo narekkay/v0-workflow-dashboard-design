@@ -11,14 +11,13 @@ import { ClientTabs } from "@/components/client-tabs"
 import { RevenueFullPage } from "@/components/revenue-full-page"
 import { Form2042View } from "@/components/form-2042-view"
 import { ChatWidget } from "@/components/chat-widget"
-import { DashboardView } from "@/components/dashboard-view"
 import { RevenueAmountEntry } from "@/components/revenue-amount-entry"
 import { AddClientPage } from "@/components/add-client-page"
 import type { Client, TaxProfile, Document } from "@/lib/types"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 
-type View = "clients" | "documents" | "settings" | "archives" | "dashboard"
+type View = "clients" | "documents" | "settings" | "archives"
 
 const clientBaseTabs: ClientTab[] = [
   { id: "overview", label: "Aperçu général", icon: Home },
@@ -39,8 +38,8 @@ interface Tab {
 
 export default function HomePage() {
   const [clients, setClients] = useState<Client[]>([])
-  const [tabs, setTabs] = useState<Tab[]>([{ id: "view-dashboard", type: "view", label: "Tableau de bord", view: "dashboard" }])
-  const [activeTabId, setActiveTabId] = useState("view-dashboard")
+  const [tabs, setTabs] = useState<Tab[]>([{ id: "view-clients", type: "view", label: "Tableau de bord", view: "clients" }])
+  const [activeTabId, setActiveTabId] = useState("view-clients")
   const [clientsData, setClientsData] = useState<
     Map<string, { client: Client; taxProfiles: TaxProfile[]; documents: Document[] }>
   >(new Map())
@@ -343,20 +342,6 @@ export default function HomePage() {
                   }}
                 />
               </div>
-            ) : activeTab?.type === "view" && activeTab.view === "dashboard" ? (
-              <DashboardView 
-                clients={clients} 
-                onClientSelect={handleClientSelect}
-                onAddClient={() => {
-                  const newTab: Tab = {
-                    id: `add-client-${Date.now()}`,
-                    type: "add-client",
-                    label: "Nouveau client",
-                  }
-                  setTabs([...tabs, newTab])
-                  setActiveTabId(newTab.id)
-                }}
-              />
             ) : activeTab?.type === "view" && activeTab.view === "documents" ? (
               <div className="p-6">
                 <h2 className="text-2xl font-semibold text-foreground">Documents</h2>
