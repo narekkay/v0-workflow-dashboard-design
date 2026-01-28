@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowLeft, FileText, Clock, FolderOpen, Check, X, FileUp, ChevronRight, Save, Eye, CheckCircle2, Loader2, Trash2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { uploadDocument } from "@/app/actions/upload-document"
-import { generateConventionPdf } from "@/app/actions/generate-convention-pdf"
+import { generatePdfFromHtml, uploadPdfToBlob } from "@/lib/pdf-generator"
 import { createBrowserClient } from "@/lib/supabase/client"
 import { ConventionEditor } from "@/components/convention-editor"
 
@@ -416,27 +416,35 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
           ? "Convention d'honoraires au forfait"
           : "Convention d'honoraires au temps passé"
         
-        // Generate convention HTML content
-        const clientName = `${formData.firstName} ${formData.lastName}`
-        const conventionHtml = generateConventionHtml(selectedConvention, hasResultClause, {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          address: formData.address || "",
-        })
-        
-        // Upload to Vercel Blob
-        const pdfResult = await generateConventionPdf(conventionHtml, clientName, selectedConvention)
-        
-        if (pdfResult.success && pdfResult.data) {
-          console.log("[v0] Convention PDF uploaded:", pdfResult.data.url)
+        try {
+          // Generate convention HTML content
+          const clientName = `${formData.firstName} ${formData.lastName}`
+          const conventionHtml = generateConventionHtml(selectedConvention, hasResultClause, {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            address: formData.address || "",
+          })
+          
+          console.log("[v0] Converting HTML to PDF...")
+          
+          // Convert HTML to PDF blob
+          const pdfBlob = await generatePdfFromHtml(conventionHtml, `convention_${selectedConvention}_${clientName}`)
+          
+          console.log("[v0] Uploading PDF to Vercel Blob...")
+          
+          // Upload PDF to Vercel Blob
+          const fileName = `convention_${selectedConvention}_${clientName.replace(/\s+/g, '_')}_${Date.now()}`
+          const { url, size } = await uploadPdfToBlob(pdfBlob, fileName)
+          
+          console.log("[v0] Convention PDF uploaded:", url)
           
           const { error: conventionDocError } = await supabase.from("documents").insert({
             client_id: client.id,
             name: conventionTitle,
-            url: pdfResult.data.url,
+            url: url,
             type: "application/pdf",
-            size: pdfResult.data.size,
+            size: size,
             category: "convention",
             convention_type: selectedConvention,
             has_result_clause: hasResultClause,
@@ -447,8 +455,8 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
           } else {
             console.log("[v0] Convention document saved successfully")
           }
-        } else {
-          console.error("[v0] Convention PDF generation failed:", pdfResult.error)
+        } catch (error) {
+          console.error("[v0] Convention PDF generation/upload failed:", error)
         }
       }
 
