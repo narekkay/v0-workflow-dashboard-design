@@ -771,18 +771,41 @@ export function ClientTabs({
 
   async function loadClientFiles() {
     const supabase = createBrowserClient()
-    const { data, error } = await supabase
-      .from("client_files")
-      .select("*")
-      .eq("client_id", client.id)
-      .order("created_at", { ascending: false })
+    
+    // Load from both client_files and documents tables
+    const [clientFilesResult, documentsResult] = await Promise.all([
+      supabase
+        .from("client_files")
+        .select("*")
+        .eq("client_id", client.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("documents")
+        .select("*")
+        .eq("client_id", client.id)
+        .order("created_at", { ascending: false })
+    ])
 
-    if (error) {
-      console.error("Error loading client files:", error)
-      return
+    if (clientFilesResult.error) {
+      console.error("[v0] Error loading client files:", clientFilesResult.error)
+    }
+    
+    if (documentsResult.error) {
+      console.error("[v0] Error loading documents:", documentsResult.error)
     }
 
-    setClientFiles(data || [])
+    // Merge both sources
+    const allFiles = [
+      ...(clientFilesResult.data || []),
+      ...(documentsResult.data || []).map(doc => ({
+        ...doc,
+        file_name: doc.name,
+        file_url: doc.url,
+        file_type: doc.type,
+      }))
+    ]
+
+    setClientFiles(allFiles)
   }
 
   async function handleDeleteOutboxFile(fileId: string) {
