@@ -1,6 +1,6 @@
 "use client"
 
-import { Users, FileText, ChevronLeft, ChevronRight, ChevronDown, Home, User, FolderOpen, Share2, Trash2, X, LayoutDashboard } from "lucide-react"
+import { LayoutDashboardIcon,Users, FileText, ChevronLeft, ChevronRight, ChevronDown, Home, User, FolderOpen, Share2, Trash2, X, LayoutDashboard } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -80,18 +80,6 @@ export function Sidebar({
       <nav className="flex-1 overflow-y-auto p-4">
         <div className="space-y-1">
           <button
-            onClick={() => onViewChange("dashboard")}
-            className={cn(
-              "flex w-full items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors",
-              "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-              isCollapsed && "justify-center",
-            )}
-            title={isCollapsed ? "Tableau de bord" : undefined}
-          >
-            <User className="h-5 w-5 flex-shrink-0" />
-            {!isCollapsed && <span className="font-medium">Tableau de bord</span>}
-          </button>
-          <button
             onClick={() => onViewChange("clients")}
             className={cn(
               "flex w-full items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors",
@@ -100,8 +88,8 @@ export function Sidebar({
             )}
             title={isCollapsed ? "Clients" : undefined}
           >
-            <User className="h-5 w-5 flex-shrink-0" />
-            {!isCollapsed && <span className="font-medium">Tableau de bord</span>}
+            <LayoutDashboardIcon className="h-5 w-5 flex-shrink-0" />
+            {!isCollapsed && <span className="font-medium">Clients</span>}
           </button>
         </div>
 

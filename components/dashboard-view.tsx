@@ -51,69 +51,8 @@ export function DashboardView({ clients, onClientSelect, onAddClient }: Dashboar
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold text-foreground">Tableau de bord</h2>
-        <div className="flex items-center gap-3">
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Rechercher par nom..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <Button onClick={onAddClient} size="icon" title="Nouveau client">
-            <UserPlus className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Stats cards */}
-      
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Recent uploads */}
-        
-
-        {/* Active cases */}
-        <Card className="md:col-span-2 lg:col-span-3">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <FolderOpen className="h-4 w-4" />
-              Dossiers en cours
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {activeCases.map((caseItem) => (
-              <div 
-                key={caseItem.id} 
-                className="flex items-center justify-between gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                onClick={() => onClientSelect(caseItem)}
-              >
-                <div className="min-w-0 flex-1 flex items-center gap-4">
-                  <p className="text-sm font-medium min-w-[150px]">{caseItem.first_name} {caseItem.last_name}</p>
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="h-2 flex-1 rounded-full bg-muted">
-                      <div 
-                        className="h-full rounded-full bg-emerald-500" 
-                        style={{ width: `${caseItem.progress}%` }}
-                      />
-                    </div>
-                    <span className="text-xs text-muted-foreground min-w-[35px] text-right">{caseItem.progress}%</span>
-                  </div>
-                </div>
-                <Badge variant="secondary" className="text-xs">
-                  {caseItem.status}
-                </Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Recent activity */}
-        
+      <div className="text-center text-muted-foreground py-12">
+        <p>Page non disponible</p>
       </div>
     </div>
   )
