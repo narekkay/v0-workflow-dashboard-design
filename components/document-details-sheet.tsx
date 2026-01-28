@@ -273,12 +273,16 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
     validated: { label: "Validé", class: "bg-green-100 text-green-700 border-green-200" },
     error: { label: "Erreur", class: "bg-red-100 text-red-700 border-red-200" },
   }
+  
+  const currentStatus = statusConfig[document.status] || statusConfig.pending
 
   const criticalityConfig: Record<string, { label: string; class: string }> = {
     blocking: { label: "Bloquant", class: "bg-red-100 text-red-700 border-red-200" },
     important: { label: "Important", class: "bg-orange-100 text-orange-700 border-orange-200" },
     accessory: { label: "Accessoire", class: "bg-gray-100 text-gray-700 border-gray-200" },
   }
+  
+  const currentCriticality = criticalityConfig[document.criticality] || criticalityConfig.important
 
   const originLabels: Record<string, string> = {
     auto: "Automatique",
@@ -293,7 +297,7 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
     error: { label: "Échec", icon: XCircle, class: "text-red-500" },
   }
 
-  const ocrConfig = ocrStateConfig[document.ocr.state]
+  const ocrConfig = ocrStateConfig[document.ocr?.state] || ocrStateConfig.idle
   const OcrIcon = ocrConfig.icon
 
   return (
@@ -318,8 +322,8 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Statut</span>
-                <Badge variant="outline" className={statusConfig[document.status].class}>
-                  {statusConfig[document.status].label}
+                <Badge variant="outline" className={currentStatus.class}>
+                  {currentStatus.label}
                 </Badge>
               </div>
               <div className="flex justify-between">
@@ -357,8 +361,8 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
               )}
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Criticité</span>
-                <Badge variant="outline" className={criticalityConfig[document.criticality].class}>
-                  {criticalityConfig[document.criticality].label}
+                <Badge variant="outline" className={currentCriticality.class}>
+                  {currentCriticality.label}
                 </Badge>
               </div>
             </div>
