@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, FileText, Clock, FolderOpen, Check, X, FileUp, ChevronRight, Save, Eye, CheckCircle2, Loader2 } from "lucide-react"
+import { ArrowLeft, FileText, Clock, FolderOpen, Check, X, FileUp, ChevronRight, Save, Eye, CheckCircle2, Loader2, Trash2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { uploadDocument } from "@/app/actions/upload-document"
 import { createBrowserClient } from "@/lib/supabase/client"
@@ -219,6 +219,46 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
 
   const removeFile = (index: number) => {
     setUploadedFiles(uploadedFiles.filter((_, i) => i !== index))
+  }
+
+  const handleDeleteExistantFile = async () => {
+    if (!existantFile) return
+    
+    try {
+      const supabase = createBrowserClient()
+      
+      // Delete from database if it exists
+      if (existantFile.id) {
+        const { error } = await supabase
+          .from("documents")
+          .delete()
+          .eq("id", existantFile.id)
+        
+        if (error) {
+          console.error("[v0] Error deleting file from database:", error)
+        }
+      }
+      
+      // Reset visual state
+      setExistantFile(null)
+      setPdfPreviewUrl(null)
+      setUploadSuccess(false)
+      if (selectedConvention === "existant") {
+        setSelectedConvention(null)
+      }
+      
+      toast({
+        title: "Fichier supprimé",
+        description: "Le contrat a été supprimé avec succès",
+      })
+    } catch (error) {
+      console.error("[v0] Error deleting file:", error)
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le fichier",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -539,6 +579,8 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                           isSelected ? 'ring-2 ring-primary shadow-lg' : (
                             (!isExistant || hasFile) ? 'hover:border-primary/50' : ''
                           )
+                        } ${
+                          isSelected && hasFile ? 'md:col-span-2 lg:col-span-1 flex-grow' : ''
                         }`}
                         onClick={() => (!isExistant || hasFile) && handleSelectConvention(convention.id)}
                       >
@@ -552,9 +594,23 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                               {convention.description}
                             </p>
                             {hasFile && (
-                              <div className="w-full mt-2 p-3 bg-green-50 rounded-lg border border-green-200 flex items-center gap-2">
-                                <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
-                                <p className="text-sm font-medium text-green-700 truncate">{existantFile.name}</p>
+                              <div className="w-full mt-2 p-3 bg-green-50 rounded-lg border border-green-200 flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                                  <p className="text-sm font-medium text-green-700 truncate">{existantFile.name}</p>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDeleteExistantFile()
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </div>
                             )}
                           </div>
@@ -717,19 +773,30 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
               </Button>
               <div className="flex gap-3">
                 {currentStep < 4 ? (
-                  <Button
-                    type="button"
-                    onClick={() => setCurrentStep(currentStep + 1)}
-                    disabled={
-                      isLoading ||
-                      (currentStep === 1 && (!formData.firstName || !formData.lastName || !formData.email)) ||
-                      (currentStep === 2 && !selectedConvention && !conventionSkipped)
-                    }
-                    className="gap-2"
-                  >
-                    Suivant
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                  currentStep === 2 && selectedConvention === "existant" && existantFile ? (
+                    <Button
+                      type="submit"
+                      disabled={isLoading}
+                      className="gap-2"
+                    >
+                      <Save className="h-4 w-4" />
+                      {isLoading ? "Création..." : "Accéder à la page client"}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      onClick={() => setCurrentStep(currentStep + 1)}
+                      disabled={
+                        isLoading ||
+                        (currentStep === 1 && (!formData.firstName || !formData.lastName || !formData.email)) ||
+                        (currentStep === 2 && !selectedConvention && !conventionSkipped)
+                      }
+                      className="gap-2"
+                    >
+                      Suivant
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  )
                 ) : (
                   <Button type="submit" disabled={isLoading} className="gap-2">
                     <Save className="h-4 w-4" />
