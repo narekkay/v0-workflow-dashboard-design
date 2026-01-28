@@ -290,6 +290,26 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
 
       console.log("[v0] Client created successfully:", client)
 
+      // Save existant contract file if uploaded
+      if (existantFile) {
+        console.log("[v0] Saving existant contract file:", existantFile.name)
+        
+        const { error: existantError } = await supabase.from("documents").insert({
+          client_id: client.id,
+          name: existantFile.name,
+          url: existantFile.url,
+          type: existantFile.type || "application/pdf",
+          size: existantFile.size,
+          category: "contrat_existant",
+        })
+
+        if (existantError) {
+          console.error("[v0] Existant contract save error:", existantError)
+        } else {
+          console.log("[v0] Existant contract saved successfully")
+        }
+      }
+
       // Save uploaded documents to database
       if (uploadedFiles.length > 0) {
         console.log("[v0] Saving", uploadedFiles.length, "documents to database")
