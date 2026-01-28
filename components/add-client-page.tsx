@@ -290,35 +290,6 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
 
       console.log("[v0] Client created successfully:", client)
 
-      // Create convention record in the conventions table
-      if (selectedConvention || conventionSkipped) {
-        console.log("[v0] Creating convention record...")
-        
-        const { error: conventionError } = await supabase
-          .from("conventions")
-          .insert({
-            client_id: client.id,
-            type: selectedConvention || 'forfait', // Default to forfait if skipped
-            status: conventionSkipped ? 'brouillon' : 'pret',
-            has_result_clause: hasResultClause,
-            skipped: conventionSkipped,
-            document_url: existantFile?.url || null,
-            document_name: existantFile?.name || null,
-            content: {}, // Will be populated from convention editor later
-          })
-
-        if (conventionError) {
-          console.error("[v0] Convention creation error:", conventionError)
-          toast({
-            title: "Attention",
-            description: "Le client a été créé mais la convention n'a pas pu être sauvegardée",
-            variant: "destructive",
-          })
-        } else {
-          console.log("[v0] Convention created successfully")
-        }
-      }
-
       // Save uploaded documents to database
       if (uploadedFiles.length > 0) {
         console.log("[v0] Saving", uploadedFiles.length, "documents to database")
