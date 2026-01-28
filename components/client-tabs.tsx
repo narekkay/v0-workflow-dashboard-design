@@ -2371,40 +2371,52 @@ export function ClientTabs({
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
           }
           
-          // Create a completely isolated element with no inherited styles
-          const element = document.createElement('div')
-          element.style.cssText = `
-            all: initial;
-            display: block;
-            padding: 20px;
-            font-family: Arial, sans-serif;
-            font-size: 12pt;
-            line-height: 1.6;
-            color: #000000;
-            background-color: #ffffff;
-          `
+          // Create an iframe to completely isolate from page styles
+          const iframe = document.createElement('iframe')
+          iframe.style.cssText = 'position: absolute; left: -9999px; width: 210mm; height: 297mm;'
+          document.body.appendChild(iframe)
           
-          // Parse and clean the HTML content to remove any classes or inherited styles
-          const tempDiv = document.createElement('div')
-          tempDiv.innerHTML = conventionHtmlContent
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document
+          if (!iframeDoc) throw new Error('Cannot access iframe document')
           
-          // Remove all class attributes and oklch colors
-          const allElements = tempDiv.querySelectorAll('*')
-          allElements.forEach((el) => {
-            el.removeAttribute('class')
-            const style = (el as HTMLElement).style
-            if (style.color && style.color.includes('oklch')) {
-              style.color = '#000000'
-            }
-            if (style.backgroundColor && style.backgroundColor.includes('oklch')) {
-              style.backgroundColor = '#ffffff'
-            }
-          })
+          // Write clean HTML to iframe with only basic styles
+          iframeDoc.open()
+          iframeDoc.write(`
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <meta charset="utf-8">
+                <style>
+                  * { margin: 0; padding: 0; box-sizing: border-box; }
+                  body { 
+                    font-family: Arial, sans-serif; 
+                    font-size: 12pt; 
+                    line-height: 1.6; 
+                    color: #000000;
+                    background: #ffffff;
+                    padding: 20mm;
+                  }
+                  h1 { font-size: 18pt; font-weight: bold; margin-bottom: 16px; }
+                  h2 { font-size: 14pt; font-weight: bold; margin-top: 16px; margin-bottom: 8px; }
+                  p { margin-bottom: 8px; }
+                  section { margin-bottom: 16px; }
+                  strong { font-weight: bold; }
+                  ul { margin-left: 20px; }
+                  li { margin-bottom: 4px; }
+                </style>
+              </head>
+              <body>${conventionHtmlContent}</body>
+            </html>
+          `)
+          iframeDoc.close()
           
-          element.innerHTML = tempDiv.innerHTML
+          const element = iframeDoc.body
           
           // Generate PDF
           await html2pdf().set(opt).from(element).save()
+          
+          // Clean up iframe
+          document.body.removeChild(iframe)
           
           toast({
             title: "Export réussi",
