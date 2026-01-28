@@ -782,8 +782,7 @@ export function ClientTabs({
       supabase
         .from("documents")
         .select("*")
-        .eq("client_id", client.id)
-        .order("created_at", { ascending: false }),
+        .eq("client_id", client.id),
       supabase
         .from("conventions")
         .select("*")
