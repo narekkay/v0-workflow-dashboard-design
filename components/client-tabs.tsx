@@ -2318,7 +2318,7 @@ export function ClientTabs({
 
 {/* Convention Text Modal */}
 <Dialog open={conventionModalOpen} onOpenChange={setConventionModalOpen}>
-  <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+  <DialogContent className="max-w-[80vw] sm:max-w-[80vw] max-h-[80vh] overflow-y-auto">
     <DialogHeader>
       <DialogTitle className="flex items-center gap-2">
         <Scale className="h-5 w-5" />
