@@ -2179,16 +2179,22 @@ export function ClientTabs({
 
                         {/* Client files - Documents reçus/validés */}
                         {clientFiles
-                          .filter((file) => file.file_name.toLowerCase().includes(documentSearchTerm.toLowerCase()))
-                          .map((file) => (
+                          .filter((file) => {
+                            const fileName = file.file_name || (file as any).name || ''
+                            return fileName.toLowerCase().includes(documentSearchTerm.toLowerCase())
+                          })
+                          .map((file) => {
+                            const fileName = file.file_name || (file as any).name || 'Document sans nom'
+                            return (
                             <tr
                               key={file.id}
                               onClick={() => {
                                 // Convert client file to DocumentRequest format
+                                const fileDate = file.created_at || new Date().toISOString()
                                 const docRequest: DocumentRequest = {
                                   id: file.id,
-                                  name: file.file_name,
-                                  lastRequestAt: file.created_at,
+                                  name: fileName,
+                                  lastRequestAt: fileDate,
                                   status:
                                     file.status === "ok"
                                       ? "validated"
@@ -2207,7 +2213,7 @@ export function ClientTabs({
                                   },
                                   history: [
                                     {
-                                      date: file.created_at,
+                                      date: fileDate,
                                       action: "Document reçu",
                                       user: "Client",
                                     },
@@ -2221,11 +2227,11 @@ export function ClientTabs({
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-3">
                                   <FileText className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm font-medium">{file.file_name}</span>
+                                  <span className="text-sm font-medium">{fileName}</span>
                                 </div>
                               </td>
                               <td className="px-4 py-3 text-sm text-muted-foreground">
-                                {new Date(file.created_at).toLocaleDateString("fr-FR")}
+                                {file.created_at ? new Date(file.created_at).toLocaleDateString("fr-FR") : "-"}
                               </td>
                               <td className="px-4 py-3">
                                 <Badge
@@ -2269,7 +2275,7 @@ export function ClientTabs({
                                 </Button>
                               </td>
                             </tr>
-                          ))}
+                          )}))}
                       </tbody>
                     </table>
                   </div>
