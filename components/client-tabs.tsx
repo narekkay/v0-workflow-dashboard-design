@@ -2275,7 +2275,7 @@ export function ClientTabs({
                                 </Button>
                               </td>
                             </tr>
-                          )}))}
+                          )})}
                       </tbody>
                     </table>
                   </div>
