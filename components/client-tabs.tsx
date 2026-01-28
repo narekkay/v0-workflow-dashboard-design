@@ -2346,11 +2346,52 @@ export function ClientTabs({
       <Button variant="outline" onClick={() => setConventionModalOpen(false)}>
         Fermer
       </Button>
-      <Button onClick={() => {
-        toast({
-          title: "Export en cours",
-          description: "La convention sera téléchargée en PDF"
-        })
+      <Button onClick={async () => {
+        if (!conventionHtmlContent) {
+          toast({
+            title: "Erreur",
+            description: "Aucun contenu à exporter",
+            variant: "destructive"
+          })
+          return
+        }
+        
+        try {
+          // Dynamically import html2pdf
+          const html2pdf = (await import('html2pdf.js')).default
+          
+          const fileName = selectedConventionDoc?.name || 'Convention'
+          
+          // Configure options
+          const opt = {
+            margin: 10,
+            filename: `${fileName}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          }
+          
+          // Create a temporary element with the HTML content
+          const element = document.createElement('div')
+          element.innerHTML = conventionHtmlContent
+          element.style.padding = '20px'
+          element.style.fontFamily = 'Arial, sans-serif'
+          
+          // Generate PDF
+          await html2pdf().set(opt).from(element).save()
+          
+          toast({
+            title: "Export réussi",
+            description: "La convention a été téléchargée en PDF"
+          })
+        } catch (error) {
+          console.error("[v0] PDF export error:", error)
+          toast({
+            title: "Erreur d'export",
+            description: "Impossible de générer le PDF",
+            variant: "destructive"
+          })
+        }
       }}>
         <Download className="h-4 w-4 mr-2" />
         Exporter en PDF
