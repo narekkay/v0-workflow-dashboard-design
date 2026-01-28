@@ -284,7 +284,6 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
                     {getSortIcon("status")}
                   </button>
                 </TableHead>
-                <TableHead className="py-4 px-6 font-semibold text-center">Cas complexe</TableHead>
                 <TableHead className="py-4 px-6 font-semibold text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -309,7 +308,7 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
               ) : filteredClients.length === 0 ? (
                 // Empty state
                 <TableRow>
-                    <TableCell colSpan={4} className="py-16 px-6">
+                    <TableCell colSpan={3} className="py-16 px-6">
                     <div className="flex flex-col items-center justify-center text-center">
                       <div className="rounded-full bg-muted p-4 mb-4">
                         <Users className="h-8 w-8 text-muted-foreground" />
@@ -387,32 +386,6 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
                               {status === "action" && "Des actions sont requises sur ce dossier"}
                               {status === "archived" && "Ce client est archive"}
                             </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TableCell>
-
-                      {/* Cas complexe */}
-                      <TableCell className="py-5 px-6 text-center">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="flex justify-center">
-                              <Checkbox
-                                checked={client.is_complex || false}
-                                onCheckedChange={async (checked) => {
-                                  const supabase = createClient()
-                                  await supabase
-                                    .from("clients")
-                                    .update({ is_complex: checked })
-                                    .eq("id", client.id)
-                                  onClientAdded()
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                                className={client.is_complex ? "border-orange-500 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500" : ""}
-                              />
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{client.is_complex ? "Cas complexe" : "Marquer comme cas complexe"}</p>
                           </TooltipContent>
                         </Tooltip>
                       </TableCell>

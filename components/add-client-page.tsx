@@ -91,6 +91,7 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
     phone: randomData.phone,
     address: randomData.address,
     notes: "Client créé via le dashboard",
+    isComplex: false,
   })
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
@@ -279,6 +280,7 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
           email: formData.email,
           phone: formData.phone || null,
           address: formData.address || null,
+          is_complex: formData.isComplex || false,
         })
         .select()
         .single()
@@ -289,6 +291,30 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
       }
 
       console.log("[v0] Client created successfully:", client)
+
+      // Save convention as document if a convention type was selected (not existant)
+      if (selectedConvention && selectedConvention !== "existant") {
+        console.log("[v0] Saving convention document:", selectedConvention)
+        
+        const conventionTitle = selectedConvention === "forfait" 
+          ? "Convention d'honoraires au forfait"
+          : "Convention d'honoraires au temps passé"
+        
+        const { error: conventionDocError } = await supabase.from("documents").insert({
+          client_id: client.id,
+          name: conventionTitle,
+          type: "text/html",
+          category: "convention",
+          convention_type: selectedConvention,
+          has_result_clause: hasResultClause,
+        })
+
+        if (conventionDocError) {
+          console.error("[v0] Convention document save error:", conventionDocError)
+        } else {
+          console.log("[v0] Convention document saved successfully")
+        }
+      }
 
       // Save existant contract file if uploaded
       if (existantFile) {
@@ -547,6 +573,18 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   />
+                </div>
+
+                <div className="flex items-center space-x-3 pt-2">
+                  <Checkbox
+                    id="isComplex"
+                    checked={formData.isComplex || false}
+                    onCheckedChange={(checked) => setFormData({ ...formData, isComplex: checked as boolean })}
+                    className="border-orange-400 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
+                  />
+                  <Label htmlFor="isComplex" className="text-sm font-medium cursor-pointer">
+                    Cas complexe
+                  </Label>
                 </div>
               </>
             )}
