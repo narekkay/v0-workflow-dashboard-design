@@ -39,8 +39,8 @@ interface Tab {
 
 export default function HomePage() {
   const [clients, setClients] = useState<Client[]>([])
-  const [tabs, setTabs] = useState<Tab[]>([{ id: "view-dashboard", type: "view", label: "Tableau de bord", view: "dashboard" }])
-  const [activeTabId, setActiveTabId] = useState("view-dashboard")
+  const [tabs, setTabs] = useState<Tab[]>([{ id: "view-clients", type: "view", label: "Clients", view: "clients" }])
+  const [activeTabId, setActiveTabId] = useState("view-clients")
   const [clientsData, setClientsData] = useState<
     Map<string, { client: Client; taxProfiles: TaxProfile[]; documents: Document[] }>
   >(new Map())
