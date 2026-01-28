@@ -2233,14 +2233,16 @@ export function ClientTabs({
                                   className={
                                     file.status === "ok"
                                       ? "bg-green-50 text-green-700 border-green-200"
-                                      : "bg-orange-50 text-orange-700 border-orange-200"
+                                      : file.status === "pending"
+                                        ? "bg-orange-50 text-orange-700 border-orange-200"
+                                        : "bg-blue-50 text-blue-700 border-blue-200"
                                   }
                                 >
                                   {file.status === "ok"
                                     ? "Validé"
                                     : file.status === "pending"
                                       ? "En attente"
-                                      : "Demandé"}
+                                      : "Disponible"}
                                 </Badge>
                               </td>
                               <td className="px-4 py-3">
