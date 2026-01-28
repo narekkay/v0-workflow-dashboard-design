@@ -89,7 +89,7 @@ export function Sidebar({
             title={isCollapsed ? "Clients" : undefined}
           >
             <LayoutDashboardIcon className="h-5 w-5 flex-shrink-0" />
-            {!isCollapsed && <span className="font-medium">Tableau de bordableau de bord</span>}
+            {!isCollapsed && <span className="font-medium">Tableau de bord</span>}
           </button>
         </div>
 
