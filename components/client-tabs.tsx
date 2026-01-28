@@ -772,8 +772,8 @@ export function ClientTabs({
   async function loadClientFiles() {
     const supabase = createBrowserClient()
     
-    // Load from both client_files and documents tables
-    const [clientFilesResult, documentsResult] = await Promise.all([
+    // Load from client_files, documents, and conventions tables
+    const [clientFilesResult, documentsResult, conventionsResult] = await Promise.all([
       supabase
         .from("client_files")
         .select("*")
@@ -781,6 +781,11 @@ export function ClientTabs({
         .order("created_at", { ascending: false }),
       supabase
         .from("documents")
+        .select("*")
+        .eq("client_id", client.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("conventions")
         .select("*")
         .eq("client_id", client.id)
         .order("created_at", { ascending: false })
@@ -793,8 +798,12 @@ export function ClientTabs({
     if (documentsResult.error) {
       console.error("[v0] Error loading documents:", documentsResult.error)
     }
+    
+    if (conventionsResult.error) {
+      console.error("[v0] Error loading conventions:", conventionsResult.error)
+    }
 
-    // Merge both sources
+    // Merge all three sources
     const allFiles = [
       ...(clientFilesResult.data || []),
       ...(documentsResult.data || []).map(doc => ({
@@ -802,7 +811,15 @@ export function ClientTabs({
         file_name: doc.name,
         file_url: doc.url,
         file_type: doc.type,
-      }))
+      })),
+      ...(conventionsResult.data || [])
+        .filter(conv => conv.document_url)
+        .map(conv => ({
+          ...conv,
+          file_name: conv.document_name || 'Convention',
+          file_url: conv.document_url,
+          file_type: 'application/pdf',
+        }))
     ]
 
     setClientFiles(allFiles)
