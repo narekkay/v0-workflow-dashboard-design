@@ -11,6 +11,7 @@ export interface Client {
   custom_fields?: Array<{ name: string; value: string }>
   children?: Array<{ first_name: string; last_name: string; date_of_birth: string }>
   archived?: boolean
+  is_complex?: boolean
 }
 
 export interface TaxProfile {
