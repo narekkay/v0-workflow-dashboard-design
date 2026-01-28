@@ -101,7 +101,7 @@ export function Sidebar({
             title={isCollapsed ? "Clients" : undefined}
           >
             <User className="h-5 w-5 flex-shrink-0" />
-            {!isCollapsed && <span className="font-medium">Clients</span>}
+            {!isCollapsed && <span className="font-medium">Tableau de bord</span>}
           </button>
         </div>
 
