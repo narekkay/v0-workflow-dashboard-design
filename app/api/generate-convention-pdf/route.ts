@@ -52,10 +52,10 @@ export async function POST(request: NextRequest) {
       </html>
     `
 
-    // Upload HTML as blob with PDF content type
-    const blob = await put(`${fileName}.pdf`, fullHtml, {
+    // Upload HTML as blob (we'll display it as text in the modal)
+    const blob = await put(`${fileName}.html`, fullHtml, {
       access: "public",
-      contentType: "application/pdf",
+      contentType: "text/html",
     })
 
     return NextResponse.json({

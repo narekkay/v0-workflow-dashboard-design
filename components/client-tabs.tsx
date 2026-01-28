@@ -248,6 +248,7 @@ export function ClientTabs({
   const [documentSheetOpen, setDocumentSheetOpen] = useState(false)
   const [conventionModalOpen, setConventionModalOpen] = useState(false)
   const [selectedConventionDoc, setSelectedConventionDoc] = useState<any>(null)
+  const [conventionHtmlContent, setConventionHtmlContent] = useState<string>("")
   const [isRelancingDocs, setIsRelancingDocs] = useState(false)
   const [lastReminderAt, setLastReminderAt] = useState<string | undefined>(undefined)
   const [draggedTabIndex, setDraggedTabIndex] = useState<number | null>(null)
@@ -2190,11 +2191,25 @@ export function ClientTabs({
                             return (
                             <tr
                               key={file.id}
-                              onClick={() => {
+                              onClick={async () => {
                                 // Check if it's a convention document
                                 const fileCategory = (file as any).category
                                 if (fileCategory === "convention") {
                                   setSelectedConventionDoc(file)
+                                  
+                                  // Load HTML content from URL if available
+                                  const fileUrl = (file as any).url
+                                  if (fileUrl) {
+                                    try {
+                                      const response = await fetch(fileUrl)
+                                      const html = await response.text()
+                                      setConventionHtmlContent(html)
+                                    } catch (error) {
+                                      console.error("[v0] Failed to load convention HTML:", error)
+                                      setConventionHtmlContent("")
+                                    }
+                                  }
+                                  
                                   setConventionModalOpen(true)
                                   return
                                 }
@@ -2318,48 +2333,12 @@ export function ClientTabs({
         {selectedConventionDoc?.has_result_clause && " - Avec clause de résultat"}
       </DialogDescription>
     </DialogHeader>
-    <div className="prose prose-sm max-w-none mt-4 p-6 bg-muted/30 rounded-lg border">
-      {selectedConventionDoc?.convention_type === "forfait" ? (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Convention d'honoraires au forfait</h3>
-          <p>Entre les soussignés :</p>
-          <p><strong>Le Cabinet</strong>, représenté par son gérant,</p>
-          <p>Et</p>
-          <p><strong>{client.first_name} {client.last_name}</strong>, ci-après dénommé(e) "le Client",</p>
-          <hr className="my-4" />
-          <h4 className="font-semibold">Article 1 - Objet</h4>
-          <p>La présente convention a pour objet de définir les conditions dans lesquelles le Cabinet assistera le Client dans l'établissement de sa déclaration d'impôt sur le revenu.</p>
-          <h4 className="font-semibold">Article 2 - Honoraires</h4>
-          <p>Les honoraires sont fixés forfaitairement et comprennent l'ensemble des prestations nécessaires à l'établissement de la déclaration.</p>
-          {selectedConventionDoc?.has_result_clause && (
-            <>
-              <h4 className="font-semibold">Article 3 - Clause de résultat</h4>
-              <p>En cas d'économie d'impôt réalisée grâce à l'intervention du Cabinet, un honoraire complémentaire calculé en pourcentage de l'économie réalisée pourra être facturé.</p>
-            </>
-          )}
-          <h4 className="font-semibold">Article {selectedConventionDoc?.has_result_clause ? "4" : "3"} - Durée</h4>
-          <p>La présente convention est conclue pour la durée de la mission et prend fin à la date de dépôt de la déclaration.</p>
-        </div>
+    <div className="prose prose-sm max-w-none mt-4 p-6 bg-muted/30 rounded-lg border max-h-[60vh] overflow-y-auto">
+      {conventionHtmlContent ? (
+        <div dangerouslySetInnerHTML={{ __html: conventionHtmlContent }} />
       ) : (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Convention d'honoraires au temps passé</h3>
-          <p>Entre les soussignés :</p>
-          <p><strong>Le Cabinet</strong>, représenté par son gérant,</p>
-          <p>Et</p>
-          <p><strong>{client.first_name} {client.last_name}</strong>, ci-après dénommé(e) "le Client",</p>
-          <hr className="my-4" />
-          <h4 className="font-semibold">Article 1 - Objet</h4>
-          <p>La présente convention a pour objet de définir les conditions dans lesquelles le Cabinet assistera le Client dans l'établissement de sa déclaration d'impôt sur le revenu.</p>
-          <h4 className="font-semibold">Article 2 - Honoraires</h4>
-          <p>Les honoraires sont calculés sur la base du temps passé, selon le barème horaire en vigueur au Cabinet. Un relevé détaillé des heures sera fourni au Client.</p>
-          {selectedConventionDoc?.has_result_clause && (
-            <>
-              <h4 className="font-semibold">Article 3 - Clause de résultat</h4>
-              <p>En cas d'économie d'impôt réalisée grâce à l'intervention du Cabinet, un honoraire complémentaire calculé en pourcentage de l'économie réalisée pourra être facturé.</p>
-            </>
-          )}
-          <h4 className="font-semibold">Article {selectedConventionDoc?.has_result_clause ? "4" : "3"} - Durée</h4>
-          <p>La présente convention est conclue pour la durée de la mission et prend fin à la date de dépôt de la déclaration.</p>
+        <div className="text-center text-muted-foreground py-8">
+          Chargement de la convention...
         </div>
       )}
     </div>

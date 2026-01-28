@@ -20,5 +20,11 @@ export async function generateAndUploadConventionPdf(
     throw new Error(error.error || 'Failed to generate PDF')
   }
 
-  return response.json()
+  const result = await response.json()
+  
+  if (!result.success || !result.data) {
+    throw new Error(result.error || 'Failed to generate PDF')
+  }
+  
+  return result.data
 }

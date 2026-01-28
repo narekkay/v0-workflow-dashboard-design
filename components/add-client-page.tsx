@@ -438,7 +438,7 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
             client_id: client.id,
             name: conventionTitle,
             url: url,
-            type: "application/pdf",
+            type: "text/html",
             size: size,
             category: "convention",
             convention_type: selectedConvention,
