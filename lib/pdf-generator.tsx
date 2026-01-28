@@ -1,14 +1,25 @@
 export async function generatePdfFromHtml(htmlContent: string, fileName: string): Promise<Blob> {
-  // Create a temporary container
+  // Create a temporary container completely isolated from page styles
   const container = document.createElement('div')
-  container.style.position = 'absolute'
-  container.style.left = '-9999px'
-  container.style.width = '210mm'
-  container.style.padding = '20mm'
-  container.style.fontFamily = 'Arial, sans-serif'
-  container.style.fontSize = '12pt'
-  container.style.lineHeight = '1.6'
-  container.innerHTML = htmlContent
+  container.style.cssText = `
+    position: absolute;
+    left: -9999px;
+    width: 210mm;
+    padding: 20mm;
+    font-family: Arial, sans-serif;
+    font-size: 12pt;
+    line-height: 1.6;
+    background-color: #ffffff;
+    color: #000000;
+    all: initial;
+  `
+  
+  // Wrap content in a styled div to override all inherited styles
+  container.innerHTML = `
+    <div style="font-family: Arial, sans-serif; font-size: 12pt; line-height: 1.6; color: #000000; background: #ffffff;">
+      ${htmlContent}
+    </div>
+  `
   document.body.appendChild(container)
 
   try {

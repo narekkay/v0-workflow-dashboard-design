@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowLeft, FileText, Clock, FolderOpen, Check, X, FileUp, ChevronRight, Save, Eye, CheckCircle2, Loader2, Trash2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { uploadDocument } from "@/app/actions/upload-document"
-import { generatePdfFromHtml, uploadPdfToBlob } from "@/lib/pdf-generator"
+import { generateAndUploadConventionPdf } from "@/lib/pdf-utils"
 import { createBrowserClient } from "@/lib/supabase/client"
 import { ConventionEditor } from "@/components/convention-editor"
 
@@ -426,16 +426,11 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
             address: formData.address || "",
           })
           
-          console.log("[v0] Converting HTML to PDF...")
+          console.log("[v0] Generating and uploading PDF to Vercel Blob...")
           
-          // Convert HTML to PDF blob
-          const pdfBlob = await generatePdfFromHtml(conventionHtml, `convention_${selectedConvention}_${clientName}`)
-          
-          console.log("[v0] Uploading PDF to Vercel Blob...")
-          
-          // Upload PDF to Vercel Blob
+          // Generate PDF and upload to Vercel Blob via API route
           const fileName = `convention_${selectedConvention}_${clientName.replace(/\s+/g, '_')}_${Date.now()}`
-          const { url, size } = await uploadPdfToBlob(pdfBlob, fileName)
+          const { url, size } = await generateAndUploadConventionPdf(conventionHtml, fileName)
           
           console.log("[v0] Convention PDF uploaded:", url)
           
