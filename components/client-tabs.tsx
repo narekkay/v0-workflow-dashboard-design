@@ -2357,66 +2357,83 @@ export function ClientTabs({
         }
         
         try {
-          // Dynamically import html2pdf
-          const html2pdf = (await import('html2pdf.js')).default
+          // Dynamically import jsPDF
+          const { jsPDF } = await import('jspdf')
           
           const fileName = selectedConventionDoc?.name || 'Convention'
           
-          // Configure options
-          const opt = {
-            margin: 10,
-            filename: `${fileName}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          // Parse HTML to extract text content
+          const tempDiv = document.createElement('div')
+          tempDiv.innerHTML = conventionHtmlContent
+          
+          // Create PDF
+          const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+          })
+          
+          const pageWidth = pdf.internal.pageSize.getWidth()
+          const pageHeight = pdf.internal.pageSize.getHeight()
+          const margin = 20
+          const maxWidth = pageWidth - 2 * margin
+          let yPosition = margin
+          
+          // Extract and format text from HTML
+          const processNode = (node: Node, fontSize = 10, isBold = false) => {
+            if (node.nodeType === Node.TEXT_NODE) {
+              const text = node.textContent?.trim()
+              if (!text) return
+              
+              pdf.setFontSize(fontSize)
+              pdf.setFont('helvetica', isBold ? 'bold' : 'normal')
+              
+              const lines = pdf.splitTextToSize(text, maxWidth)
+              lines.forEach((line: string) => {
+                if (yPosition > pageHeight - margin) {
+                  pdf.addPage()
+                  yPosition = margin
+                }
+                pdf.text(line, margin, yPosition)
+                yPosition += fontSize * 0.5
+              })
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+              const element = node as HTMLElement
+              const tagName = element.tagName.toLowerCase()
+              
+              if (tagName === 'h1') {
+                yPosition += 5
+                Array.from(element.childNodes).forEach(child => processNode(child, 16, true))
+                yPosition += 5
+              } else if (tagName === 'h2') {
+                yPosition += 4
+                Array.from(element.childNodes).forEach(child => processNode(child, 14, true))
+                yPosition += 3
+              } else if (tagName === 'h3' || tagName === 'h4') {
+                yPosition += 3
+                Array.from(element.childNodes).forEach(child => processNode(child, 12, true))
+                yPosition += 2
+              } else if (tagName === 'p') {
+                Array.from(element.childNodes).forEach(child => {
+                  const hasStrong = element.querySelector('strong')
+                  processNode(child, 10, hasStrong !== null && child.nodeType === Node.ELEMENT_NODE && (child as HTMLElement).tagName === 'STRONG')
+                })
+                yPosition += 4
+              } else if (tagName === 'strong' || tagName === 'b') {
+                Array.from(element.childNodes).forEach(child => processNode(child, 10, true))
+              } else if (tagName === 'hr') {
+                pdf.line(margin, yPosition, pageWidth - margin, yPosition)
+                yPosition += 5
+              } else {
+                Array.from(element.childNodes).forEach(child => processNode(child, 10, false))
+              }
+            }
           }
           
-          // Create an iframe to completely isolate from page styles
-          const iframe = document.createElement('iframe')
-          iframe.style.cssText = 'position: absolute; left: -9999px; width: 210mm; height: 297mm;'
-          document.body.appendChild(iframe)
+          Array.from(tempDiv.childNodes).forEach(child => processNode(child))
           
-          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document
-          if (!iframeDoc) throw new Error('Cannot access iframe document')
-          
-          // Write clean HTML to iframe with only basic styles
-          iframeDoc.open()
-          iframeDoc.write(`
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <meta charset="utf-8">
-                <style>
-                  * { margin: 0; padding: 0; box-sizing: border-box; }
-                  body { 
-                    font-family: Arial, sans-serif; 
-                    font-size: 12pt; 
-                    line-height: 1.6; 
-                    color: #000000;
-                    background: #ffffff;
-                    padding: 20mm;
-                  }
-                  h1 { font-size: 18pt; font-weight: bold; margin-bottom: 16px; }
-                  h2 { font-size: 14pt; font-weight: bold; margin-top: 16px; margin-bottom: 8px; }
-                  p { margin-bottom: 8px; }
-                  section { margin-bottom: 16px; }
-                  strong { font-weight: bold; }
-                  ul { margin-left: 20px; }
-                  li { margin-bottom: 4px; }
-                </style>
-              </head>
-              <body>${conventionHtmlContent}</body>
-            </html>
-          `)
-          iframeDoc.close()
-          
-          const element = iframeDoc.body
-          
-          // Generate PDF
-          await html2pdf().set(opt).from(element).save()
-          
-          // Clean up iframe
-          document.body.removeChild(iframe)
+          // Save PDF
+          pdf.save(`${fileName}.pdf`)
           
           toast({
             title: "Export réussi",
