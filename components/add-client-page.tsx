@@ -294,25 +294,55 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
 
       // Save convention as document if a convention type was selected (not existant)
       if (selectedConvention && selectedConvention !== "existant") {
-        console.log("[v0] Saving convention document:", selectedConvention)
+        console.log("[v0] Generating and uploading convention document:", selectedConvention)
+        
+        // Generate and upload the convention to Vercel Blob
+        const { generateConventionPdf } = await import("@/app/actions/generate-convention-pdf")
+        const conventionResult = await generateConventionPdf({
+          conventionType: selectedConvention as "forfait" | "temps_passe",
+          hasResultClause: hasResultClause,
+          clientFirstName: formData.firstName,
+          clientLastName: formData.lastName,
+          clientEmail: formData.email,
+          clientAddress: formData.address,
+        })
         
         const conventionTitle = selectedConvention === "forfait" 
           ? "Convention d'honoraires au forfait"
           : "Convention d'honoraires au temps passé"
         
-        const { error: conventionDocError } = await supabase.from("documents").insert({
-          client_id: client.id,
-          name: conventionTitle,
-          type: "text/html",
-          category: "convention",
-          convention_type: selectedConvention,
-          has_result_clause: hasResultClause,
-        })
+        if (conventionResult.success && conventionResult.url) {
+          console.log("[v0] Convention uploaded successfully:", conventionResult.url)
+          
+          const { error: conventionDocError } = await supabase.from("documents").insert({
+            client_id: client.id,
+            name: conventionTitle,
+            url: conventionResult.url,
+            type: "text/html",
+            category: "convention",
+            convention_type: selectedConvention,
+            has_result_clause: hasResultClause,
+          })
 
-        if (conventionDocError) {
-          console.error("[v0] Convention document save error:", conventionDocError)
+          if (conventionDocError) {
+            console.error("[v0] Convention document save error:", conventionDocError)
+          } else {
+            console.log("[v0] Convention document saved to database successfully")
+          }
         } else {
-          console.log("[v0] Convention document saved successfully")
+          console.error("[v0] Convention upload failed:", conventionResult.error)
+          // Still save the document without URL as fallback
+          const { error: conventionDocError } = await supabase.from("documents").insert({
+            client_id: client.id,
+            name: conventionTitle,
+            type: "text/html",
+            category: "convention",
+            convention_type: selectedConvention,
+            has_result_clause: hasResultClause,
+          })
+          if (conventionDocError) {
+            console.error("[v0] Fallback convention document save error:", conventionDocError)
+          }
         }
       }
 
