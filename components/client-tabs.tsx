@@ -2191,6 +2191,7 @@ export function ClientTabs({
                               onClick={() => {
                                 // Convert client file to DocumentRequest format
                                 const fileDate = file.created_at || new Date().toISOString()
+                                const fileUrl = file.file_url || (file as any).url || null
                                 const docRequest: DocumentRequest = {
                                   id: String(file.id),
                                   name: fileName,
@@ -2206,6 +2207,7 @@ export function ClientTabs({
                                   origin: "manual",
                                   revenueSubcategoryLabel: "Documents validés",
                                   impactedCases: [],
+                                  fileUrl: fileUrl,
                                   ocr: {
                                     state: file.status === "ok" ? "done" : "pending",
                                     extracted: file.status === "ok" ? { Sample: "Data" } : undefined,

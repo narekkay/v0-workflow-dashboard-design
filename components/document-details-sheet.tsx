@@ -52,6 +52,7 @@ export interface DocumentRequest {
   origin: "auto" | "manual" | "annex"
   revenueSubcategoryLabel?: string
   impactedCases: string[]
+  fileUrl?: string
   ocr: {
     state: "idle" | "running" | "done" | "error"
     extracted?: Record<string, string | number>
@@ -170,6 +171,7 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
   const [translationState, setTranslationState] = useState<"idle" | "running" | "done" | "error">("idle")
   const [translatedText, setTranslatedText] = useState<string>("")
   const [twoColumnView, setTwoColumnView] = useState(true)
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
 
   if (!document) return null
 
@@ -431,7 +433,22 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
               )}
 
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" className="gap-1 bg-transparent">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-1 bg-transparent"
+                  onClick={() => {
+                    if (document.fileUrl) {
+                      setPdfViewerOpen(true)
+                    } else {
+                      toast({
+                        title: "Fichier non disponible",
+                        description: "L'URL du document n'est pas disponible",
+                        variant: "destructive",
+                      })
+                    }
+                  }}
+                >
                   <Eye className="h-4 w-4" />
                   Voir le document
                 </Button>
@@ -716,6 +733,45 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
           </section>
         </div>
       </SheetContent>
+
+      {/* PDF Viewer Dialog */}
+      <Dialog open={pdfViewerOpen} onOpenChange={setPdfViewerOpen}>
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              {document.name}
+            </DialogTitle>
+            <DialogDescription>
+              Visualisation du document
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 mt-4">
+            {document.fileUrl ? (
+              <iframe
+                src={document.fileUrl}
+                className="w-full h-full rounded-lg border"
+                title={document.name}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                Aucun fichier disponible
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => document.fileUrl && window.open(document.fileUrl, "_blank")}
+            >
+              Ouvrir dans un nouvel onglet
+            </Button>
+            <Button onClick={() => setPdfViewerOpen(false)}>
+              Fermer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Sheet>
   )
 }
