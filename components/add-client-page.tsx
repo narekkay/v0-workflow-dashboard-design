@@ -506,15 +506,7 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                     placeholder="+33 6 12 34 56 78"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address">Adresse</Label>
-                  <Input
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="123 Rue de la Paix, 75001 Paris"
-                  />
-                </div>
+                
                 <div className="space-y-2">
                   <Label htmlFor="notes">Notes</Label>
                   <Textarea
