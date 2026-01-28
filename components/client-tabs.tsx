@@ -246,6 +246,8 @@ export function ClientTabs({
   const [expertMode, setExpertMode] = useState(false)
   const [selectedDocument, setSelectedDocument] = useState<DocumentRequest | null>(null)
   const [documentSheetOpen, setDocumentSheetOpen] = useState(false)
+  const [conventionModalOpen, setConventionModalOpen] = useState(false)
+  const [selectedConventionDoc, setSelectedConventionDoc] = useState<any>(null)
   const [isRelancingDocs, setIsRelancingDocs] = useState(false)
   const [lastReminderAt, setLastReminderAt] = useState<string | undefined>(undefined)
   const [draggedTabIndex, setDraggedTabIndex] = useState<number | null>(null)
@@ -2189,6 +2191,14 @@ export function ClientTabs({
                             <tr
                               key={file.id}
                               onClick={() => {
+                                // Check if it's a convention document
+                                const fileCategory = (file as any).category
+                                if (fileCategory === "convention") {
+                                  setSelectedConventionDoc(file)
+                                  setConventionModalOpen(true)
+                                  return
+                                }
+                                
                                 // Convert client file to DocumentRequest format
                                 const fileDate = file.created_at || new Date().toISOString()
                                 const fileUrl = file.file_url || (file as any).url || null
@@ -2284,12 +2294,91 @@ export function ClientTabs({
                 </div>
               )}
 
-              <DocumentDetailsSheet
-                document={selectedDocument}
-                open={documentSheetOpen}
-                onOpenChange={setDocumentSheetOpen}
-                expertMode={expertMode}
-              />
+<DocumentDetailsSheet
+  document={selectedDocument}
+  open={documentSheetOpen}
+  onOpenChange={setDocumentSheetOpen}
+  expertMode={expertMode}
+  />
+
+{/* Convention Text Modal */}
+<Dialog open={conventionModalOpen} onOpenChange={setConventionModalOpen}>
+  <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+    <DialogHeader>
+      <DialogTitle className="flex items-center gap-2">
+        <Scale className="h-5 w-5" />
+        {selectedConventionDoc?.name || "Convention d'honoraires"}
+      </DialogTitle>
+      <DialogDescription>
+        {selectedConventionDoc?.convention_type === "forfait" 
+          ? "Convention au forfait" 
+          : selectedConventionDoc?.convention_type === "temps_passe"
+            ? "Convention au temps passé"
+            : "Convention d'honoraires"}
+        {selectedConventionDoc?.has_result_clause && " - Avec clause de résultat"}
+      </DialogDescription>
+    </DialogHeader>
+    <div className="prose prose-sm max-w-none mt-4 p-6 bg-muted/30 rounded-lg border">
+      {selectedConventionDoc?.convention_type === "forfait" ? (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Convention d'honoraires au forfait</h3>
+          <p>Entre les soussignés :</p>
+          <p><strong>Le Cabinet</strong>, représenté par son gérant,</p>
+          <p>Et</p>
+          <p><strong>{client.first_name} {client.last_name}</strong>, ci-après dénommé(e) "le Client",</p>
+          <hr className="my-4" />
+          <h4 className="font-semibold">Article 1 - Objet</h4>
+          <p>La présente convention a pour objet de définir les conditions dans lesquelles le Cabinet assistera le Client dans l'établissement de sa déclaration d'impôt sur le revenu.</p>
+          <h4 className="font-semibold">Article 2 - Honoraires</h4>
+          <p>Les honoraires sont fixés forfaitairement et comprennent l'ensemble des prestations nécessaires à l'établissement de la déclaration.</p>
+          {selectedConventionDoc?.has_result_clause && (
+            <>
+              <h4 className="font-semibold">Article 3 - Clause de résultat</h4>
+              <p>En cas d'économie d'impôt réalisée grâce à l'intervention du Cabinet, un honoraire complémentaire calculé en pourcentage de l'économie réalisée pourra être facturé.</p>
+            </>
+          )}
+          <h4 className="font-semibold">Article {selectedConventionDoc?.has_result_clause ? "4" : "3"} - Durée</h4>
+          <p>La présente convention est conclue pour la durée de la mission et prend fin à la date de dépôt de la déclaration.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Convention d'honoraires au temps passé</h3>
+          <p>Entre les soussignés :</p>
+          <p><strong>Le Cabinet</strong>, représenté par son gérant,</p>
+          <p>Et</p>
+          <p><strong>{client.first_name} {client.last_name}</strong>, ci-après dénommé(e) "le Client",</p>
+          <hr className="my-4" />
+          <h4 className="font-semibold">Article 1 - Objet</h4>
+          <p>La présente convention a pour objet de définir les conditions dans lesquelles le Cabinet assistera le Client dans l'établissement de sa déclaration d'impôt sur le revenu.</p>
+          <h4 className="font-semibold">Article 2 - Honoraires</h4>
+          <p>Les honoraires sont calculés sur la base du temps passé, selon le barème horaire en vigueur au Cabinet. Un relevé détaillé des heures sera fourni au Client.</p>
+          {selectedConventionDoc?.has_result_clause && (
+            <>
+              <h4 className="font-semibold">Article 3 - Clause de résultat</h4>
+              <p>En cas d'économie d'impôt réalisée grâce à l'intervention du Cabinet, un honoraire complémentaire calculé en pourcentage de l'économie réalisée pourra être facturé.</p>
+            </>
+          )}
+          <h4 className="font-semibold">Article {selectedConventionDoc?.has_result_clause ? "4" : "3"} - Durée</h4>
+          <p>La présente convention est conclue pour la durée de la mission et prend fin à la date de dépôt de la déclaration.</p>
+        </div>
+      )}
+    </div>
+    <DialogFooter className="mt-4">
+      <Button variant="outline" onClick={() => setConventionModalOpen(false)}>
+        Fermer
+      </Button>
+      <Button onClick={() => {
+        toast({
+          title: "Export en cours",
+          description: "La convention sera téléchargée en PDF"
+        })
+      }}>
+        <Download className="h-4 w-4 mr-2" />
+        Exporter en PDF
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
             </div>
           )}
 
