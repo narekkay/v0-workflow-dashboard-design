@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowLeft, FileText, Clock, FolderOpen, Check, X, FileUp, ChevronRight, Save, Eye, CheckCircle2, Loader2, Trash2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { uploadDocument } from "@/app/actions/upload-document"
+import { generateConventionPdf } from "@/app/actions/generate-convention-pdf"
 import { createBrowserClient } from "@/lib/supabase/client"
 import { ConventionEditor } from "@/components/convention-editor"
 
@@ -69,6 +70,121 @@ function generateRandomData() {
   const address = `${streetNum} Rue de la République, 75001 ${city}`
 
   return { firstName, lastName, email, phone, address }
+}
+
+function generateConventionHtml(
+  conventionType: string, 
+  hasResultClause: boolean, 
+  clientData: { firstName: string; lastName: string; email: string; address: string }
+) {
+  const mode = conventionType === "temps_passe" ? "AU TEMPS PASSÉ" : "AU FORFAIT"
+  const today = new Date().toLocaleDateString("fr-FR")
+  
+  return `
+    <div class="document-content">
+      <h1 style="text-align: center; font-size: 18pt; margin-bottom: 24px;">
+        CONTRAT DE MISSION ET DE RÉMUNÉRATION<br/>
+        <span style="font-size: 14pt;">${mode}</span>
+      </h1>
+
+      <section style="margin-bottom: 20px;">
+        <h2 style="font-size: 14pt; font-weight: bold;">ENTRE LES SOUSSIGNÉS :</h2>
+        <p style="margin-bottom: 10px;">
+          <strong>Le Cabinet :</strong><br/>
+          Cabinet Martin & Associés, représenté par Me Sophie Martin, Avocat inscrit au Barreau de Paris,<br/>
+          Adresse : 25 Avenue Montaigne, 75008 Paris<br/>
+          Email : contact@martin-avocats.fr<br/>
+          Téléphone : +33 1 45 67 89 00
+        </p>
+        <p style="text-align: center; margin: 10px 0;">ET</p>
+        <p>
+          <strong>Le Client :</strong><br/>
+          ${clientData.firstName} ${clientData.lastName}, demeurant ${clientData.address || "adresse à compléter"}<br/>
+          Email : ${clientData.email}
+        </p>
+      </section>
+
+      <section style="margin-bottom: 20px;">
+        <h2 style="font-size: 14pt; font-weight: bold;">PRÉAMBULE</h2>
+        <p>
+          Le Client souhaite confier à l'Avocat une mission de conseil et consultation juridique.
+          La présente convention a pour objet de définir les modalités de cette mission ainsi que les conditions de rémunération de l'Avocat.
+        </p>
+      </section>
+
+      <section style="margin-bottom: 20px;">
+        <h2 style="font-size: 14pt; font-weight: bold;">ARTICLE 1 – MISSION</h2>
+        <p style="margin-bottom: 10px;">
+          <strong>Nature de la mission :</strong> Conseil et assistance juridique dans le cadre de la déclaration d'impôt sur le revenu.
+        </p>
+        <p>
+          <strong>Diligences incluses :</strong> Rendez-vous et échanges, Étude du dossier et des pièces, Rédaction d'actes, Suivi client.
+        </p>
+      </section>
+
+      <section style="margin-bottom: 20px;">
+        <h2 style="font-size: 14pt; font-weight: bold;">ARTICLE 2 – DÉTERMINATION DES HONORAIRES</h2>
+        ${conventionType === "forfait" ? `
+        <p style="margin-bottom: 10px;">
+          Les honoraires de l'Avocat sont fixés de manière forfaitaire à 3 000 € HT,
+          soit 3 600 € TTC (TVA à 20%).
+        </p>
+        <p>
+          Ce forfait couvre l'ensemble des diligences décrites à l'article précédent.
+          Toute prestation complémentaire fera l'objet d'un avenant.
+        </p>
+        ` : `
+        <p style="margin-bottom: 10px;">
+          Les honoraires de l'Avocat sont calculés au temps passé selon les taux horaires suivants :
+        </p>
+        <ul style="margin-left: 20px; margin-bottom: 10px;">
+          <li>Associé : 350 € HT / heure</li>
+          <li>Collaborateur : 200 € HT / heure</li>
+        </ul>
+        <p>TVA applicable : 20%</p>
+        `}
+      </section>
+
+      ${hasResultClause ? `
+      <section style="margin-bottom: 20px;">
+        <h2 style="font-size: 14pt; font-weight: bold;">ARTICLE 3 – HONORAIRE COMPLÉMENTAIRE DE RÉSULTAT</h2>
+        <p>
+          En sus des honoraires ${conventionType === "forfait" ? "forfaitaires" : "au temps passé"} prévus ci-dessus, 
+          un honoraire complémentaire de résultat est convenu entre les parties, égal à 10% de l'économie réalisée.
+        </p>
+      </section>
+      ` : ""}
+
+      <section style="margin-bottom: 20px;">
+        <h2 style="font-size: 14pt; font-weight: bold;">ARTICLE ${hasResultClause ? "4" : "3"} – FRAIS, DÉBOURS ET DÉPENS</h2>
+        <p>
+          Les frais et débours engagés par l'Avocat sont refacturés au Client à l'identique.
+          Les dépens sont à la charge de la partie condamnée, conformément à la décision de justice.
+        </p>
+      </section>
+
+      <section style="margin-bottom: 20px;">
+        <h2 style="font-size: 14pt; font-weight: bold;">ARTICLE ${hasResultClause ? "5" : "4"} – RÈGLEMENT</h2>
+        <p>
+          Les honoraires sont payables à réception de la facture, par virement bancaire.
+        </p>
+      </section>
+
+      <section style="margin-top: 40px;">
+        <p>Fait à Paris, le ${today}</p>
+        <div style="display: flex; justify-content: space-between; margin-top: 40px;">
+          <div style="width: 45%;">
+            <p><strong>Le Cabinet</strong></p>
+            <p style="margin-top: 60px;">Signature :</p>
+          </div>
+          <div style="width: 45%;">
+            <p><strong>Le Client</strong></p>
+            <p style="margin-top: 60px;">Signature :</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  `
 }
 
 export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
@@ -292,33 +408,35 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
 
       console.log("[v0] Client created successfully:", client)
 
-      // Save convention as document if a convention type was selected (not existant)
+      // Generate and save convention PDF if a convention type was selected (not existant)
       if (selectedConvention && selectedConvention !== "existant") {
-        console.log("[v0] Generating and uploading convention document:", selectedConvention)
-        
-        // Generate and upload the convention to Vercel Blob
-        const { generateConventionPdf } = await import("@/app/actions/generate-convention-pdf")
-        const conventionResult = await generateConventionPdf({
-          conventionType: selectedConvention as "forfait" | "temps_passe",
-          hasResultClause: hasResultClause,
-          clientFirstName: formData.firstName,
-          clientLastName: formData.lastName,
-          clientEmail: formData.email,
-          clientAddress: formData.address,
-        })
+        console.log("[v0] Generating convention PDF:", selectedConvention)
         
         const conventionTitle = selectedConvention === "forfait" 
           ? "Convention d'honoraires au forfait"
           : "Convention d'honoraires au temps passé"
         
-        if (conventionResult.success && conventionResult.url) {
-          console.log("[v0] Convention uploaded successfully:", conventionResult.url)
+        // Generate convention HTML content
+        const clientName = `${formData.firstName} ${formData.lastName}`
+        const conventionHtml = generateConventionHtml(selectedConvention, hasResultClause, {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          address: formData.address || "",
+        })
+        
+        // Upload to Vercel Blob
+        const pdfResult = await generateConventionPdf(conventionHtml, clientName, selectedConvention)
+        
+        if (pdfResult.success && pdfResult.data) {
+          console.log("[v0] Convention PDF uploaded:", pdfResult.data.url)
           
           const { error: conventionDocError } = await supabase.from("documents").insert({
             client_id: client.id,
             name: conventionTitle,
-            url: conventionResult.url,
-            type: "text/html",
+            url: pdfResult.data.url,
+            type: "application/pdf",
+            size: pdfResult.data.size,
             category: "convention",
             convention_type: selectedConvention,
             has_result_clause: hasResultClause,
@@ -327,22 +445,10 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
           if (conventionDocError) {
             console.error("[v0] Convention document save error:", conventionDocError)
           } else {
-            console.log("[v0] Convention document saved to database successfully")
+            console.log("[v0] Convention document saved successfully")
           }
         } else {
-          console.error("[v0] Convention upload failed:", conventionResult.error)
-          // Still save the document without URL as fallback
-          const { error: conventionDocError } = await supabase.from("documents").insert({
-            client_id: client.id,
-            name: conventionTitle,
-            type: "text/html",
-            category: "convention",
-            convention_type: selectedConvention,
-            has_result_clause: hasResultClause,
-          })
-          if (conventionDocError) {
-            console.error("[v0] Fallback convention document save error:", conventionDocError)
-          }
+          console.error("[v0] Convention PDF generation failed:", pdfResult.error)
         }
       }
 
