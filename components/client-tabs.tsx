@@ -2189,10 +2189,13 @@ export function ClientTabs({
                             <tr
                               key={file.id}
                               onClick={() => {
+                                console.log("[v0] Clicked file:", file)
+                                console.log("[v0] File ID:", file.id, "Type:", typeof file.id)
+                                console.log("[v0] File name:", fileName)
                                 // Convert client file to DocumentRequest format
                                 const fileDate = file.created_at || new Date().toISOString()
                                 const docRequest: DocumentRequest = {
-                                  id: file.id,
+                                  id: String(file.id),
                                   name: fileName,
                                   lastRequestAt: fileDate,
                                   status:
