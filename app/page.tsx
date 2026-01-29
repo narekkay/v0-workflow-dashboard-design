@@ -17,6 +17,7 @@ import { AddClientPage } from "@/components/add-client-page"
 import type { Client, TaxProfile, Document } from "@/lib/types"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
+import { NotificationsDropdown } from "@/components/notifications-dropdown"
 
 type View = "clients" | "documents" | "settings" | "archives" | "dashboard"
 
@@ -308,7 +309,9 @@ export default function HomePage() {
               </div>
             ))}
 
-            <div className="ml-auto pr-2">
+            <div className="ml-auto pr-2 flex items-center gap-2">
+              <NotificationsDropdown />
+              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
