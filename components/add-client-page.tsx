@@ -197,6 +197,7 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
   const [hasResultClause, setHasResultClause] = useState(false)
   const [conventionSkipped, setConventionSkipped] = useState(false)
   const [showConventionEditor, setShowConventionEditor] = useState(false)
+  const [isSubmittingFromEditor, setIsSubmittingFromEditor] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const existantFileInputRef = useRef<HTMLInputElement | null>(null)
   const randomData = generateRandomData()
@@ -557,6 +558,7 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
         description: error instanceof Error ? error.message : "Une erreur est survenue",
         variant: "destructive",
       })
+      throw error // Re-throw to allow caller to handle
     } finally {
       setIsLoading(false)
     }
@@ -575,11 +577,21 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
           phone: formData.phone,
           address: formData.address,
         }}
-        onBack={() => setShowConventionEditor(false)}
-  onValidate={() => {
-    setShowConventionEditor(false)
-    handleSubmit()
-  }}
+      onBack={() => setShowConventionEditor(false)}
+      onValidate={async () => {
+        setIsSubmittingFromEditor(true)
+        try {
+          await handleSubmit()
+          // Only close editor if submission succeeds
+          setShowConventionEditor(false)
+        } catch (error) {
+          // Keep editor open on error
+          console.error("[v0] Submission failed, keeping editor open:", error)
+        } finally {
+          setIsSubmittingFromEditor(false)
+        }
+      }}
+      isSubmitting={isSubmittingFromEditor}
       />
     )
   }

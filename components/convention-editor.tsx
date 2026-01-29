@@ -27,7 +27,8 @@ interface ConventionEditorProps {
     address: string
   }
   onBack: () => void
-  onValidate: () => void
+  onValidate: () => void | Promise<void>
+  isSubmitting?: boolean
 }
 
 interface AuditEntry {
@@ -53,6 +54,7 @@ export function ConventionEditor({
   clientData,
   onBack,
   onValidate,
+  isSubmitting = false,
 }: ConventionEditorProps) {
   // Cabinet data
   const [cabinet, setCabinet] = useState(defaultCabinetData.cabinet)
@@ -1126,8 +1128,15 @@ export function ConventionEditor({
           <Button variant="outline" onClick={onBack}>
             Revenir
           </Button>
-          <Button onClick={onValidate} disabled={!isReadyForSignature()}>
-            Envoyer la convention
+          <Button onClick={onValidate} disabled={!isReadyForSignature() || isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Clock className="h-4 w-4 mr-2 animate-spin" />
+                Envoi en cours...
+              </>
+            ) : (
+              "Envoyer la convention"
+            )}
           </Button>
         </div>
 
