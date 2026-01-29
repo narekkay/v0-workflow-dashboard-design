@@ -209,6 +209,42 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
     notes: "Client créé via le dashboard",
     isComplex: false,
   })
+  const [formErrors, setFormErrors] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+  })
+  
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
+  
+  const validateStep1 = (): boolean => {
+    const errors = {
+      firstName: "",
+      lastName: "",
+      email: "",
+    }
+    
+    if (!formData.firstName.trim()) {
+      errors.firstName = "Le prénom est requis"
+    }
+    
+    if (!formData.lastName.trim()) {
+      errors.lastName = "Le nom est requis"
+    }
+    
+    if (!formData.email.trim()) {
+      errors.email = "L'email est requis"
+    } else if (!validateEmail(formData.email)) {
+      errors.email = "Format d'email invalide"
+    }
+    
+    setFormErrors(errors)
+    return !errors.firstName && !errors.lastName && !errors.email
+  }
+  
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
@@ -663,9 +699,18 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                       id="firstName"
                       required
                       value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, firstName: e.target.value })
+                        if (formErrors.firstName) {
+                          setFormErrors({ ...formErrors, firstName: "" })
+                        }
+                      }}
                       placeholder="Jean"
+                      className={formErrors.firstName ? "border-red-500" : ""}
                     />
+                    {formErrors.firstName && (
+                      <p className="text-xs text-red-500">{formErrors.firstName}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Nom *</Label>
@@ -673,9 +718,18 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                       id="lastName"
                       required
                       value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, lastName: e.target.value })
+                        if (formErrors.lastName) {
+                          setFormErrors({ ...formErrors, lastName: "" })
+                        }
+                      }}
                       placeholder="Dupont"
+                      className={formErrors.lastName ? "border-red-500" : ""}
                     />
+                    {formErrors.lastName && (
+                      <p className="text-xs text-red-500">{formErrors.lastName}</p>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -685,9 +739,18 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                     type="email"
                     required
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, email: e.target.value })
+                      if (formErrors.email) {
+                        setFormErrors({ ...formErrors, email: "" })
+                      }
+                    }}
                     placeholder="jean.dupont@example.com"
+                    className={formErrors.email ? "border-red-500" : ""}
                   />
+                  {formErrors.email && (
+                    <p className="text-xs text-red-500">{formErrors.email}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Téléphone</Label>
@@ -900,7 +963,18 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                   <Button
                     type="button"
                     onClick={() => {
-                      if (currentStep === 2 && selectedConvention && selectedConvention !== "existant") {
+                      if (currentStep === 1) {
+                        // Validate step 1 before proceeding
+                        if (!validateStep1()) {
+                          toast({
+                            title: "Erreur de validation",
+                            description: "Veuillez remplir tous les champs obligatoires correctement",
+                            variant: "destructive"
+                          })
+                          return
+                        }
+                        setCurrentStep(2)
+                      } else if (currentStep === 2 && selectedConvention && selectedConvention !== "existant") {
                         // Open editor directly at step 2 if a convention is selected
                         setCurrentStep(3)
                         setShowConventionEditor(true)
@@ -910,7 +984,6 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                     }}
                     disabled={
                       isLoading ||
-                      (currentStep === 1 && (!formData.firstName || !formData.lastName || !formData.email)) ||
                       (currentStep === 2 && !selectedConvention && !conventionSkipped)
                     }
                     className="gap-2"
