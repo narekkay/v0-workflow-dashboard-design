@@ -250,6 +250,83 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
 
       console.log("[v0] Client created successfully:", client)
 
+      // Send DocuSign envelope with convention PDF
+      if (existantFile || selectedConvention) {
+        console.log("[v0] Sending DocuSign envelope...")
+        try {
+          // Get PDF base64 - either from uploaded file or generate a simple one
+          let pdfBase64 = ''
+          let fileName = 'Convention à signer'
+          
+          if (existantFile) {
+            // If user uploaded a PDF, fetch it and convert to base64
+            console.log("[v0] Fetching uploaded PDF from:", existantFile.url)
+            const pdfResponse = await fetch(existantFile.url)
+            const pdfBlob = await pdfResponse.blob()
+            const arrayBuffer = await pdfBlob.arrayBuffer()
+            pdfBase64 = Buffer.from(arrayBuffer).toString('base64')
+            fileName = existantFile.name
+          } else {
+            // Generate a simple placeholder PDF for the convention
+            // In production, you'd generate the actual convention PDF here
+            console.log("[v0] Generating placeholder PDF for convention...")
+            const placeholderPDF = `
+              %PDF-1.4
+              1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj
+              2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj
+              3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R>>endobj
+              4 0 obj<</Length 44>>stream
+              BT /F1 12 Tf 100 700 Td (Convention d'honoraires) Tj ET
+              endstream endobj
+              xref
+              0 5
+              0000000000 65535 f
+              0000000009 00000 n
+              0000000056 00000 n
+              0000000115 00000 n
+              0000000214 00000 n
+              trailer<</Size 5/Root 1 0 R>>
+              startxref 306
+              %%EOF
+            `.trim()
+            pdfBase64 = Buffer.from(placeholderPDF).toString('base64')
+            fileName = `Convention_${selectedConvention}_${formData.firstName}_${formData.lastName}.pdf`
+          }
+          
+          // Call DocuSign API
+          const docusignResponse = await fetch('/api/clients', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: `${formData.firstName} ${formData.lastName}`,
+              email: formData.email,
+              pdfBase64,
+              fileName,
+            }),
+          })
+          
+          if (!docusignResponse.ok) {
+            const error = await docusignResponse.json()
+            throw new Error(error.details || 'Failed to send DocuSign envelope')
+          }
+          
+          const docusignResult = await docusignResponse.json()
+          console.log("[v0] DocuSign envelope sent:", docusignResult.envelopeId)
+          
+          toast({
+            title: "📧 Enveloppe DocuSign envoyée",
+            description: `Un email de signature a été envoyé à ${formData.email}`,
+          })
+        } catch (docusignError) {
+          console.error("[v0] DocuSign error:", docusignError)
+          toast({
+            title: "Attention",
+            description: "Le client a été créé mais l'envoi DocuSign a échoué",
+            variant: "destructive",
+          })
+        }
+      }
+
       // Create convention record in the conventions table
       if (selectedConvention || conventionSkipped) {
         console.log("[v0] Creating convention record...")
