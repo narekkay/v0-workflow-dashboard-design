@@ -377,8 +377,8 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault()
     console.log("[v0] Form submitted", formData)
     setIsLoading(true)
 
@@ -887,45 +887,38 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                 {currentStep === 1 ? "Annuler" : "Précédent"}
               </Button>
               <div className="flex gap-3">
-                {currentStep < 3 ? (
-                  currentStep === 2 && selectedConvention === "existant" && existantFile ? (
-                    <Button
-                      type="submit"
-                      disabled={isLoading}
-                      className="gap-2"
-                    >
-                      <Save className="h-4 w-4" />
-                      {isLoading ? "Création..." : "Accéder à la page client"}
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        if (currentStep === 2 && selectedConvention && selectedConvention !== "existant") {
-                          // Open editor directly at step 2 if a convention is selected
-                          setCurrentStep(3)
-                          setShowConventionEditor(true)
-                        } else {
-                          setCurrentStep(currentStep + 1)
-                        }
-                      }}
-                      disabled={
-                        isLoading ||
-                        (currentStep === 1 && (!formData.firstName || !formData.lastName || !formData.email)) ||
-                        (currentStep === 2 && !selectedConvention && !conventionSkipped)
-                      }
-                      className="gap-2"
-                    >
-                      Suivant
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  )
-                ) : (
-                  <Button type="submit" disabled={isLoading} className="gap-2">
+                {currentStep === 2 && selectedConvention === "existant" && existantFile ? (
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="gap-2"
+                  >
                     <Save className="h-4 w-4" />
-                    {isLoading ? "Création..." : "Créer le client"}
+                    {isLoading ? "Création..." : "Accéder à la page client"}
                   </Button>
-                )}
+                ) : currentStep < 3 ? (
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      if (currentStep === 2 && selectedConvention && selectedConvention !== "existant") {
+                        // Open editor directly at step 2 if a convention is selected
+                        setCurrentStep(3)
+                        setShowConventionEditor(true)
+                      } else {
+                        setCurrentStep(currentStep + 1)
+                      }
+                    }}
+                    disabled={
+                      isLoading ||
+                      (currentStep === 1 && (!formData.firstName || !formData.lastName || !formData.email)) ||
+                      (currentStep === 2 && !selectedConvention && !conventionSkipped)
+                    }
+                    className="gap-2"
+                  >
+                    Suivant
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                ) : null}
               </div>
             </div>
           </CardContent>

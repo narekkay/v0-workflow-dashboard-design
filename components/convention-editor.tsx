@@ -1163,7 +1163,7 @@ export function ConventionEditor({
             Revenir
           </Button>
           <Button onClick={onValidate} disabled={!isReadyForSignature()}>
-            Valider la convention
+            Valider et créer le client
           </Button>
         </div>
 
