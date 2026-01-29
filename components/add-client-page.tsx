@@ -869,26 +869,6 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
               </div>
             )}
 
-            {/* Step 3: Convention Editor placeholder - Editor opens as full-screen overlay */}
-            {currentStep === 3 && !showConventionEditor && (
-              <div className="text-center py-12">
-                <div className="rounded-full bg-primary/10 p-6 w-fit mx-auto mb-6">
-                  <FileText className="h-12 w-12 text-primary" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Éditer la convention d'honoraires</h3>
-                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  Configurez et personnalisez la convention d'honoraires pour votre client. Le document se met à jour en temps réel.
-                </p>
-                <Button
-                  type="button"
-                  size="lg"
-                  onClick={() => setShowConventionEditor(true)}
-                >
-                  Ouvrir l'éditeur
-                </Button>
-              </div>
-            )}
-
 
             {/* Action Buttons */}
             <div className="flex gap-3 pt-4 border-t justify-between">
