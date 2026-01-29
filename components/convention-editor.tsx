@@ -1118,42 +1118,6 @@ export function ConventionEditor({
                 />
               </div>
             </div>
-
-            {/* Audit Panel */}
-            <div className="w-[280px] border-l overflow-y-auto p-4 space-y-4">
-              <h3 className="font-semibold text-sm">Audit</h3>
-              <div className="space-y-2">
-                {auditLog.length === 0 && manualEdits.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Aucune modification</p>
-                ) : (
-                  <>
-                    {auditLog.slice(-5).map((entry, i) => (
-                      <div key={i} className="text-xs p-2 bg-muted rounded">
-                        <p className="font-medium">{entry.field}</p>
-                        <p className="text-muted-foreground">{entry.oldValue} → {entry.newValue}</p>
-                        <p className="text-muted-foreground">{entry.timestamp.toLocaleTimeString("fr-FR")}</p>
-                      </div>
-                    ))}
-                    {manualEdits.length > 0 && (
-                      <div className="text-xs p-2 bg-orange-50 border border-orange-200 rounded flex items-center gap-2">
-                        <AlertCircle className="h-3 w-3 text-orange-600" />
-                        <span>{manualEdits.length} modification(s) manuelle(s)</span>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-              <Separator />
-              <div className="space-y-2">
-                <Button variant="outline" size="sm" className="w-full bg-transparent" onClick={() => setShowDiffModal(true)}>
-                  Comparer
-                </Button>
-                <Button variant="outline" size="sm" className="w-full text-destructive bg-transparent" onClick={() => setShowResetModal(true)}>
-                  <RotateCcw className="h-3 w-3 mr-2" />
-                  Réinitialiser
-                </Button>
-              </div>
-            </div>
           </div>
         </div>
 
