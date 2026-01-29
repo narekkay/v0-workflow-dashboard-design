@@ -953,7 +953,15 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                   ) : (
                     <Button
                       type="button"
-                      onClick={() => setCurrentStep(currentStep + 1)}
+                      onClick={() => {
+                        if (currentStep === 2 && selectedConvention && selectedConvention !== "existant") {
+                          // Open editor directly at step 2 if a convention is selected
+                          setCurrentStep(3)
+                          setShowConventionEditor(true)
+                        } else {
+                          setCurrentStep(currentStep + 1)
+                        }
+                      }}
                       disabled={
                         isLoading ||
                         (currentStep === 1 && (!formData.firstName || !formData.lastName || !formData.email)) ||
