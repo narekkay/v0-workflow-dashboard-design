@@ -727,7 +727,14 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                 {currentStep < 4 ? (
                   <Button
                     type="button"
-                    onClick={() => setCurrentStep(currentStep + 1)}
+                    onClick={() => {
+                      if (currentStep === 2) {
+                        // At step 2, open the editor directly instead of going to step 3
+                        setShowConventionEditor(true)
+                      } else {
+                        setCurrentStep(currentStep + 1)
+                      }
+                    }}
                     disabled={
                       isLoading ||
                       (currentStep === 1 && (!formData.firstName || !formData.lastName || !formData.email)) ||
