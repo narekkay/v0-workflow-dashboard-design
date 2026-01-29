@@ -218,8 +218,7 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
   const steps = [
     { id: 1, title: "Informations" },
     { id: 2, title: "Convention" },
-    { id: 3, title: "Edition" },
-    { id: 4, title: "Récapitulatif" },
+    { id: 3, title: "Créer le client" },
   ]
 
   const handleSelectConvention = (type: ConventionType) => {
@@ -541,10 +540,10 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
           address: formData.address,
         }}
         onBack={() => setShowConventionEditor(false)}
-        onValidate={() => {
-          setShowConventionEditor(false)
-          setCurrentStep(4)
-        }}
+  onValidate={() => {
+    setShowConventionEditor(false)
+    handleSubmit()
+  }}
       />
     )
   }
@@ -599,8 +598,8 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
           </div>
 
           {/* Steps */}
-          {steps.map((step) => {
-            const canNavigate = step.id === 1 || (step.id > 1 && formData.firstName && formData.lastName && formData.email)
+  {steps.map((step) => {
+    const canNavigate = step.id < 3 && (step.id === 1 || (step.id > 1 && formData.firstName && formData.lastName && formData.email))
             
             return (
               <button
@@ -648,12 +647,10 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
       <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader>
-            <CardTitle>
-              {currentStep === 1 && "Informations du client"}
-              {currentStep === 2 && "Choisir la convention"}
-              {currentStep === 3 && "Edition de la convention"}
-              {currentStep === 4 && "Récapitulatif"}
-            </CardTitle>
+  <CardTitle>
+    {currentStep === 1 && "Informations du client"}
+    {currentStep === 2 && "Choisir la convention"}
+  </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Step 1: Profile Information */}
@@ -892,36 +889,6 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
               </div>
             )}
 
-            {/* Step 4: Summary */}
-            {currentStep === 4 && (
-              <div className="space-y-4">
-                <h3 className="font-semibold">Récapitulatif des informations</h3>
-                <div className="grid gap-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Nom complet:</span>
-                    <span className="font-medium">
-                      {formData.firstName} {formData.lastName}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Email:</span>
-                    <span className="font-medium">{formData.email}</span>
-                  </div>
-                  {formData.phone && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Téléphone:</span>
-                      <span className="font-medium">{formData.phone}</span>
-                    </div>
-                  )}
-                  {formData.address && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Adresse:</span>
-                      <span className="font-medium">{formData.address}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* Action Buttons */}
             <div className="flex gap-3 pt-4 border-t justify-between">
@@ -940,7 +907,7 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                 {currentStep === 1 ? "Annuler" : "Précédent"}
               </Button>
               <div className="flex gap-3">
-                {currentStep < 4 ? (
+                {currentStep < 3 ? (
                   currentStep === 2 && selectedConvention === "existant" && existantFile ? (
                     <Button
                       type="submit"
