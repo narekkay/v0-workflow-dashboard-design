@@ -65,16 +65,42 @@ function LoginForm() {
       )}
       
       {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]" />
-        <div className="relative z-10 text-center text-primary-foreground px-12">
+      <div className="hidden lg:flex lg:w-1/2 items-center justify-center relative overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+        {/* Background Image with Grid Overlay */}
+        <div className="absolute inset-0 z-0">
+          {/* Lawyer silhouette background */}
+          <div 
+            className="absolute inset-0 opacity-[0.08] dark:opacity-[0.12]" 
+            style={{ 
+              backgroundImage: "url('/placeholder.svg?height=1080&width=1920')",
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              filter: 'grayscale(100%) contrast(1.2)'
+            }}
+          />
+          {/* Grid Pattern Overlay */}
+          <div 
+            className="absolute inset-0 opacity-[0.15] dark:opacity-[0.08]"
+            style={{
+              backgroundImage: `
+                linear-gradient(to right, rgb(15 23 42 / 0.3) 1px, transparent 1px),
+                linear-gradient(to bottom, rgb(15 23 42 / 0.3) 1px, transparent 1px)
+              `,
+              backgroundSize: '60px 60px'
+            }}
+          />
+          {/* Subtle vignette for depth */}
+          <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-slate-100/50 dark:to-slate-950/50" />
+        </div>
+
+        <div className="relative z-10 text-center px-12">
           <div className="flex items-center justify-center gap-3 mb-8">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-14 h-14">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-14 h-14 text-foreground">
               <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
             </svg>
           </div>
-          <h1 className="text-5xl font-bold tracking-tight mb-4">Fiscalia</h1>
-          <p className="text-xl text-primary-foreground/80 max-w-md mx-auto leading-relaxed">
+          <h1 className="text-5xl font-bold tracking-tight mb-4 text-foreground">Fiscalia</h1>
+          <p className="text-xl text-muted-foreground max-w-md mx-auto leading-relaxed">
             Plateforme de gestion fiscale pour avocats et leurs clients
           </p>
         </div>
