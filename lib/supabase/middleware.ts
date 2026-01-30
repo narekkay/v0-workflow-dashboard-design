@@ -56,11 +56,17 @@ export async function updateSession(request: NextRequest) {
     const memberviewMatch = pathname.match(/^\/dashboard\/memberview\/([^\/]+)/)
     if (memberviewMatch) {
       // Fetch user profile for role check
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role, is_active')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
+
+      if (profileError) {
+        console.error('[v0] Error fetching profile:', profileError)
+        // Allow access on error to avoid blocking authenticated users
+        return supabaseResponse
+      }
 
       if (!profile || !profile.is_active) {
         // No profile or inactive - sign out and redirect to login
