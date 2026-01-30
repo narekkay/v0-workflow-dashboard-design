@@ -46,12 +46,6 @@ export function ClientDrawer({ client, open, onOpenChange }: ClientDrawerProps) 
   const [documents, setDocuments] = useState<Document[]>([])
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    if (open && client) {
-      loadRecentDocuments()
-    }
-  }, [open, client])
-
   async function loadRecentDocuments() {
     if (!client) return
     
@@ -68,6 +62,13 @@ export function ClientDrawer({ client, open, onOpenChange }: ClientDrawerProps) 
     setDocuments(data || [])
     setLoading(false)
   }
+
+  useEffect(() => {
+    if (open && client) {
+      loadRecentDocuments()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, client])
 
   if (!client) return null
 
