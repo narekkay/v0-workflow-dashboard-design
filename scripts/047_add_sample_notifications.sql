@@ -11,7 +11,7 @@ INSERT INTO notifications (title, content, alert_type, read_status, created_at) 
   (
     'Convention en attente',
     'Jean Dupont n''a pas encore signé la convention d''honoraires',
-    'warning',
+    'alert',
     false,
     NOW() - INTERVAL '2 hours'
   ),
