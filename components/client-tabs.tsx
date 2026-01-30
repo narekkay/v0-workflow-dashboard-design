@@ -1197,16 +1197,7 @@ export function ClientTabs({
     <div className="p-6">
       {activeTab === "overview" && (
             <div className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-3">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>ONBOARDING</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">Section onboarding à venir</p>
-                  </CardContent>
-                </Card>
-                
+              <div className="grid gap-6 md:grid-cols-2">
                 <Card>
                   <CardHeader>
                     <div className="flex items-center gap-3">
@@ -1291,36 +1282,22 @@ export function ClientTabs({
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div>
-                        <CardTitle>ESPACE DÉCLARATIFS</CardTitle>
+                        <CardTitle>Déclarations</CardTitle>
+                        
                       </div>
-                      <Button 
-                        size="sm" 
-                        onClick={() => setNewDeclarationModalOpen(true)}
-                        disabled={!client.convention_signed}
-                        className={!client.convention_signed ? "opacity-50 cursor-not-allowed" : ""}
-                      >
+                      <Button size="sm" onClick={() => setNewDeclarationModalOpen(true)}>
                         <Plus className="h-4 w-4 mr-1" />
                         Ajouter
                       </Button>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {!client.convention_signed && (
-                      <Alert className="mb-4">
-                        <Lock className="h-4 w-4" />
-                        <AlertTitle>Convention non signée</AlertTitle>
-                        <AlertDescription>
-                          Les déclarations seront accessibles une fois la convention signée par le client.
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                    <div className={`flex flex-col gap-2 items-start ${!client.convention_signed ? "opacity-50 pointer-events-none" : ""}`}>
+                    <div className="flex flex-col gap-2 items-start">
                       <Button
                         variant="outline"
                         size="sm"
                         className="bg-blue-50 border-blue-200 hover:bg-blue-100 w-24 justify-center"
                         onClick={() => onOpen2042View(client.id, `${client.first_name} ${client.last_name}`)}
-                        disabled={!client.convention_signed}
                       >
                         <span className="font-semibold text-blue-700">2042</span>
                       </Button>
@@ -1338,7 +1315,6 @@ export function ClientTabs({
                               onClick={() => {
                                 loadAnnexeDocuments(annexe)
                               }}
-                              disabled={!client.convention_signed}
                             >
                               <span className="font-semibold">{annexe.annexe_name}</span>
                               {stats && (
