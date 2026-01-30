@@ -28,11 +28,23 @@ export function OnboardingProgress({
     { label: "Formulaire d'onboarding rempli", completed: formCompleted, number: 4 },
   ]
 
+  const completedCount = steps.filter(step => step.completed).length
+  const progressPercentage = completedCount > 0 ? ((completedCount - 1) / (steps.length - 1)) * 100 : 0
+
   return (
     <div className="w-full max-w-4xl mx-auto py-8">
       <div className="relative">
-        {/* Progress line */}
-        <div className="absolute top-8 left-0 right-0 h-px bg-border/50" style={{ margin: '0 10%' }} />
+        {/* Progress line background */}
+        <div className="absolute top-8 left-0 right-0 h-0.5 bg-border/30" style={{ margin: '0 10%' }} />
+        
+        {/* Progress line filled (green) */}
+        <div 
+          className="absolute top-8 left-0 h-0.5 bg-emerald-500 transition-all duration-500 ease-out"
+          style={{ 
+            marginLeft: '10%',
+            width: `${progressPercentage * 0.8}%`
+          }}
+        />
         
         <div className="flex items-start justify-between relative">
           {steps.map((step, index) => (
