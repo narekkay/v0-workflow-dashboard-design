@@ -1,6 +1,5 @@
 "use client"
 
-import { Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface OnboardingProgressProps {
@@ -13,6 +12,7 @@ interface OnboardingProgressProps {
 interface Step {
   label: string
   completed: boolean
+  number: number
 }
 
 export function OnboardingProgress({
@@ -22,41 +22,42 @@ export function OnboardingProgress({
   formCompleted,
 }: OnboardingProgressProps) {
   const steps: Step[] = [
-    { label: "Convention envoyée", completed: conventionSent },
-    { label: "Convention signée", completed: conventionSigned },
-    { label: "Formulaire d'onboarding en attente", completed: formPending },
-    { label: "Formulaire d'onboarding rempli", completed: formCompleted },
+    { label: "Convention envoyée", completed: conventionSent, number: 1 },
+    { label: "Convention signée", completed: conventionSigned, number: 2 },
+    { label: "Formulaire d'onboarding en attente", completed: formPending, number: 3 },
+    { label: "Formulaire d'onboarding rempli", completed: formCompleted, number: 4 },
   ]
 
   return (
-    <div className="w-full">
-      <div className="grid grid-cols-4 gap-4">
-        {steps.map((step, index) => (
-          <div key={index} className="flex flex-col items-center gap-2">
-            <div
-              className={cn(
-                "w-full h-24 rounded-lg border-2 flex items-center justify-center transition-all",
-                step.completed
-                  ? "bg-green-50 border-green-500"
-                  : "bg-muted border-border"
-              )}
-            >
-              {step.completed ? (
-                <Check className="h-8 w-8 text-green-600" />
-              ) : (
-                <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/30" />
-              )}
+    <div className="w-full max-w-4xl mx-auto py-8">
+      <div className="relative">
+        {/* Progress line */}
+        <div className="absolute top-8 left-0 right-0 h-0.5 bg-border" style={{ margin: '0 10%' }} />
+        
+        <div className="flex items-start justify-between relative">
+          {steps.map((step, index) => (
+            <div key={index} className="flex flex-col items-center gap-3" style={{ flex: 1 }}>
+              <div
+                className={cn(
+                  "w-16 h-16 rounded-full flex items-center justify-center text-xl font-semibold transition-all z-10",
+                  step.completed
+                    ? "bg-foreground text-background"
+                    : "bg-background border-2 border-border text-muted-foreground"
+                )}
+              >
+                {step.number}
+              </div>
+              <p
+                className={cn(
+                  "text-sm text-center font-medium max-w-[120px]",
+                  step.completed ? "text-foreground" : "text-muted-foreground"
+                )}
+              >
+                {step.label}
+              </p>
             </div>
-            <p
-              className={cn(
-                "text-sm text-center font-medium",
-                step.completed ? "text-green-700" : "text-muted-foreground"
-              )}
-            >
-              {step.label}
-            </p>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   )
