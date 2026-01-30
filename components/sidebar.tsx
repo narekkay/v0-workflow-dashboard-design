@@ -39,6 +39,7 @@ interface SidebarProps {
   onCloseRevenueTab?: (tabId: string) => void
   onCloseYearTab?: (tabId: string) => void
   clientName?: string
+  conventionSigned?: boolean
 }
 
 export function Sidebar({ 
@@ -51,6 +52,7 @@ export function Sidebar({
   onCloseRevenueTab,
   onCloseYearTab,
   clientName,
+  conventionSigned = true,
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [declaratifOpen, setDeclaratifOpen] = useState(true)
@@ -106,12 +108,15 @@ export function Sidebar({
             {/* ESPACE DECLARATIF category */}
             {!isCollapsed ? (
               <Collapsible open={declaratifOpen} onOpenChange={setDeclaratifOpen} className="mt-4">
-                <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-2 hover:bg-sidebar-accent rounded-lg transition-colors">
+                <CollapsibleTrigger className={cn(
+                  "flex w-full items-center justify-between px-3 py-2 hover:bg-sidebar-accent rounded-lg transition-colors",
+                  !conventionSigned && "opacity-40"
+                )}>
                   <h4 className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wide">ESPACE DECLARATIF</h4>
                   <ChevronDown className={cn("h-4 w-4 text-sidebar-foreground/60 transition-transform", declaratifOpen && "rotate-180")} />
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <div className="space-y-1 mt-2">
+                  <div className={cn("space-y-1 mt-2", !conventionSigned && "opacity-40 pointer-events-none")}>
                     {[...clientTabs].sort((a, b) => {
                       const getOrder = (label: string) => {
                         const lower = label.toLowerCase()
@@ -130,6 +135,7 @@ export function Sidebar({
                         <button
                           key={tab.id}
                           onClick={() => onClientTabChange?.(tab.id)}
+                          disabled={!conventionSigned}
                           className={cn(
                             "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
                             activeClientTab === tab.id
