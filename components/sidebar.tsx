@@ -98,7 +98,7 @@ export function Sidebar({
         </div>
 
         {/* Client tabs section */}
-        {clientTabs && clientTabs.length > 0 && onboardingCompleted && (
+        {clientTabs && clientTabs.length > 0 && (
           <div className="mt-6 pt-4 border-t border-sidebar-border">
             {/* Client name */}
             {!isCollapsed && clientName && (
@@ -116,7 +116,7 @@ export function Sidebar({
                     ONBOARDING
                   </h4>
                 </div>
-              ) : (
+              ) : onboardingCompleted ? (
                 // Show ESPACE DECLARATIF when onboarding completed
                 <Collapsible open={declaratifOpen} onOpenChange={setDeclaratifOpen} className="mt-4">
                   <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-2 hover:bg-sidebar-accent rounded-lg transition-colors">
@@ -226,8 +226,8 @@ export function Sidebar({
                     )}
                   </CollapsibleContent>
                 </Collapsible>
-              )
-            ) : (
+              ) : null
+            ) : onboardingCompleted ? (
               <div className="space-y-1">
                 {clientTabs.map((tab) => {
                   const Icon = tab.icon
@@ -248,10 +248,10 @@ export function Sidebar({
                   )
                 })}
               </div>
-            )}
+            ) : null}
 
             {/* ESPACE CONTENTIEUX category */}
-            {!isCollapsed && (
+            {!isCollapsed && onboardingCompleted && (
               <Collapsible open={contentieuxOpen} onOpenChange={setContentieuxOpen} className="mt-4">
                 <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-2 hover:bg-sidebar-accent rounded-lg transition-colors">
                   <h4 className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wide">ESPACE CONTENTIEUX</h4>
