@@ -329,9 +329,11 @@ export function Sidebar({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem>
-                <Settings className="h-4 w-4 mr-2" />
-                <span>Edit profil</span>
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/settings" className="flex items-center cursor-pointer">
+                  <Settings className="h-4 w-4 mr-2" />
+                  <span>Edit profil</span>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/logout" className="flex items-center cursor-pointer">
@@ -351,9 +353,11 @@ export function Sidebar({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem>
-                <Settings className="h-4 w-4 mr-2" />
-                <span>Edit profil</span>
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/settings" className="flex items-center cursor-pointer">
+                  <Settings className="h-4 w-4 mr-2" />
+                  <span>Edit profil</span>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/logout" className="flex items-center cursor-pointer">
