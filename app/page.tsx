@@ -485,6 +485,15 @@ export default function HomePage() {
                 const client = clients.find(c => c.id === activeTab.clientId)
                 if (!client) return <div className="p-6">Client introuvable</div>
                 
+                console.log("[v0] Client data for onboarding:", {
+                  id: client.id,
+                  name: `${client.first_name} ${client.last_name}`,
+                  convention_sent: client.convention_sent,
+                  convention_signed: client.convention_signed,
+                  onboarding_form_pending: client.onboarding_form_pending,
+                  onboarding_form_completed: client.onboarding_form_completed,
+                })
+                
                 return (
                   <div className="p-6 space-y-8">
                     <div>
