@@ -14,7 +14,7 @@ export default function HomePage() {
             <span className="text-xl font-bold tracking-tight">Fiscalia</span>
           </div>
           <Link href="/login">
-            <Button className="bg-black hover:bg-black/90 text-white rounded-md">Se connecter</Button>
+            <Button className="bg-[#171717] hover:bg-[#171717]/90 text-white rounded-md">Se connecter</Button>
           </Link>
         </div>
       </header>
