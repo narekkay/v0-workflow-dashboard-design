@@ -22,28 +22,28 @@ export default function HomePage() {
       {/* Hero Section */}
       <main>
         <section className="relative py-32 md:py-40 overflow-hidden bg-[#1a1a1a]">
-          {/* Grille subtile */}
+          {/* Grille visible */}
           <div 
-            className="absolute inset-0 opacity-[0.03]"
+            className="absolute inset-0 opacity-[0.08]"
             style={{
               backgroundImage: `
-                linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px)
+                linear-gradient(to right, rgba(255, 255, 255, 0.15) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.15) 1px, transparent 1px)
               `,
-              backgroundSize: '80px 80px'
+              backgroundSize: '60px 60px'
             }}
           />
 
           <div className="max-w-4xl mx-auto px-6 relative z-10">
             <div className="text-center">
-              <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6 text-white">
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-5 text-white">
                 Gestion fiscale simplifiée pour les avocats
               </h1>
-              <p className="text-xl text-gray-300 mb-10 leading-relaxed max-w-3xl mx-auto">
+              <p className="text-lg text-gray-300 mb-8 leading-relaxed max-w-2xl mx-auto">
                 Fiscalia centralise la gestion de vos clients, leurs déclarations fiscales et leurs documents. Une plateforme sécurisée pour optimiser votre pratique.
               </p>
               <Link href="/login">
-                <Button size="lg" className="h-12 px-8 text-base bg-white hover:bg-gray-100 text-black rounded-md">
+                <Button size="lg" className="h-11 px-7 text-base bg-white hover:bg-gray-100 text-black rounded-md">
                   Accéder à la plateforme
                 </Button>
               </Link>
