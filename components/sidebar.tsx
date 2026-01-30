@@ -118,7 +118,7 @@ export function Sidebar({
                 className="flex items-center gap-2 mx-3 mb-4 px-3 py-2 text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 rounded-lg transition-colors"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
-                Voir la vue client
+                Ouvrir vue client
               </Link>
             )}
 
