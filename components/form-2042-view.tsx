@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
-import { createBrowserClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/supabase/client"
 import { Save, Check } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
@@ -118,7 +118,7 @@ export function Form2042View({ clientId, clientName }: Form2042ViewProps) {
   }, [searchFilter])
 
   async function loadTraitementsData() {
-    const supabase = createBrowserClient()
+    const supabase = createClient()
 
     // Load "Traitements & salaires" subcategories (category_id = 1)
     const { data, error } = await supabase
@@ -134,7 +134,7 @@ export function Form2042View({ clientId, clientName }: Form2042ViewProps) {
   }
 
   async function loadSavedValues() {
-    const supabase = createBrowserClient()
+    const supabase = createClient()
 
     // Load saved values for this client
     const { data, error } = await supabase
@@ -161,7 +161,7 @@ export function Form2042View({ clientId, clientName }: Form2042ViewProps) {
 
   async function handleSave() {
     setSaving(true)
-    const supabase = createBrowserClient()
+    const supabase = createClient()
 
     try {
       console.log("[v0] Starting save operation for client:", clientId)

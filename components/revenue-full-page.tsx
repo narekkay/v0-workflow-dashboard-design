@@ -5,7 +5,7 @@ import { ArrowLeft, FileText, Plus, Loader2, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
-import { createBrowserClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/supabase/client"
 
 interface RevenueFullPageProps {
   clientName: string
@@ -82,7 +82,7 @@ export function RevenueFullPage({
 
   async function loadData() {
     setIsLoadingData(true)
-    const supabase = createBrowserClient()
+    const supabase = createClient()
 
     const { data: subCatsData, error: subCatsError } = await supabase
       .from("categories_revenus_sub")
@@ -167,7 +167,7 @@ export function RevenueFullPage({
   }, [onClose])
 
   async function loadDocuments() {
-    const supabase = createBrowserClient()
+    const supabase = createClient()
     const { data, error } = await supabase
       .from("documents_necessaires")
       .select("*")
@@ -202,7 +202,7 @@ export function RevenueFullPage({
     setModalState("loading")
     setIsSaving(true)
 
-    const supabase = createBrowserClient()
+    const supabase = createClient()
     const documentIds = documents.map((doc) => Number.parseInt(doc.id))
     const subCategoryIds = selectedSubCategories.map((id) => Number.parseInt(id))
 

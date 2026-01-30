@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createBrowserClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -46,7 +46,7 @@ export function RevenueDetailTab({ revenueId, categoryName, allRevenues, onSwitc
   }, [revenueId])
 
   async function loadRevenueDetail() {
-    const supabase = createBrowserClient()
+    const supabase = createClient()
 
     // Load revenue details
     const { data: revenue, error } = await supabase.from("client_revenues").select("*").eq("id", revenueId).single()

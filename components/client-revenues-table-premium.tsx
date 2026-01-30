@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createBrowserClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -54,7 +54,7 @@ export function ClientRevenuesTablePremium({ clientId }: ClientRevenuesTablePrem
   }, [clientId])
 
   async function loadOutboxDocuments() {
-    const supabase = createBrowserClient()
+    const supabase = createClient()
     const { data, error } = await supabase
       .from("boite_envoi_files")
       .select("document_id")
@@ -71,7 +71,7 @@ export function ClientRevenuesTablePremium({ clientId }: ClientRevenuesTablePrem
   }
 
   async function loadActions() {
-    const supabase = createBrowserClient()
+    const supabase = createClient()
 
     // Load revenues for this client
     const { data: revenuesData, error } = await supabase
@@ -164,7 +164,7 @@ export function ClientRevenuesTablePremium({ clientId }: ClientRevenuesTablePrem
       return
     }
 
-    const supabase = createBrowserClient()
+    const supabase = createClient()
     const { error } = await supabase.from("boite_envoi_files").insert({
       client_id: clientId,
       file_name: docName,
