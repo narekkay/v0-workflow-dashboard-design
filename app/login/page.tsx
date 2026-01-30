@@ -19,39 +19,26 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [configError, setConfigError] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
   const next = searchParams.get('next')
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    const supabase = createClient()
     setIsLoading(true)
     setError(null)
-    setConfigError(null)
 
     try {
-      const supabase = createClient()
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
-      
       if (error) throw error
-      
-      // Small delay to ensure session is set
-      await new Promise(resolve => setTimeout(resolve, 100))
-      
-      // Redirect to next param if present, otherwise to home
       router.push(next || '/')
-      router.refresh()
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Identifiants invalides'
-      if (errorMessage.includes('Missing Supabase') || errorMessage.includes('Failed to fetch')) {
-        setConfigError('Configuration Supabase manquante. Veuillez connecter Supabase dans les paramètres du projet.')
-      } else {
-        setError(errorMessage)
-      }
+      setError(error instanceof Error ? error.message : 'Identifiants invalides')
+    } finally {
       setIsLoading(false)
     }
   }
@@ -121,17 +108,12 @@ function LoginForm() {
                 className="h-12"
               />
             </div>
-            {configError && (
-              <div className="text-sm text-amber-700 text-center bg-amber-50 py-3 px-4 rounded-lg border border-amber-200">
-                {configError}
-              </div>
-            )}
             {error && (
               <div className="text-sm text-red-600 text-center bg-red-50 py-3 px-4 rounded-lg border border-red-100">
                 {error}
               </div>
             )}
-            <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={isLoading || !!configError}>
+            <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={isLoading}>
               {isLoading ? 'Connexion en cours...' : 'Se connecter'}
             </Button>
           </form>
