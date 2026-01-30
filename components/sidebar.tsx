@@ -3,6 +3,7 @@
 import { LayoutDashboardIcon,Users, FileText, ChevronLeft, ChevronRight, ChevronDown, Home, User, FolderOpen, Share2, Trash2, X, LayoutDashboard, ExternalLink, LogOut } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -64,6 +65,7 @@ export function Sidebar({
   const [declaratifOpen, setDeclaratifOpen] = useState(true)
   const [contentieuxOpen, setContentieuxOpen] = useState(true)
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
     async function loadUser() {
@@ -73,6 +75,13 @@ export function Sidebar({
     }
     loadUser()
   }, [])
+
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
+    router.refresh()
+  }
 
   return (
     <div
@@ -307,18 +316,20 @@ export function Sidebar({
                 <p className="text-xs text-muted-foreground">Avocat</p>
               </div>
             </div>
-            <Link href="/logout">
-              <button className="p-1.5 rounded-md hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-foreground">
-                <LogOut className="h-4 w-4" />
-              </button>
-            </Link>
-          </div>
-        ) : (
-          <Link href="/logout" className="flex justify-center">
-            <button className="p-1.5 rounded-md hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-foreground">
+            <button 
+              onClick={handleLogout}
+              className="p-1.5 rounded-md hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-foreground"
+            >
               <LogOut className="h-4 w-4" />
             </button>
-          </Link>
+          </div>
+        ) : (
+          <button 
+            onClick={handleLogout}
+            className="p-1.5 rounded-md hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-foreground"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         )}
       </div>
     </div>

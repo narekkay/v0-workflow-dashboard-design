@@ -29,17 +29,25 @@ function LoginForm() {
     setIsLoading(true)
     setError(null)
 
+    console.log('[v0] Login attempt for:', email)
+
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
+      
+      console.log('[v0] Login response:', { data, error })
+      
       if (error) throw error
+      
+      console.log('[v0] Login successful, redirecting to:', next || '/')
       
       // Redirect to next param if present, otherwise to home
       router.push(next || '/')
       router.refresh()
     } catch (error: unknown) {
+      console.error('[v0] Login error:', error)
       setError(error instanceof Error ? error.message : 'Identifiants invalides')
     } finally {
       setIsLoading(false)
