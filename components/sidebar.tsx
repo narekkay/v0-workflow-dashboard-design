@@ -64,7 +64,7 @@ export function Sidebar({
       )}
     >
       <div className="flex h-16 items-center border-b px-6 justify-between">
-        {!isCollapsed && <h1 className="text-lg font-semibold text-sidebar-foreground">FiscalPro</h1>}
+        {!isCollapsed && <h1 className="text-lg font-semibold text-sidebar-foreground">Fiscalia</h1>}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className={cn("rounded-md p-1.5 hover:bg-sidebar-accent transition-colors", isCollapsed && "mx-auto")}
