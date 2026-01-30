@@ -34,7 +34,7 @@ interface FamilyEvent {
 interface Document {
   id: string
   name: string
-  status: "received" | "missing" | "optional"
+  status: "recu" | "manquant" | "optionnel"
   category: string
 }
 
@@ -121,7 +121,7 @@ interface FormData {
   termsAccepted: boolean
 }
 
-type SaveStatus = "saved" | "saving" | "error"
+type SaveStatus = "enregistre" | "enregistrement" | "erreur"
 
 // Custom accordion section component
 function AccordionSection({ 
@@ -306,7 +306,7 @@ export default function ClientOnboardingPage() {
   
   const [loading, setLoading] = useState(true)
   const [clientName, setClientName] = useState("Nouveau Dossier")
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved")
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("enregistre")
   const [submitted, setSubmitted] = useState(false)
   const [progress, setProgress] = useState(0)
   const [openSection, setOpenSection] = useState<string | null>("identity")
@@ -522,7 +522,7 @@ export default function ClientOnboardingPage() {
     const timeoutId = setTimeout(async () => {
       if (loading || submitted) return
       
-      setSaveStatus("saving")
+      setSaveStatus("enregistrement")
       const supabase = createClient()
       
       const { error } = await supabase
@@ -589,9 +589,9 @@ export default function ClientOnboardingPage() {
 
       if (error) {
         console.error("Autosave error:", error)
-        setSaveStatus("error")
+        setSaveStatus("erreur")
       } else {
-        setSaveStatus("saved")
+        setSaveStatus("enregistre")
       }
     }, 1500)
 
@@ -777,20 +777,18 @@ export default function ClientOnboardingPage() {
           </div>
           <div 
             className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors duration-150 ${
-              saveStatus === "saved" ? "bg-[#d1fae5] text-[#10b981]" : 
-              saveStatus === "saving" ? "bg-[#fef3c7] text-[#f59e0b]" : 
+              saveStatus === "enregistre" ? "bg-[#d1fae5] text-[#10b981]" : 
+              saveStatus === "enregistrement" ? "bg-[#fef3c7] text-[#f59e0b]" : 
               "bg-[#fee2e2] text-[#ef4444]"
             }`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${
-              saveStatus === "saved" ? "bg-[#10b981]" : 
-              saveStatus === "saving" ? "bg-[#f59e0b] animate-pulse" : 
+              saveStatus === "enregistre" ? "bg-[#10b981]" : 
+              saveStatus === "enregistrement" ? "bg-[#f59e0b] animate-pulse" : 
               "bg-[#ef4444]"
             }`} />
-            <span className="text-[13px] font-medium">
-              {saveStatus === "saved" && "Enregistré"}
-              {saveStatus === "saving" && "Enregistrement..."}
-              {saveStatus === "error" && "Erreur"}
+            <span className="text-[12px] font-medium">
+              {saveStatus === "enregistre" ? "Enregistré" : saveStatus === "enregistrement" ? "En cours..." : "Erreur"}
             </span>
           </div>
         </div>
