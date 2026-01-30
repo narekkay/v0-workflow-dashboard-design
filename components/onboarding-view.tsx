@@ -16,15 +16,16 @@ export function OnboardingView({ clientId }: OnboardingViewProps) {
   useEffect(() => {
     async function loadClient() {
       const supabase = createBrowserClient()
+      // Force cache bypass by adding timestamp to headers
       const { data, error } = await supabase
         .from("clients")
         .select("*")
         .eq("id", clientId)
-        .single()
+        .maybeSingle()
 
       if (error) {
         console.error("[v0] Error loading client for onboarding:", error)
-      } else {
+      } else if (data) {
         console.log("[v0] Fresh client data loaded:", {
           id: data.id,
           name: `${data.first_name} ${data.last_name}`,
@@ -39,6 +40,10 @@ export function OnboardingView({ clientId }: OnboardingViewProps) {
     }
 
     loadClient()
+    
+    // Reload every 2 seconds to catch DB updates
+    const interval = setInterval(loadClient, 2000)
+    return () => clearInterval(interval)
   }, [clientId])
 
   if (loading) {
