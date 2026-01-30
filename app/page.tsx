@@ -105,6 +105,24 @@ export default function HomePage() {
   }
 
   function handleClientSelect(client: Client) {
+    // If convention not signed, open onboarding tab instead
+    if (!client.convention_signed) {
+      const onboardingTabId = `onboarding-${client.id}`
+      const existingOnboardingTab = tabs.find(t => t.id === onboardingTabId)
+      
+      if (!existingOnboardingTab) {
+        setTabs(prev => [...prev, {
+          id: onboardingTabId,
+          type: "onboarding",
+          label: `Onboarding ${client.first_name} ${client.last_name}`,
+          clientId: client.id,
+        }])
+      }
+      
+      setActiveTabId(onboardingTabId)
+      return
+    }
+    
     const existingTab = tabs.find((tab) => tab.type === "client" && tab.clientId === client.id)
 
     if (existingTab) {
