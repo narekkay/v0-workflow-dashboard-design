@@ -246,6 +246,9 @@ export function ClientTabs({
   const [expertMode, setExpertMode] = useState(false)
   const [selectedDocument, setSelectedDocument] = useState<DocumentRequest | null>(null)
   const [documentSheetOpen, setDocumentSheetOpen] = useState(false)
+  const [conventionModalOpen, setConventionModalOpen] = useState(false)
+  const [selectedConventionDoc, setSelectedConventionDoc] = useState<any>(null)
+  const [conventionHtmlContent, setConventionHtmlContent] = useState<string>("")
   const [isRelancingDocs, setIsRelancingDocs] = useState(false)
   const [lastReminderAt, setLastReminderAt] = useState<string | undefined>(undefined)
   const [draggedTabIndex, setDraggedTabIndex] = useState<number | null>(null)
@@ -771,18 +774,57 @@ export function ClientTabs({
 
   async function loadClientFiles() {
     const supabase = createBrowserClient()
-    const { data, error } = await supabase
-      .from("client_files")
-      .select("*")
-      .eq("client_id", client.id)
-      .order("created_at", { ascending: false })
+    
+    // Load from client_files, documents, and conventions tables
+    const [clientFilesResult, documentsResult, conventionsResult] = await Promise.all([
+      supabase
+        .from("client_files")
+        .select("*")
+        .eq("client_id", client.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("documents")
+        .select("*")
+        .eq("client_id", client.id),
+      supabase
+        .from("conventions")
+        .select("*")
+        .eq("client_id", client.id)
+        .order("created_at", { ascending: false })
+    ])
 
-    if (error) {
-      console.error("Error loading client files:", error)
-      return
+    if (clientFilesResult.error) {
+      console.error("[v0] Error loading client files:", clientFilesResult.error)
+    }
+    
+    if (documentsResult.error) {
+      console.error("[v0] Error loading documents:", documentsResult.error)
+    }
+    
+    if (conventionsResult.error) {
+      console.error("[v0] Error loading conventions:", conventionsResult.error)
     }
 
-    setClientFiles(data || [])
+    // Merge all three sources
+    const allFiles = [
+      ...(clientFilesResult.data || []),
+      ...(documentsResult.data || []).map(doc => ({
+        ...doc,
+        file_name: doc.name,
+        file_url: doc.url,
+        file_type: doc.type,
+      })),
+      ...(conventionsResult.data || [])
+        .filter(conv => conv.document_url)
+        .map(conv => ({
+          ...conv,
+          file_name: conv.document_name || 'Convention',
+          file_url: conv.document_url,
+          file_type: 'application/pdf',
+        }))
+    ]
+
+    setClientFiles(allFiles)
   }
 
   async function handleDeleteOutboxFile(fileId: string) {
@@ -1155,13 +1197,6 @@ export function ClientTabs({
     <div className="p-6">
       {activeTab === "overview" && (
             <div className="space-y-6">
-              {/* Convention pending signature alert */}
-              <Alert className="bg-amber-50 border-amber-200">
-                <AlertTriangle className="h-4 w-4 text-amber-600" />
-                <AlertTitle className="text-amber-800">Convention en attente de signature.</AlertTitle>
-                
-              </Alert>
-
               <div className="grid gap-6 md:grid-cols-2">
                 <Card>
                   <CardHeader>
@@ -2147,16 +2182,45 @@ export function ClientTabs({
 
                         {/* Client files - Documents reçus/validés */}
                         {clientFiles
-                          .filter((file) => file.file_name.toLowerCase().includes(documentSearchTerm.toLowerCase()))
-                          .map((file) => (
+                          .filter((file) => {
+                            const fileName = file.file_name || (file as any).name || ''
+                            return fileName.toLowerCase().includes(documentSearchTerm.toLowerCase())
+                          })
+                          .map((file) => {
+                            const fileName = file.file_name || (file as any).name || 'Document sans nom'
+                            return (
                             <tr
                               key={file.id}
-                              onClick={() => {
+                              onClick={async () => {
+                                // Check if it's a convention document
+                                const fileCategory = (file as any).category
+                                if (fileCategory === "convention") {
+                                  setSelectedConventionDoc(file)
+                                  
+                                  // Load HTML content from URL if available
+                                  const fileUrl = (file as any).url
+                                  if (fileUrl) {
+                                    try {
+                                      const response = await fetch(fileUrl)
+                                      const html = await response.text()
+                                      setConventionHtmlContent(html)
+                                    } catch (error) {
+                                      console.error("[v0] Failed to load convention HTML:", error)
+                                      setConventionHtmlContent("")
+                                    }
+                                  }
+                                  
+                                  setConventionModalOpen(true)
+                                  return
+                                }
+                                
                                 // Convert client file to DocumentRequest format
+                                const fileDate = file.created_at || new Date().toISOString()
+                                const fileUrl = file.file_url || (file as any).url || null
                                 const docRequest: DocumentRequest = {
-                                  id: file.id,
-                                  name: file.file_name,
-                                  lastRequestAt: file.created_at,
+                                  id: String(file.id),
+                                  name: fileName,
+                                  lastRequestAt: fileDate,
                                   status:
                                     file.status === "ok"
                                       ? "validated"
@@ -2168,6 +2232,7 @@ export function ClientTabs({
                                   origin: "manual",
                                   revenueSubcategoryLabel: "Documents validés",
                                   impactedCases: [],
+                                  fileUrl: fileUrl,
                                   ocr: {
                                     state: file.status === "ok" ? "done" : "pending",
                                     extracted: file.status === "ok" ? { Sample: "Data" } : undefined,
@@ -2175,7 +2240,7 @@ export function ClientTabs({
                                   },
                                   history: [
                                     {
-                                      date: file.created_at,
+                                      date: fileDate,
                                       action: "Document reçu",
                                       user: "Client",
                                     },
@@ -2189,11 +2254,11 @@ export function ClientTabs({
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-3">
                                   <FileText className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm font-medium">{file.file_name}</span>
+                                  <span className="text-sm font-medium">{fileName}</span>
                                 </div>
                               </td>
                               <td className="px-4 py-3 text-sm text-muted-foreground">
-                                {new Date(file.created_at).toLocaleDateString("fr-FR")}
+                                {file.created_at ? new Date(file.created_at).toLocaleDateString("fr-FR") : "-"}
                               </td>
                               <td className="px-4 py-3">
                                 <Badge
@@ -2201,14 +2266,16 @@ export function ClientTabs({
                                   className={
                                     file.status === "ok"
                                       ? "bg-green-50 text-green-700 border-green-200"
-                                      : "bg-orange-50 text-orange-700 border-orange-200"
+                                      : file.status === "pending"
+                                        ? "bg-orange-50 text-orange-700 border-orange-200"
+                                        : "bg-blue-50 text-blue-700 border-blue-200"
                                   }
                                 >
                                   {file.status === "ok"
                                     ? "Validé"
                                     : file.status === "pending"
                                       ? "En attente"
-                                      : "Demandé"}
+                                      : "Disponible"}
                                 </Badge>
                               </td>
                               <td className="px-4 py-3">
@@ -2235,19 +2302,158 @@ export function ClientTabs({
                                 </Button>
                               </td>
                             </tr>
-                          ))}
+                          )})}
                       </tbody>
                     </table>
                   </div>
                 </div>
               )}
 
-              <DocumentDetailsSheet
-                document={selectedDocument}
-                open={documentSheetOpen}
-                onOpenChange={setDocumentSheetOpen}
-                expertMode={expertMode}
-              />
+<DocumentDetailsSheet
+  document={selectedDocument}
+  open={documentSheetOpen}
+  onOpenChange={setDocumentSheetOpen}
+  expertMode={expertMode}
+  />
+
+{/* Convention Text Modal */}
+<Dialog open={conventionModalOpen} onOpenChange={setConventionModalOpen}>
+  <DialogContent className="max-w-[80vw] sm:max-w-[80vw] max-h-[80vh] overflow-y-auto">
+    <DialogHeader>
+      <DialogTitle className="flex items-center gap-2">
+        <Scale className="h-5 w-5" />
+        {selectedConventionDoc?.name || "Convention d'honoraires"}
+      </DialogTitle>
+      <DialogDescription>
+        {selectedConventionDoc?.convention_type === "forfait" 
+          ? "Convention au forfait" 
+          : selectedConventionDoc?.convention_type === "temps_passe"
+            ? "Convention au temps passé"
+            : "Convention d'honoraires"}
+        {selectedConventionDoc?.has_result_clause && " - Avec clause de résultat"}
+      </DialogDescription>
+    </DialogHeader>
+    <div className="prose prose-sm max-w-none mt-4 p-6 bg-muted/30 rounded-lg border max-h-[60vh] overflow-y-auto">
+      {conventionHtmlContent ? (
+        <div dangerouslySetInnerHTML={{ __html: conventionHtmlContent }} />
+      ) : (
+        <div className="text-center text-muted-foreground py-8">
+          Chargement de la convention...
+        </div>
+      )}
+    </div>
+    <DialogFooter className="mt-4">
+      <Button variant="outline" onClick={() => setConventionModalOpen(false)}>
+        Fermer
+      </Button>
+      <Button onClick={async () => {
+        if (!conventionHtmlContent) {
+          toast({
+            title: "Erreur",
+            description: "Aucun contenu à exporter",
+            variant: "destructive"
+          })
+          return
+        }
+        
+        try {
+          // Dynamically import jsPDF
+          const { jsPDF } = await import('jspdf')
+          
+          const fileName = selectedConventionDoc?.name || 'Convention'
+          
+          // Parse HTML to extract text content
+          const tempDiv = document.createElement('div')
+          tempDiv.innerHTML = conventionHtmlContent
+          
+          // Create PDF
+          const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+          })
+          
+          const pageWidth = pdf.internal.pageSize.getWidth()
+          const pageHeight = pdf.internal.pageSize.getHeight()
+          const margin = 20
+          const maxWidth = pageWidth - 2 * margin
+          let yPosition = margin
+          
+          // Extract and format text from HTML
+          const processNode = (node: Node, fontSize = 10, isBold = false) => {
+            if (node.nodeType === Node.TEXT_NODE) {
+              const text = node.textContent?.trim()
+              if (!text) return
+              
+              pdf.setFontSize(fontSize)
+              pdf.setFont('helvetica', isBold ? 'bold' : 'normal')
+              
+              const lines = pdf.splitTextToSize(text, maxWidth)
+              lines.forEach((line: string) => {
+                if (yPosition > pageHeight - margin) {
+                  pdf.addPage()
+                  yPosition = margin
+                }
+                pdf.text(line, margin, yPosition)
+                yPosition += fontSize * 0.5
+              })
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+              const element = node as HTMLElement
+              const tagName = element.tagName.toLowerCase()
+              
+              if (tagName === 'h1') {
+                yPosition += 5
+                Array.from(element.childNodes).forEach(child => processNode(child, 16, true))
+                yPosition += 5
+              } else if (tagName === 'h2') {
+                yPosition += 4
+                Array.from(element.childNodes).forEach(child => processNode(child, 14, true))
+                yPosition += 3
+              } else if (tagName === 'h3' || tagName === 'h4') {
+                yPosition += 3
+                Array.from(element.childNodes).forEach(child => processNode(child, 12, true))
+                yPosition += 2
+              } else if (tagName === 'p') {
+                Array.from(element.childNodes).forEach(child => {
+                  const hasStrong = element.querySelector('strong')
+                  processNode(child, 10, hasStrong !== null && child.nodeType === Node.ELEMENT_NODE && (child as HTMLElement).tagName === 'STRONG')
+                })
+                yPosition += 4
+              } else if (tagName === 'strong' || tagName === 'b') {
+                Array.from(element.childNodes).forEach(child => processNode(child, 10, true))
+              } else if (tagName === 'hr') {
+                pdf.line(margin, yPosition, pageWidth - margin, yPosition)
+                yPosition += 5
+              } else {
+                Array.from(element.childNodes).forEach(child => processNode(child, 10, false))
+              }
+            }
+          }
+          
+          Array.from(tempDiv.childNodes).forEach(child => processNode(child))
+          
+          // Save PDF
+          pdf.save(`${fileName}.pdf`)
+          
+          toast({
+            title: "Export réussi",
+            description: "La convention a été téléchargée en PDF"
+          })
+        } catch (error) {
+          console.error("[v0] PDF export error:", error)
+          toast({
+            title: "Erreur d'export",
+            description: "Impossible de générer le PDF",
+            variant: "destructive"
+          })
+        }
+      }}>
+        <Download className="h-4 w-4 mr-2" />
+        Exporter en PDF
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
             </div>
           )}
 

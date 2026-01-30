@@ -11,6 +11,15 @@ export interface Client {
   custom_fields?: Array<{ name: string; value: string }>
   children?: Array<{ first_name: string; last_name: string; date_of_birth: string }>
   archived?: boolean
+  is_complex?: boolean
+  convention_signed?: boolean
+  convention_sent?: boolean
+  onboarding_form_pending?: boolean
+  onboarding_form_completed?: boolean
+  convention_sent_at?: string
+  convention_signed_at?: string
+  onboarding_form_pending_at?: string
+  onboarding_form_completed_at?: string
 }
 
 export interface TaxProfile {

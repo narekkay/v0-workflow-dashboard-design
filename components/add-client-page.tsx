@@ -12,9 +12,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, FileText, Clock, FolderOpen, Check, X, FileUp, ChevronRight, Save, Eye, CheckCircle2, Loader2 } from "lucide-react"
+import { ArrowLeft, FileText, Clock, FolderOpen, Check, X, FileUp, ChevronRight, Save, Eye, CheckCircle2, Loader2, Trash2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { uploadDocument } from "@/app/actions/upload-document"
+import { generateAndUploadConventionPdf } from "@/lib/pdf-utils"
 import { createBrowserClient } from "@/lib/supabase/client"
 import { ConventionEditor } from "@/components/convention-editor"
 
@@ -71,6 +72,121 @@ function generateRandomData() {
   return { firstName, lastName, email, phone, address }
 }
 
+function generateConventionHtml(
+  conventionType: string, 
+  hasResultClause: boolean, 
+  clientData: { firstName: string; lastName: string; email: string; address: string }
+) {
+  const mode = conventionType === "temps_passe" ? "AU TEMPS PASSÉ" : "AU FORFAIT"
+  const today = new Date().toLocaleDateString("fr-FR")
+  
+  return `
+    <div class="document-content">
+      <h1 style="text-align: center; font-size: 18pt; margin-bottom: 24px;">
+        CONTRAT DE MISSION ET DE RÉMUNÉRATION<br/>
+        <span style="font-size: 14pt;">${mode}</span>
+      </h1>
+
+      <section style="margin-bottom: 20px;">
+        <h2 style="font-size: 14pt; font-weight: bold;">ENTRE LES SOUSSIGNÉS :</h2>
+        <p style="margin-bottom: 10px;">
+          <strong>Le Cabinet :</strong><br/>
+          Cabinet Martin & Associés, représenté par Me Sophie Martin, Avocat inscrit au Barreau de Paris,<br/>
+          Adresse : 25 Avenue Montaigne, 75008 Paris<br/>
+          Email : contact@martin-avocats.fr<br/>
+          Téléphone : +33 1 45 67 89 00
+        </p>
+        <p style="text-align: center; margin: 10px 0;">ET</p>
+        <p>
+          <strong>Le Client :</strong><br/>
+          ${clientData.firstName} ${clientData.lastName}, demeurant ${clientData.address || "adresse à compléter"}<br/>
+          Email : ${clientData.email}
+        </p>
+      </section>
+
+      <section style="margin-bottom: 20px;">
+        <h2 style="font-size: 14pt; font-weight: bold;">PRÉAMBULE</h2>
+        <p>
+          Le Client souhaite confier à l'Avocat une mission de conseil et consultation juridique.
+          La présente convention a pour objet de définir les modalités de cette mission ainsi que les conditions de rémunération de l'Avocat.
+        </p>
+      </section>
+
+      <section style="margin-bottom: 20px;">
+        <h2 style="font-size: 14pt; font-weight: bold;">ARTICLE 1 – MISSION</h2>
+        <p style="margin-bottom: 10px;">
+          <strong>Nature de la mission :</strong> Conseil et assistance juridique dans le cadre de la déclaration d'impôt sur le revenu.
+        </p>
+        <p>
+          <strong>Diligences incluses :</strong> Rendez-vous et échanges, Étude du dossier et des pièces, Rédaction d'actes, Suivi client.
+        </p>
+      </section>
+
+      <section style="margin-bottom: 20px;">
+        <h2 style="font-size: 14pt; font-weight: bold;">ARTICLE 2 – DÉTERMINATION DES HONORAIRES</h2>
+        ${conventionType === "forfait" ? `
+        <p style="margin-bottom: 10px;">
+          Les honoraires de l'Avocat sont fixés de manière forfaitaire à 3 000 € HT,
+          soit 3 600 € TTC (TVA à 20%).
+        </p>
+        <p>
+          Ce forfait couvre l'ensemble des diligences décrites à l'article précédent.
+          Toute prestation complémentaire fera l'objet d'un avenant.
+        </p>
+        ` : `
+        <p style="margin-bottom: 10px;">
+          Les honoraires de l'Avocat sont calculés au temps passé selon les taux horaires suivants :
+        </p>
+        <ul style="margin-left: 20px; margin-bottom: 10px;">
+          <li>Associé : 350 € HT / heure</li>
+          <li>Collaborateur : 200 € HT / heure</li>
+        </ul>
+        <p>TVA applicable : 20%</p>
+        `}
+      </section>
+
+      ${hasResultClause ? `
+      <section style="margin-bottom: 20px;">
+        <h2 style="font-size: 14pt; font-weight: bold;">ARTICLE 3 – HONORAIRE COMPLÉMENTAIRE DE RÉSULTAT</h2>
+        <p>
+          En sus des honoraires ${conventionType === "forfait" ? "forfaitaires" : "au temps passé"} prévus ci-dessus, 
+          un honoraire complémentaire de résultat est convenu entre les parties, égal à 10% de l'économie réalisée.
+        </p>
+      </section>
+      ` : ""}
+
+      <section style="margin-bottom: 20px;">
+        <h2 style="font-size: 14pt; font-weight: bold;">ARTICLE ${hasResultClause ? "4" : "3"} – FRAIS, DÉBOURS ET DÉPENS</h2>
+        <p>
+          Les frais et débours engagés par l'Avocat sont refacturés au Client à l'identique.
+          Les dépens sont à la charge de la partie condamnée, conformément à la décision de justice.
+        </p>
+      </section>
+
+      <section style="margin-bottom: 20px;">
+        <h2 style="font-size: 14pt; font-weight: bold;">ARTICLE ${hasResultClause ? "5" : "4"} – RÈGLEMENT</h2>
+        <p>
+          Les honoraires sont payables à réception de la facture, par virement bancaire.
+        </p>
+      </section>
+
+      <section style="margin-top: 40px;">
+        <p>Fait à Paris, le ${today}</p>
+        <div style="display: flex; justify-content: space-between; margin-top: 40px;">
+          <div style="width: 45%;">
+            <p><strong>Le Cabinet</strong></p>
+            <p style="margin-top: 60px;">Signature :</p>
+          </div>
+          <div style="width: 45%;">
+            <p><strong>Le Client</strong></p>
+            <p style="margin-top: 60px;">Signature :</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  `
+}
+
 export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
   const [selectedConvention, setSelectedConvention] = useState<ConventionType | null>(null)
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([])
@@ -81,6 +197,7 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
   const [hasResultClause, setHasResultClause] = useState(false)
   const [conventionSkipped, setConventionSkipped] = useState(false)
   const [showConventionEditor, setShowConventionEditor] = useState(false)
+  const [isSubmittingFromEditor, setIsSubmittingFromEditor] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const existantFileInputRef = useRef<HTMLInputElement | null>(null)
   const randomData = generateRandomData()
@@ -91,7 +208,44 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
     phone: randomData.phone,
     address: randomData.address,
     notes: "Client créé via le dashboard",
+    isComplex: false,
   })
+  const [formErrors, setFormErrors] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+  })
+  
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
+  
+  const validateStep1 = (): boolean => {
+    const errors = {
+      firstName: "",
+      lastName: "",
+      email: "",
+    }
+    
+    if (!formData.firstName.trim()) {
+      errors.firstName = "Le prénom est requis"
+    }
+    
+    if (!formData.lastName.trim()) {
+      errors.lastName = "Le nom est requis"
+    }
+    
+    if (!formData.email.trim()) {
+      errors.email = "L'email est requis"
+    } else if (!validateEmail(formData.email)) {
+      errors.email = "Format d'email invalide"
+    }
+    
+    setFormErrors(errors)
+    return !errors.firstName && !errors.lastName && !errors.email
+  }
+  
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
@@ -101,8 +255,7 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
   const steps = [
     { id: 1, title: "Informations" },
     { id: 2, title: "Convention" },
-    { id: 3, title: "Edition" },
-    { id: 4, title: "Récapitulatif" },
+    { id: 3, title: "Créer le client" },
   ]
 
   const handleSelectConvention = (type: ConventionType) => {
@@ -221,8 +374,48 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
     setUploadedFiles(uploadedFiles.filter((_, i) => i !== index))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleDeleteExistantFile = async () => {
+    if (!existantFile) return
+    
+    try {
+      const supabase = createBrowserClient()
+      
+      // Delete from database if it exists
+      if (existantFile.id) {
+        const { error } = await supabase
+          .from("documents")
+          .delete()
+          .eq("id", existantFile.id)
+        
+        if (error) {
+          console.error("[v0] Error deleting file from database:", error)
+        }
+      }
+      
+      // Reset visual state
+      setExistantFile(null)
+      setPdfPreviewUrl(null)
+      setUploadSuccess(false)
+      if (selectedConvention === "existant") {
+        setSelectedConvention(null)
+      }
+      
+      toast({
+        title: "Fichier supprimé",
+        description: "Le contrat a été supprimé avec succès",
+      })
+    } catch (error) {
+      console.error("[v0] Error deleting file:", error)
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le fichier",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault()
     console.log("[v0] Form submitted", formData)
     setIsLoading(true)
 
@@ -239,6 +432,7 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
           email: formData.email,
           phone: formData.phone || null,
           address: formData.address || null,
+          is_complex: formData.isComplex || false,
         })
         .select()
         .single()
@@ -250,32 +444,85 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
 
       console.log("[v0] Client created successfully:", client)
 
-      // Create convention record in the conventions table
-      if (selectedConvention || conventionSkipped) {
-        console.log("[v0] Creating convention record...")
+      // Generate and save convention PDF if a convention type was selected (not existant)
+      if (selectedConvention && selectedConvention !== "existant") {
+        console.log("[v0] Generating convention PDF:", selectedConvention)
         
-        const { error: conventionError } = await supabase
-          .from("conventions")
-          .insert({
+        const conventionTitle = selectedConvention === "forfait" 
+          ? "Convention d'honoraires au forfait"
+          : "Convention d'honoraires au temps passé"
+        
+        try {
+          // Generate convention HTML content
+          const clientName = `${formData.firstName} ${formData.lastName}`
+          const conventionHtml = generateConventionHtml(selectedConvention, hasResultClause, {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            address: formData.address || "",
+          })
+          
+          console.log("[v0] Generating and uploading PDF to Vercel Blob...")
+          
+          // Generate PDF and upload to Vercel Blob via API route
+          const fileName = `convention_${selectedConvention}_${clientName.replace(/\s+/g, '_')}_${Date.now()}`
+          const { url, size } = await generateAndUploadConventionPdf(conventionHtml, fileName)
+          
+          console.log("[v0] Convention PDF uploaded:", url)
+          
+          const { error: conventionDocError } = await supabase.from("documents").insert({
             client_id: client.id,
-            type: selectedConvention || 'forfait', // Default to forfait if skipped
-            status: conventionSkipped ? 'brouillon' : 'pret',
+            name: conventionTitle,
+            url: url,
+            type: "text/html",
+            size: size,
+            category: "convention",
+            convention_type: selectedConvention,
             has_result_clause: hasResultClause,
-            skipped: conventionSkipped,
-            document_url: existantFile?.url || null,
-            document_name: existantFile?.name || null,
-            content: {}, // Will be populated from convention editor later
           })
 
-        if (conventionError) {
-          console.error("[v0] Convention creation error:", conventionError)
-          toast({
-            title: "Attention",
-            description: "Le client a été créé mais la convention n'a pas pu être sauvegardée",
-            variant: "destructive",
-          })
+          if (conventionDocError) {
+            console.error("[v0] Convention document save error:", conventionDocError)
+          } else {
+            console.log("[v0] Convention document saved successfully")
+            
+            // Update convention_sent status with timestamp
+            const { error: updateError } = await supabase
+              .from("clients")
+              .update({ 
+                convention_sent: true,
+                convention_sent_at: new Date().toISOString()
+              })
+              .eq("id", client.id)
+            
+            if (updateError) {
+              console.error("[v0] Failed to update convention_sent:", updateError)
+            } else {
+              console.log("[v0] convention_sent set to true for client")
+            }
+          }
+        } catch (error) {
+          console.error("[v0] Convention PDF generation/upload failed:", error)
+        }
+      }
+
+      // Save existant contract file if uploaded
+      if (existantFile) {
+        console.log("[v0] Saving existant contract file:", existantFile.name)
+        
+        const { error: existantError } = await supabase.from("documents").insert({
+          client_id: client.id,
+          name: existantFile.name,
+          url: existantFile.url,
+          type: existantFile.type || "application/pdf",
+          size: existantFile.size,
+          category: "contrat_existant",
+        })
+
+        if (existantError) {
+          console.error("[v0] Existant contract save error:", existantError)
         } else {
-          console.log("[v0] Convention created successfully")
+          console.log("[v0] Existant contract saved successfully")
         }
       }
 
@@ -312,12 +559,20 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
           : "Le client a été ajouté avec succès",
       })
 
+      // Refetch client with updated convention_sent status
+      const { data: updatedClient } = await supabase
+        .from("clients")
+        .select("*")
+        .eq("id", client.id)
+        .single()
+      
       // Pass the created client back to parent for navigation
-      onSuccess({
+      onSuccess(updatedClient || {
         id: client.id,
         first_name: client.first_name,
         last_name: client.last_name,
         email: client.email,
+        convention_sent: true,
       })
     } catch (error) {
       console.error("[v0] Error creating client:", error)
@@ -326,6 +581,7 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
         description: error instanceof Error ? error.message : "Une erreur est survenue",
         variant: "destructive",
       })
+      throw error // Re-throw to allow caller to handle
     } finally {
       setIsLoading(false)
     }
@@ -344,11 +600,21 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
           phone: formData.phone,
           address: formData.address,
         }}
-        onBack={() => setShowConventionEditor(false)}
-        onValidate={() => {
+      onBack={() => setShowConventionEditor(false)}
+      onValidate={async () => {
+        setIsSubmittingFromEditor(true)
+        try {
+          await handleSubmit()
+          // Only close editor if submission succeeds
           setShowConventionEditor(false)
-          setCurrentStep(4)
-        }}
+        } catch (error) {
+          // Keep editor open on error
+          console.error("[v0] Submission failed, keeping editor open:", error)
+        } finally {
+          setIsSubmittingFromEditor(false)
+        }
+      }}
+      isSubmitting={isSubmittingFromEditor}
       />
     )
   }
@@ -403,8 +669,8 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
           </div>
 
           {/* Steps */}
-          {steps.map((step) => {
-            const canNavigate = step.id === 1 || (step.id > 1 && formData.firstName && formData.lastName && formData.email)
+  {steps.map((step) => {
+    const canNavigate = step.id < 3 && (step.id === 1 || (step.id > 1 && formData.firstName && formData.lastName && formData.email))
             
             return (
               <button
@@ -452,12 +718,10 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
       <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader>
-            <CardTitle>
-              {currentStep === 1 && "Informations du client"}
-              {currentStep === 2 && "Choisir la convention"}
-              {currentStep === 3 && "Edition de la convention"}
-              {currentStep === 4 && "Récapitulatif"}
-            </CardTitle>
+  <CardTitle>
+    {currentStep === 1 && "Informations du client"}
+    {currentStep === 2 && "Choisir la convention"}
+  </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Step 1: Profile Information */}
@@ -470,9 +734,18 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                       id="firstName"
                       required
                       value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, firstName: e.target.value })
+                        if (formErrors.firstName) {
+                          setFormErrors({ ...formErrors, firstName: "" })
+                        }
+                      }}
                       placeholder="Jean"
+                      className={formErrors.firstName ? "border-red-500" : ""}
                     />
+                    {formErrors.firstName && (
+                      <p className="text-xs text-red-500">{formErrors.firstName}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Nom *</Label>
@@ -480,9 +753,18 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                       id="lastName"
                       required
                       value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, lastName: e.target.value })
+                        if (formErrors.lastName) {
+                          setFormErrors({ ...formErrors, lastName: "" })
+                        }
+                      }}
                       placeholder="Dupont"
+                      className={formErrors.lastName ? "border-red-500" : ""}
                     />
+                    {formErrors.lastName && (
+                      <p className="text-xs text-red-500">{formErrors.lastName}</p>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -492,9 +774,18 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                     type="email"
                     required
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, email: e.target.value })
+                      if (formErrors.email) {
+                        setFormErrors({ ...formErrors, email: "" })
+                      }
+                    }}
                     placeholder="jean.dupont@example.com"
+                    className={formErrors.email ? "border-red-500" : ""}
                   />
+                  {formErrors.email && (
+                    <p className="text-xs text-red-500">{formErrors.email}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Téléphone</Label>
@@ -506,15 +797,7 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                     placeholder="+33 6 12 34 56 78"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address">Adresse</Label>
-                  <Input
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="123 Rue de la Paix, 75001 Paris"
-                  />
-                </div>
+                
                 <div className="space-y-2">
                   <Label htmlFor="notes">Notes</Label>
                   <Textarea
@@ -524,6 +807,18 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   />
+                </div>
+
+                <div className="flex items-center space-x-3 pt-2">
+                  <Checkbox
+                    id="isComplex"
+                    checked={formData.isComplex || false}
+                    onCheckedChange={(checked) => setFormData({ ...formData, isComplex: checked as boolean })}
+                    className="border-orange-400 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
+                  />
+                  <Label htmlFor="isComplex" className="text-sm font-medium cursor-pointer">
+                    Cas complexe
+                  </Label>
                 </div>
               </>
             )}
@@ -547,6 +842,8 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                           isSelected ? 'ring-2 ring-primary shadow-lg' : (
                             (!isExistant || hasFile) ? 'hover:border-primary/50' : ''
                           )
+                        } ${
+                          isSelected && hasFile ? 'md:col-span-2 lg:col-span-1 flex-grow' : ''
                         }`}
                         onClick={() => (!isExistant || hasFile) && handleSelectConvention(convention.id)}
                       >
@@ -560,9 +857,23 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                               {convention.description}
                             </p>
                             {hasFile && (
-                              <div className="w-full mt-2 p-3 bg-green-50 rounded-lg border border-green-200 flex items-center gap-2">
-                                <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
-                                <p className="text-sm font-medium text-green-700 truncate">{existantFile.name}</p>
+                              <div className="w-full mt-2 p-3 bg-green-50 rounded-lg border border-green-200 flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                                  <p className="text-sm font-medium text-green-700 truncate">{existantFile.name}</p>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDeleteExistantFile()
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </div>
                             )}
                           </div>
@@ -656,56 +967,6 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
               </div>
             )}
 
-            {/* Step 3: Convention Editor placeholder - Editor opens as full-screen overlay */}
-            {currentStep === 3 && !showConventionEditor && (
-              <div className="text-center py-12">
-                <div className="rounded-full bg-primary/10 p-6 w-fit mx-auto mb-6">
-                  <FileText className="h-12 w-12 text-primary" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Éditer la convention d'honoraires</h3>
-                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  Configurez et personnalisez la convention d'honoraires pour votre client. Le document se met à jour en temps réel.
-                </p>
-                <Button
-                  type="button"
-                  size="lg"
-                  onClick={() => setShowConventionEditor(true)}
-                >
-                  Ouvrir l'éditeur
-                </Button>
-              </div>
-            )}
-
-            {/* Step 4: Summary */}
-            {currentStep === 4 && (
-              <div className="space-y-4">
-                <h3 className="font-semibold">Récapitulatif des informations</h3>
-                <div className="grid gap-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Nom complet:</span>
-                    <span className="font-medium">
-                      {formData.firstName} {formData.lastName}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Email:</span>
-                    <span className="font-medium">{formData.email}</span>
-                  </div>
-                  {formData.phone && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Téléphone:</span>
-                      <span className="font-medium">{formData.phone}</span>
-                    </div>
-                  )}
-                  {formData.address && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Adresse:</span>
-                      <span className="font-medium">{formData.address}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* Action Buttons */}
             <div className="flex gap-3 pt-4 border-t justify-between">
@@ -724,13 +985,40 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                 {currentStep === 1 ? "Annuler" : "Précédent"}
               </Button>
               <div className="flex gap-3">
-                {currentStep < 4 ? (
+                {currentStep === 2 && selectedConvention === "existant" && existantFile ? (
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    {isLoading ? "Création..." : "Accéder à la page client"}
+                  </Button>
+                ) : currentStep < 3 ? (
                   <Button
                     type="button"
-                    onClick={() => setCurrentStep(currentStep + 1)}
+                    onClick={() => {
+                      if (currentStep === 1) {
+                        // Validate step 1 before proceeding
+                        if (!validateStep1()) {
+                          toast({
+                            title: "Erreur de validation",
+                            description: "Veuillez remplir tous les champs obligatoires correctement",
+                            variant: "destructive"
+                          })
+                          return
+                        }
+                        setCurrentStep(2)
+                      } else if (currentStep === 2 && selectedConvention && selectedConvention !== "existant") {
+                        // Open editor directly at step 2 if a convention is selected
+                        setCurrentStep(3)
+                        setShowConventionEditor(true)
+                      } else {
+                        setCurrentStep(currentStep + 1)
+                      }
+                    }}
                     disabled={
                       isLoading ||
-                      (currentStep === 1 && (!formData.firstName || !formData.lastName || !formData.email)) ||
                       (currentStep === 2 && !selectedConvention && !conventionSkipped)
                     }
                     className="gap-2"
@@ -738,12 +1026,7 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
                     Suivant
                     <ChevronRight className="h-4 w-4" />
                   </Button>
-                ) : (
-                  <Button type="submit" disabled={isLoading} className="gap-2">
-                    <Save className="h-4 w-4" />
-                    {isLoading ? "Création..." : "Créer le client"}
-                  </Button>
-                )}
+                ) : null}
               </div>
             </div>
           </CardContent>

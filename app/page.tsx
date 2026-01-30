@@ -17,6 +17,8 @@ import { AddClientPage } from "@/components/add-client-page"
 import type { Client, TaxProfile, Document } from "@/lib/types"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
+import { NotificationsDropdown } from "@/components/notifications-dropdown"
+import { OnboardingView } from "@/components/onboarding-view"
 
 type View = "clients" | "documents" | "settings" | "archives" | "dashboard"
 
@@ -31,7 +33,7 @@ const clientBaseTabs: ClientTab[] = [
 
 interface Tab {
   id: string
-  type: "view" | "client" | "form2042" | "add-client"
+  type: "view" | "client" | "form2042" | "add-client" | "onboarding"
   label: string
   view?: View
   clientId?: string
@@ -39,8 +41,8 @@ interface Tab {
 
 export default function HomePage() {
   const [clients, setClients] = useState<Client[]>([])
-  const [tabs, setTabs] = useState<Tab[]>([{ id: "view-dashboard", type: "view", label: "Tableau de bord", view: "dashboard" }])
-  const [activeTabId, setActiveTabId] = useState("view-dashboard")
+  const [tabs, setTabs] = useState<Tab[]>([{ id: "view-clients", type: "view", label: "Clients", view: "clients" }])
+  const [activeTabId, setActiveTabId] = useState("view-clients")
   const [clientsData, setClientsData] = useState<
     Map<string, { client: Client; taxProfiles: TaxProfile[]; documents: Document[] }>
   >(new Map())
@@ -104,6 +106,24 @@ export default function HomePage() {
   }
 
   function handleClientSelect(client: Client) {
+    // If onboarding not completed (treat null/undefined as not completed), open onboarding tab instead
+    if (client.onboarding_form_completed !== true) {
+      const onboardingTabId = `onboarding-${client.id}`
+      const existingOnboardingTab = tabs.find(t => t.id === onboardingTabId)
+      
+      if (!existingOnboardingTab) {
+        setTabs(prev => [...prev, {
+          id: onboardingTabId,
+          type: "onboarding",
+          label: `Onboarding ${client.first_name} ${client.last_name}`,
+          clientId: client.id,
+        }])
+      }
+      
+      setActiveTabId(onboardingTabId)
+      return
+    }
+    
     const existingTab = tabs.find((tab) => tab.type === "client" && tab.clientId === client.id)
 
     if (existingTab) {
@@ -243,19 +263,31 @@ export default function HomePage() {
   const activeTab = tabs.find((t) => t.id === activeTabId)
 
   const isClientView = activeTab?.type === "client"
+  const isOnboardingView = activeTab?.type === "onboarding"
 
   return (
     <div className="flex h-screen">
       <Sidebar 
         onViewChange={handleViewChange}
-        clientTabs={isClientView && clientBaseTabs.length > 0 ? clientBaseTabs : undefined}
+        clientTabs={(isClientView || isOnboardingView) && clientBaseTabs.length > 0 ? clientBaseTabs : undefined}
         revenueTabs={isClientView ? clientRevenueTabs : undefined}
         yearTabs={isClientView ? clientYearTabs : undefined}
         activeClientTab={isClientView ? activeClientTab : undefined}
         onClientTabChange={isClientView ? setActiveClientTab : undefined}
         onCloseRevenueTab={isClientView ? (id) => setClientRevenueTabs(prev => prev.filter(t => t.id !== id)) : undefined}
         onCloseYearTab={isClientView ? (id) => setClientYearTabs(prev => prev.filter(t => t.id !== id)) : undefined}
-        clientName={isClientView ? currentClientName : undefined}
+        clientName={(isClientView || isOnboardingView) ? currentClientName : undefined}
+        conventionSigned={
+          (isClientView || isOnboardingView) && activeTab.clientId 
+            ? clientsData.get(activeTab.clientId)?.client.convention_signed ?? false
+            : undefined
+        }
+        onboardingCompleted={
+          (isClientView || isOnboardingView) && activeTab.clientId 
+            ? clientsData.get(activeTab.clientId)?.client.onboarding_form_completed ?? false
+            : true
+        }
+        clientId={(isClientView || isOnboardingView) ? activeTab.clientId : undefined}
       />
       {amountEntryView ? (
         <RevenueAmountEntry
@@ -308,7 +340,37 @@ export default function HomePage() {
               </div>
             ))}
 
-            <div className="ml-auto pr-2">
+            <div className="ml-auto pr-2 flex items-center gap-2">
+              <NotificationsDropdown 
+                onNotificationClick={(notif) => {
+                  if (notif.notification_type === "onboarding_filled" && notif.related_client_id) {
+                    // Open onboarding tab for the client
+                    const client = clients.find(c => c.id === notif.related_client_id)
+                    if (client) {
+                      const tabId = `onboarding-${notif.related_client_id}`
+                      const existingTab = tabs.find(t => t.id === tabId)
+                      
+                      if (!existingTab) {
+                        setTabs([...tabs, {
+                          id: tabId,
+                          type: "onboarding",
+                          label: `Onboarding ${client.first_name} ${client.last_name}`,
+                          clientId: notif.related_client_id,
+                        }])
+                      }
+                      
+                      setActiveTabId(tabId)
+                    }
+                  }
+                }}
+                onClientClick={(clientId) => {
+                  const client = clients.find(c => c.id === clientId)
+                  if (client) {
+                    handleClientSelect(client)
+                  }
+                }}
+              />
+              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
@@ -424,6 +486,8 @@ export default function HomePage() {
                 }}
                 onCancel={() => handleCloseTab(activeTab.id)}
               />
+            ) : activeTab?.type === "onboarding" && activeTab.clientId ? (
+              <OnboardingView clientId={activeTab.clientId} />
             ) : null}
           </main>
         </div>

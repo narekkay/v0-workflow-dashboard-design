@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Plus, MoreVertical, Archive, Trash2, Search, FolderOpen, Mail, FileText, Users, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { Plus, Search, Users, ArrowUpDown, ArrowUp, ArrowDown, MoreVertical, Archive, PanelRight } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -22,7 +23,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import type { Client } from "@/lib/types"
 import { createClient } from "@/lib/supabase/client"
-import { AddClientDialog } from "@/components/add-client-dialog" // Declare the AddClientDialog variable
+import { AddClientDialog } from "@/components/add-client-dialog"
+import { ClientDrawer } from "@/components/client-drawer"
 
 interface ClientsTableProps {
   clients: Client[]
@@ -53,7 +55,12 @@ function computeProgress(client: Client): number {
   }
 }
 
-function computeStatus(client: Client): "complete" | "incomplete" | "action" {
+function computeStatus(client: Client): "complete" | "incomplete" | "action" | "onboarding" {
+  // Check if onboarding is not completed (treat null/undefined as not completed)
+  if (client.onboarding_form_completed !== true) {
+    return "onboarding"
+  }
+  
   const progress = computeProgress(client)
   if (progress >= 75) return "complete"
   if (progress >= 50) return "incomplete"
@@ -62,6 +69,8 @@ function computeStatus(client: Client): "complete" | "incomplete" | "action" {
 
 function getStatusBadgeConfig(status: string) {
   switch (status) {
+    case "onboarding":
+      return { label: "Onboarding", className: "bg-blue-50 text-blue-700 border-blue-200" }
     case "complete":
       return { label: "Complet", className: "bg-emerald-50 text-emerald-700 border-emerald-200" }
     case "incomplete":
@@ -85,17 +94,30 @@ function getInitials(firstName: string, lastName: string): string {
 
 export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClientClick, showArchived = false }: ClientsTableProps) {
   const [displayClients, setDisplayClients] = useState<Client[]>([])
-  const [clientToArchive, setClientToArchive] = useState<Client | null>(null)
-  const [showArchiveDialog, setShowArchiveDialog] = useState(false)
-  const [clientToDelete, setClientToDelete] = useState<Client | null>(null)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [viewMode, setViewMode] = useState<ViewMode>("list")
   const [isLoading, setIsLoading] = useState(true)
-  const [isDialogOpen, setIsDialogOpen] = useState(false) // Declare the setIsDialogOpen variable
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [sortColumn, setSortColumn] = useState<"name" | "status" | null>(null)
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+  const [drawerClient, setDrawerClient] = useState<Client | null>(null)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [clientToArchive, setClientToArchive] = useState<Client | null>(null)
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false)
+
+  const handleArchiveClient = async () => {
+    if (!clientToArchive) return
+
+    const supabase = createClient()
+    const { error } = await supabase.from("clients").update({ archived: !showArchived }).eq("id", clientToArchive.id)
+
+    if (!error) {
+      setShowArchiveDialog(false)
+      setClientToArchive(null)
+      onClientAdded()
+    }
+  }
 
   useEffect(() => {
     async function loadDisplayClients() {
@@ -195,31 +217,7 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
     return result
   }, [displayClients, searchQuery, statusFilter, viewMode, sortColumn, sortDirection])
 
-  const handleArchiveClient = async () => {
-    if (!clientToArchive) return
 
-    const supabase = createClient()
-    const { error } = await supabase.from("clients").update({ archived: !showArchived }).eq("id", clientToArchive.id)
-
-    if (!error) {
-      setShowArchiveDialog(false)
-      setClientToArchive(null)
-      onClientAdded()
-    }
-  }
-
-  const handleDeleteClient = async () => {
-    if (!clientToDelete) return
-
-    const supabase = createClient()
-    const { error } = await supabase.from("clients").delete().eq("id", clientToDelete.id)
-
-    if (!error) {
-      setShowDeleteDialog(false)
-      setClientToDelete(null)
-      onClientAdded()
-    }
-  }
 
   const filterChips: { key: StatusFilter; label: string }[] = [
     { key: "all", label: "Tous" },
@@ -307,7 +305,7 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
               ) : filteredClients.length === 0 ? (
                 // Empty state
                 <TableRow>
-                  <TableCell colSpan={3} className="py-16 px-6">
+                    <TableCell colSpan={3} className="py-16 px-6">
                     <div className="flex flex-col items-center justify-center text-center">
                       <div className="rounded-full bg-muted p-4 mb-4">
                         <Users className="h-8 w-8 text-muted-foreground" />
@@ -342,7 +340,7 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
                   return (
                     <TableRow
                       key={client.id}
-                      className="cursor-pointer hover:bg-muted/40 transition-colors"
+                      className="cursor-pointer"
                       onClick={() => onClientSelect(client)}
                     >
                       {/* Client */}
@@ -372,11 +370,12 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
 
                       {/* Statut */}
                       <TableCell className="py-5 px-6">
+                        <Badge variant="outline" className={`${statusConfig.className} font-medium`}>
+                          {statusConfig.label}
+                        </Badge>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Badge variant="outline" className={`${statusConfig.className} font-medium`}>
-                              {statusConfig.label}
-                            </Badge>
+                            <span className="sr-only">Status info</span>
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>
@@ -400,41 +399,14 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
                                 className="h-8 w-8"
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  onClientSelect(client)
+                                  setDrawerClient(client)
+                                  setDrawerOpen(true)
                                 }}
                               >
-                                <FolderOpen className="h-4 w-4" />
+                                <PanelRight className="h-4 w-4" />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>Ouvrir dossier</TooltipContent>
-                          </Tooltip>
-
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Mail className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Relancer client</TooltipContent>
-                          </Tooltip>
-
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <FileText className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Ajouter declaration</TooltipContent>
+                            <TooltipContent>Détails du dossier</TooltipContent>
                           </Tooltip>
 
                           <DropdownMenu>
@@ -457,9 +429,8 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
                                 }}
                               >
                                 <Archive className="mr-2 h-4 w-4" />
-                                {showArchived ? "Desarchiver" : "Archiver"}
+                                {showArchived ? "Désarchiver" : "Archiver"}
                               </DropdownMenuItem>
-                              
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -472,47 +443,37 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
           </Table>
         </div>
 
+        {/* Add Client Dialog */}
+        {isDialogOpen && (
+          <AddClientDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} onClientAdded={onClientAdded} />
+        )}
+
+        {/* Archive Dialog */}
         <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>{showArchived ? "Desarchiver ce client ?" : "Archiver ce client ?"}</AlertDialogTitle>
+              <AlertDialogTitle>{showArchived ? "Désarchiver ce client ?" : "Archiver ce client ?"}</AlertDialogTitle>
               <AlertDialogDescription>
                 {showArchived
-                  ? `Le client ${clientToArchive?.first_name} ${clientToArchive?.last_name} sera restaure dans la liste des clients actifs.`
-                  : `Le client ${clientToArchive?.first_name} ${clientToArchive?.last_name} sera deplace vers les archives. Vous pourrez le restaurer depuis le menu Parametres > Archives clients.`}
+                  ? `Le client ${clientToArchive?.first_name} ${clientToArchive?.last_name} sera restauré dans la liste des clients actifs.`
+                  : `Le client ${clientToArchive?.first_name} ${clientToArchive?.last_name} sera déplacé vers les archives.`}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Annuler</AlertDialogCancel>
               <AlertDialogAction onClick={handleArchiveClient}>
-                {showArchived ? "Desarchiver" : "Archiver"}
+                {showArchived ? "Désarchiver" : "Archiver"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
 
-        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Supprimer ce client ?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Cette action est irreversible. Le client {clientToDelete?.first_name} {clientToDelete?.last_name} et
-                toutes ses donnees associees (revenus, documents, profils fiscaux) seront definitivement supprimes.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Annuler</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteClient} className="bg-red-600 hover:bg-red-700">
-                Supprimer definitivement
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* Add Client Dialog */}
-        {isDialogOpen && (
-          <AddClientDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} onClientAdded={onClientAdded} />
-        )}
+        {/* Client Details Drawer */}
+        <ClientDrawer
+          client={drawerClient}
+          open={drawerOpen}
+          onOpenChange={setDrawerOpen}
+        />
       </div>
     </TooltipProvider>
   )
