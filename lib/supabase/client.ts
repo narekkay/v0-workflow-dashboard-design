@@ -4,8 +4,9 @@ export function createClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   
-  console.log('[v0] Supabase URL:', supabaseUrl ? 'SET' : 'MISSING')
-  console.log('[v0] Supabase Key:', supabaseKey ? 'SET' : 'MISSING')
+  console.log('[v0] Creating Supabase client...')
+  console.log('[v0] Supabase URL:', supabaseUrl)
+  console.log('[v0] Current origin:', typeof window !== 'undefined' ? window.location.origin : 'server-side')
   
   if (!supabaseUrl || !supabaseKey) {
     console.error('[v0] Missing Supabase environment variables!')
