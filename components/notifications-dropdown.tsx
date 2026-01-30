@@ -23,6 +23,7 @@ export interface Notification {
   read: boolean
   notification_type?: string
   related_client_id?: string
+  client_name?: string
 }
 
 interface NotificationsDropdownProps {
@@ -79,6 +80,23 @@ export function NotificationsDropdown({ notifications, onNotificationClick, onCl
       }
       
       if (data) {
+        // Fetch client names for notifications with related_client_id
+        const clientIds = data.filter(n => n.related_client_id).map(n => n.related_client_id)
+        const clientsMap = new Map<string, string>()
+        
+        if (clientIds.length > 0) {
+          const { data: clientsData } = await supabase
+            .from("clients")
+            .select("id, first_name, last_name")
+            .in("id", clientIds)
+          
+          if (clientsData) {
+            clientsData.forEach(client => {
+              clientsMap.set(client.id, `${client.first_name} ${client.last_name}`)
+            })
+          }
+        }
+        
         const mappedNotifications: Notification[] = data.map(notif => ({
           id: notif.id,
           type: notif.alert_type as NotificationType,
@@ -88,6 +106,7 @@ export function NotificationsDropdown({ notifications, onNotificationClick, onCl
           read: notif.read_status,
           notification_type: notif.notification_type,
           related_client_id: notif.related_client_id,
+          client_name: notif.related_client_id ? clientsMap.get(notif.related_client_id) : undefined,
         }))
         setNotifs(mappedNotifications)
       }
@@ -122,30 +141,33 @@ export function NotificationsDropdown({ notifications, onNotificationClick, onCl
     return `il y a ${Math.floor(diff / 1440)}j`
   }
   
-  const renderMessageWithClientLink = (message: string, clientId?: string) => {
-    // Pattern to detect client names (capitalized words)
-    const namePattern = /([A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎÇ][a-zéèêëàâäôöùûüïîç]+(?:\s+[A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎÇ][a-zéèêëàâäôöùûüïîç]+)*)/g
+  const renderMessageWithClientLink = (message: string, clientId?: string, clientName?: string) => {
+    if (!clientId || !clientName || !onClientClick) {
+      return message
+    }
     
-    const parts = message.split(namePattern)
+    // Find the exact client name in the message
+    const nameIndex = message.indexOf(clientName)
     
-    return parts.map((part, index) => {
-      // Check if this part matches a name pattern and we have a clientId
-      if (index % 2 === 1 && clientId && onClientClick) {
-        return (
-          <span
-            key={index}
-            onClick={(e) => {
-              e.stopPropagation()
-              onClientClick(clientId)
-            }}
-            className="text-blue-600 underline cursor-pointer hover:text-blue-800"
-          >
-            {part}
-          </span>
-        )
-      }
-      return <span key={index}>{part}</span>
-    })
+    if (nameIndex === -1) {
+      return message
+    }
+    
+    return (
+      <>
+        {message.substring(0, nameIndex)}
+        <span
+          onClick={(e) => {
+            e.stopPropagation()
+            onClientClick(clientId)
+          }}
+          className="text-blue-600 underline cursor-pointer hover:text-blue-800"
+        >
+          {clientName}
+        </span>
+        {message.substring(nameIndex + clientName.length)}
+      </>
+    )
   }
 
   const handleNotificationClick = async (notif: Notification) => {
@@ -210,7 +232,7 @@ export function NotificationsDropdown({ notifications, onNotificationClick, onCl
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground line-clamp-2">
-                    {renderMessageWithClientLink(notif.message, notif.related_client_id)}
+                    {renderMessageWithClientLink(notif.message, notif.related_client_id, notif.client_name)}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {formatTimestamp(notif.timestamp)}
