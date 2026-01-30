@@ -5,56 +5,48 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+      <header className="border-b bg-white sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-primary">
+          <div className="flex items-center gap-2 text-foreground">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
               <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
             </svg>
             <span className="text-xl font-bold tracking-tight">Fiscalia</span>
           </div>
           <Link href="/login">
-            <Button>Se connecter</Button>
+            <Button className="bg-black hover:bg-black/90 text-white rounded-md">Se connecter</Button>
           </Link>
         </div>
       </header>
 
       {/* Hero Section */}
       <main>
-        <section className="relative py-24 md:py-32 overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
-          {/* Background avec grille */}
-          <div className="absolute inset-0 z-0">
-            {/* Grille de fond */}
-            <div 
-              className="absolute inset-0 opacity-[0.15] dark:opacity-[0.08]"
-              style={{
-                backgroundImage: `
-                  linear-gradient(to right, rgb(15 23 42 / 0.3) 1px, transparent 1px),
-                  linear-gradient(to bottom, rgb(15 23 42 / 0.3) 1px, transparent 1px)
-                `,
-                backgroundSize: '60px 60px'
-              }}
-            />
-            {/* Vignette subtile */}
-            <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-slate-100/50 dark:to-slate-950/50" />
-          </div>
+        <section className="relative py-32 md:py-40 overflow-hidden bg-[#1a1a1a]">
+          {/* Grille subtile */}
+          <div 
+            className="absolute inset-0 opacity-[0.03]"
+            style={{
+              backgroundImage: `
+                linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px)
+              `,
+              backgroundSize: '80px 80px'
+            }}
+          />
 
-          <div className="max-w-7xl mx-auto px-6 relative z-10">
-            <div className="max-w-3xl mx-auto text-center">
-              <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
+          <div className="max-w-4xl mx-auto px-6 relative z-10">
+            <div className="text-center">
+              <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6 text-white">
                 Gestion fiscale simplifiée pour les avocats
               </h1>
-              <p className="text-xl text-muted-foreground mb-10 leading-relaxed">
-                Fiscalia centralise la gestion de vos clients, leurs déclarations fiscales et leurs documents. 
-                Une plateforme sécurisée pour optimiser votre pratique.
+              <p className="text-xl text-gray-300 mb-10 leading-relaxed max-w-3xl mx-auto">
+                Fiscalia centralise la gestion de vos clients, leurs déclarations fiscales et leurs documents. Une plateforme sécurisée pour optimiser votre pratique.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/login">
-                  <Button size="lg" className="h-12 px-8 text-base">
-                    Accéder à la plateforme
-                  </Button>
-                </Link>
-              </div>
+              <Link href="/login">
+                <Button size="lg" className="h-12 px-8 text-base bg-white hover:bg-gray-100 text-black rounded-md">
+                  Accéder à la plateforme
+                </Button>
+              </Link>
             </div>
           </div>
         </section>
