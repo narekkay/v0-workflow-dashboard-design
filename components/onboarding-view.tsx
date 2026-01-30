@@ -40,10 +40,6 @@ export function OnboardingView({ clientId }: OnboardingViewProps) {
     }
 
     loadClient()
-    
-    // Reload every 2 seconds to catch DB updates
-    const interval = setInterval(loadClient, 2000)
-    return () => clearInterval(interval)
   }, [clientId])
 
   if (loading) {
