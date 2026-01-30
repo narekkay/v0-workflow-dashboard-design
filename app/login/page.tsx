@@ -65,15 +65,15 @@ function LoginForm() {
       )}
       
       {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-black items-center justify-center relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-[#171717] items-center justify-center relative overflow-hidden">
         <div 
-          className="absolute inset-0 opacity-[0.12]"
+          className="absolute inset-0 opacity-[0.1]"
           style={{
             backgroundImage: `
-              linear-gradient(to right, rgba(255, 255, 255, 0.2) 2px, transparent 2px),
-              linear-gradient(to bottom, rgba(255, 255, 255, 0.2) 2px, transparent 2px)
+              linear-gradient(to right, rgba(255, 255, 255, 0.15) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(255, 255, 255, 0.15) 1px, transparent 1px)
             `,
-            backgroundSize: '60px 60px'
+            backgroundSize: '80px 80px'
           }}
         />
         <div className="relative z-10 text-center text-white px-12">

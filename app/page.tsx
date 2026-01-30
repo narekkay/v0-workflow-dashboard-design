@@ -21,16 +21,16 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <main>
-        <section className="relative py-32 md:py-40 overflow-hidden bg-black">
+        <section className="relative py-32 md:py-40 overflow-hidden bg-[#171717]">
           {/* Grille visible */}
           <div 
-            className="absolute inset-0 opacity-[0.12]"
+            className="absolute inset-0 opacity-[0.1]"
             style={{
               backgroundImage: `
-                linear-gradient(to right, rgba(255, 255, 255, 0.2) 2px, transparent 2px),
-                linear-gradient(to bottom, rgba(255, 255, 255, 0.2) 2px, transparent 2px)
+                linear-gradient(to right, rgba(255, 255, 255, 0.15) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.15) 1px, transparent 1px)
               `,
-              backgroundSize: '60px 60px'
+              backgroundSize: '80px 80px'
             }}
           />
 
@@ -94,7 +94,7 @@ export default function HomePage() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 bg-black">
+        <section className="py-20 bg-[#171717]">
           <div className="max-w-7xl mx-auto px-6 text-center">
             <h2 className="text-3xl font-bold mb-4 text-white">Prêt à commencer ?</h2>
             <p className="text-gray-300 mb-8 max-w-xl mx-auto">
