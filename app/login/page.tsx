@@ -90,10 +90,10 @@ function LoginForm() {
       </div>
 
       {/* Right side - Login form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-background">
+      <div className="flex-1 flex items-center justify-center p-8 bg-[#171717]">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
-          <div className="flex lg:hidden items-center justify-center gap-2 text-primary mb-10">
+          <div className="flex lg:hidden items-center justify-center gap-2 text-white mb-10">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
               <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
             </svg>
@@ -101,15 +101,15 @@ function LoginForm() {
           </div>
 
           <div className="mb-8">
-            <h2 className="text-2xl font-bold tracking-tight mb-2">Espace Avocat</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-2xl font-bold tracking-tight mb-2 text-white">Espace Avocat</h2>
+            <p className="text-gray-300">
               Connectez-vous pour accéder à votre tableau de bord
             </p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email">Adresse email</Label>
+              <Label htmlFor="email" className="text-white">Adresse email</Label>
               <Input
                 id="email"
                 type="email"
@@ -122,8 +122,8 @@ function LoginForm() {
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Mot de passe</Label>
-                <button type="button" className="text-sm text-primary hover:underline">
+                <Label htmlFor="password" className="text-white">Mot de passe</Label>
+                <button type="button" className="text-sm text-gray-300 hover:text-white hover:underline">
                   Mot de passe oublié ?
                 </button>
               </div>
@@ -154,8 +154,8 @@ function LoginForm() {
             </Button>
           </form>
 
-          <div className="mt-8 pt-6 border-t text-center">
-            <p className="text-sm text-muted-foreground">
+          <div className="mt-8 pt-6 border-t border-gray-700 text-center">
+            <p className="text-sm text-gray-300">
               Accès réservé aux avocats du cabinet
             </p>
           </div>
