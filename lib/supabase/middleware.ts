@@ -35,10 +35,10 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
 
-  // Public routes that don't require auth
-  const publicRoutes = ['/login', '/403', '/memberview']
+  // Public routes
+  const isPublicRoute = pathname.startsWith('/memberview') || pathname === '/login' || pathname === '/403'
   
-  // Protect dashboard (root /)
+  // Protect dashboard (root /) - require authentication
   if (pathname === '/' && !user) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
@@ -52,52 +52,6 @@ export async function updateSession(request: NextRequest) {
     url.pathname = nextParam && nextParam !== '/login' ? nextParam : '/'
     url.searchParams.delete('next')
     return NextResponse.redirect(url)
-  }
-
-  // Protect /memberview/* routes
-  if (pathname.startsWith('/memberview')) {
-    if (!user) {
-      // Not authenticated - redirect to login with next param
-      const url = request.nextUrl.clone()
-      url.pathname = '/login'
-      url.searchParams.set('next', pathname)
-      return NextResponse.redirect(url)
-    }
-
-    // Fetch user profile for role and is_active check
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, is_active')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || !profile.is_active) {
-      // No profile or inactive - sign out and redirect to login
-      await supabase.auth.signOut()
-      const url = request.nextUrl.clone()
-      url.pathname = '/login'
-      url.searchParams.delete('next')
-      return NextResponse.redirect(url)
-    }
-
-    // Authorization check for /memberview/[id]
-    const memberviewMatch = pathname.match(/^\/memberview\/([^\/]+)/)
-    if (memberviewMatch) {
-      const requestedId = memberviewMatch[1]
-      
-      // Avocat can access all /memberview/* pages
-      if (profile.role === 'avocat') {
-        return supabaseResponse
-      }
-      
-      // Client can only access /memberview/[id] where id === auth.uid()
-      if (profile.role === 'client' && requestedId !== user.id) {
-        // Deny access - redirect to 403
-        const url = request.nextUrl.clone()
-        url.pathname = '/403'
-        return NextResponse.redirect(url)
-      }
-    }
   }
 
   return supabaseResponse
