@@ -16,6 +16,10 @@ export interface Client {
   convention_sent?: boolean
   onboarding_form_pending?: boolean
   onboarding_form_completed?: boolean
+  convention_sent_at?: string
+  convention_signed_at?: string
+  onboarding_form_pending_at?: string
+  onboarding_form_completed_at?: string
 }
 
 export interface TaxProfile {

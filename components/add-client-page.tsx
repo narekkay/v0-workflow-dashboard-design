@@ -486,10 +486,13 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
           } else {
             console.log("[v0] Convention document saved successfully")
             
-            // Update convention_sent status
+            // Update convention_sent status with timestamp
             const { error: updateError } = await supabase
               .from("clients")
-              .update({ convention_sent: true })
+              .update({ 
+                convention_sent: true,
+                convention_sent_at: new Date().toISOString()
+              })
               .eq("id", client.id)
             
             if (updateError) {
