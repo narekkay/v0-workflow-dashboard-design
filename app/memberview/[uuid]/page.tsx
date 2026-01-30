@@ -242,7 +242,7 @@ export default function MemberViewPage() {
       <header className="h-20 border-b bg-white/90 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-[1200px] mx-auto px-6 h-full flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/">
+            <Link href={`/?client=${params.uuid}&tab=overview`}>
               <Button variant="outline" size="lg" className="gap-2 h-11 px-5">
                 <ArrowLeft className="h-5 w-5" />
                 Retour

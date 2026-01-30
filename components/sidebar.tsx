@@ -115,9 +115,9 @@ export function Sidebar({
               <Link
                 href={`/memberview/${clientId}`}
                 target="_blank"
-                className="flex items-center gap-2 mx-3 mb-4 px-3 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg transition-colors text-xs font-medium"
+                className="flex items-center justify-center gap-2 mx-3 mb-4 px-4 py-2.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg transition-all hover:shadow-sm text-sm font-semibold"
               >
-                <ExternalLink className="h-3.5 w-3.5" />
+                <ExternalLink className="h-4 w-4" />
                 Ouvrir vue client
               </Link>
             )}
