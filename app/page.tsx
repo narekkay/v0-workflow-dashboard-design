@@ -262,20 +262,25 @@ export default function HomePage() {
   const activeTab = tabs.find((t) => t.id === activeTabId)
 
   const isClientView = activeTab?.type === "client"
+  const isOnboardingView = activeTab?.type === "onboarding"
 
   return (
     <div className="flex h-screen">
       <Sidebar 
         onViewChange={handleViewChange}
-        clientTabs={isClientView && clientBaseTabs.length > 0 ? clientBaseTabs : undefined}
+        clientTabs={(isClientView || isOnboardingView) && clientBaseTabs.length > 0 ? clientBaseTabs : undefined}
         revenueTabs={isClientView ? clientRevenueTabs : undefined}
         yearTabs={isClientView ? clientYearTabs : undefined}
         activeClientTab={isClientView ? activeClientTab : undefined}
         onClientTabChange={isClientView ? setActiveClientTab : undefined}
         onCloseRevenueTab={isClientView ? (id) => setClientRevenueTabs(prev => prev.filter(t => t.id !== id)) : undefined}
         onCloseYearTab={isClientView ? (id) => setClientYearTabs(prev => prev.filter(t => t.id !== id)) : undefined}
-        clientName={isClientView ? currentClientName : undefined}
-        conventionSigned={isClientView && activeTab?.type === "client" && activeTab.clientId ? clientsData.get(activeTab.clientId)?.client.convention_signed : undefined}
+        clientName={(isClientView || isOnboardingView) ? currentClientName : undefined}
+        conventionSigned={
+          (isClientView || isOnboardingView) && activeTab.clientId 
+            ? clientsData.get(activeTab.clientId)?.client.convention_signed ?? false
+            : undefined
+        }
       />
       {amountEntryView ? (
         <RevenueAmountEntry
