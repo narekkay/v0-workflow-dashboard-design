@@ -32,7 +32,7 @@ const clientBaseTabs: ClientTab[] = [
 
 interface Tab {
   id: string
-  type: "view" | "client" | "form2042" | "add-client"
+  type: "view" | "client" | "form2042" | "add-client" | "onboarding"
   label: string
   view?: View
   clientId?: string
@@ -310,7 +310,29 @@ export default function HomePage() {
             ))}
 
             <div className="ml-auto pr-2 flex items-center gap-2">
-              <NotificationsDropdown />
+              <NotificationsDropdown 
+                onNotificationClick={(notif) => {
+                  if (notif.notification_type === "onboarding_filled" && notif.related_client_id) {
+                    // Open onboarding tab for the client
+                    const client = clients.find(c => c.id === notif.related_client_id)
+                    if (client) {
+                      const tabId = `onboarding-${notif.related_client_id}`
+                      const existingTab = tabs.find(t => t.id === tabId)
+                      
+                      if (!existingTab) {
+                        setTabs([...tabs, {
+                          id: tabId,
+                          type: "onboarding",
+                          label: `Onboarding ${client.first_name} ${client.last_name}`,
+                          clientId: notif.related_client_id,
+                        }])
+                      }
+                      
+                      setActiveTabId(tabId)
+                    }
+                  }
+                }}
+              />
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -427,6 +449,22 @@ export default function HomePage() {
                 }}
                 onCancel={() => handleCloseTab(activeTab.id)}
               />
+            ) : activeTab?.type === "onboarding" && activeTab.clientId ? (
+              (() => {
+                const client = clients.find(c => c.id === activeTab.clientId)
+                if (!client) return <div className="p-6">Client introuvable</div>
+                
+                return (
+                  <div className="p-6">
+                    <h2 className="text-2xl font-semibold mb-4">
+                      Onboarding {client.first_name} {client.last_name}
+                    </h2>
+                    <div className="border rounded-lg p-8 text-center text-muted-foreground">
+                      Contenu de l'onboarding à venir
+                    </div>
+                  </div>
+                )
+              })()
             ) : null}
           </main>
         </div>

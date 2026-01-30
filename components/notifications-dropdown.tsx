@@ -21,10 +21,13 @@ export interface Notification {
   message: string
   timestamp: Date
   read: boolean
+  notification_type?: string
+  related_client_id?: string
 }
 
 interface NotificationsDropdownProps {
   notifications?: Notification[]
+  onNotificationClick?: (notif: Notification) => void
 }
 
 const defaultNotifications: Notification[] = [
@@ -54,7 +57,7 @@ const defaultNotifications: Notification[] = [
   },
 ]
 
-export function NotificationsDropdown({ notifications }: NotificationsDropdownProps) {
+export function NotificationsDropdown({ notifications, onNotificationClick }: NotificationsDropdownProps) {
   const [notifs, setNotifs] = useState<Notification[]>(notifications || defaultNotifications)
   const [loading, setLoading] = useState(true)
   
@@ -82,6 +85,8 @@ export function NotificationsDropdown({ notifications }: NotificationsDropdownPr
           message: notif.content,
           timestamp: new Date(notif.created_at),
           read: notif.read_status,
+          notification_type: notif.notification_type,
+          related_client_id: notif.related_client_id,
         }))
         setNotifs(mappedNotifications)
       }
@@ -121,9 +126,9 @@ export function NotificationsDropdown({ notifications }: NotificationsDropdownPr
     return `Il y a ${diffDays}j`
   }
 
-  const handleNotificationClick = async (id: string) => {
+  const handleNotificationClick = async (notif: Notification) => {
     setNotifs(prev => prev.map(n => 
-      n.id === id ? { ...n, read: true } : n
+      n.id === notif.id ? { ...n, read: true } : n
     ))
     
     // Update read status in database
@@ -131,7 +136,12 @@ export function NotificationsDropdown({ notifications }: NotificationsDropdownPr
     await supabase
       .from("notifications")
       .update({ read_status: true })
-      .eq("id", id)
+      .eq("id", notif.id)
+    
+    // Call parent callback if provided
+    if (onNotificationClick) {
+      onNotificationClick(notif)
+    }
   }
 
   return (
@@ -167,7 +177,7 @@ export function NotificationsDropdown({ notifications }: NotificationsDropdownPr
               <DropdownMenuItem
                 key={notif.id}
                 className="px-4 py-3 cursor-pointer flex items-start gap-3 focus:bg-muted/50"
-                onClick={() => handleNotificationClick(notif.id)}
+                onClick={() => handleNotificationClick(notif)}
               >
                 <div className="mt-0.5">{getIcon(notif.type)}</div>
                 <div className="flex-1 space-y-1">
