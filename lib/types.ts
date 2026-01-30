@@ -13,6 +13,9 @@ export interface Client {
   archived?: boolean
   is_complex?: boolean
   convention_signed?: boolean
+  convention_sent?: boolean
+  onboarding_form_pending?: boolean
+  onboarding_form_completed?: boolean
 }
 
 export interface TaxProfile {
