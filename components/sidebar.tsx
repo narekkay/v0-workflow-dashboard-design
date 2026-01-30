@@ -125,7 +125,7 @@ export function Sidebar({
             {/* View client portal button */}
             {!isCollapsed && clientId && (
               <Link
-                href={`/memberview/${clientId}`}
+                href={`/dashboard/memberview/${clientId}`}
                 target="_blank"
                 className="flex items-center justify-center gap-2 mx-3 mb-4 px-4 py-2.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg transition-all hover:shadow-sm text-sm font-semibold"
               >

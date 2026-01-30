@@ -36,8 +36,8 @@ function LoginForm() {
       })
       if (error) throw error
       
-      // Redirect to next param if present, otherwise to home
-      router.push(next || '/')
+      // Redirect to next param if present, otherwise to dashboard
+      router.push(next || '/dashboard')
       router.refresh()
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'Identifiants invalides')
