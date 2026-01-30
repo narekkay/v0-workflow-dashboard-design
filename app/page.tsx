@@ -284,7 +284,7 @@ export default function HomePage() {
         }
         onboardingCompleted={
           (isClientView || isOnboardingView) && activeTab.clientId 
-            ? clientsData.get(activeTab.clientId)?.client.onboarding_form_completed ?? true
+            ? clientsData.get(activeTab.clientId)?.client.onboarding_form_completed ?? false
             : true
         }
       />
