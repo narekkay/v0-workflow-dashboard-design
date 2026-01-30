@@ -1,11 +1,12 @@
 "use client"
 
-import { LayoutDashboardIcon,Users, FileText, ChevronLeft, ChevronRight, ChevronDown, Home, User, FolderOpen, Share2, Trash2, X, LayoutDashboard, ExternalLink, LogOut } from "lucide-react"
+import { LayoutDashboardIcon,Users, FileText, ChevronLeft, ChevronRight, ChevronDown, Home, User, FolderOpen, Share2, Trash2, X, LayoutDashboard, ExternalLink, LogOut, Settings } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { LucideIcon } from "lucide-react"
 
 type View = "clients" | "documents" | "settings" | "dashboard"
@@ -64,12 +65,26 @@ export function Sidebar({
   const [declaratifOpen, setDeclaratifOpen] = useState(true)
   const [contentieuxOpen, setContentieuxOpen] = useState(true)
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [userName, setUserName] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadUser() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       setUserEmail(user?.email ?? null)
+      
+      if (user) {
+        // Fetch user profile to get name
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', user.id)
+          .single()
+        
+        if (profile) {
+          setUserName(`${profile.first_name} ${profile.last_name}`)
+        }
+      }
     }
     loadUser()
   }, [])
@@ -297,28 +312,57 @@ export function Sidebar({
       {/* User section */}
       <div className="mt-auto border-t p-4">
         {!isCollapsed ? (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-sm">
-                {userEmail?.charAt(0).toUpperCase() || "U"}
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">{userEmail || "Utilisateur"}</p>
-                <p className="text-xs text-muted-foreground">Avocat</p>
-              </div>
-            </div>
-            <Link href="/logout">
-              <button className="p-1.5 rounded-md hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-foreground">
-                <LogOut className="h-4 w-4" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-3 w-full rounded-lg px-3 py-2 hover:bg-sidebar-accent transition-colors">
+                <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm flex-shrink-0">
+                  {userName?.charAt(0).toUpperCase() || userEmail?.charAt(0).toUpperCase() || "A"}
+                </div>
+                <div className="min-w-0 flex-1 text-left">
+                  <p className="text-sm font-bold text-sidebar-foreground truncate">
+                    {userName || "Avocat"}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {userEmail || "email@example.com"}
+                  </p>
+                </div>
               </button>
-            </Link>
-          </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem>
+                <Settings className="h-4 w-4 mr-2" />
+                <span>Edit profil</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/logout" className="flex items-center cursor-pointer">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  <span>Logout</span>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : (
-          <Link href="/logout" className="flex justify-center">
-            <button className="p-1.5 rounded-md hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-foreground">
-              <LogOut className="h-4 w-4" />
-            </button>
-          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex justify-center w-full p-1.5 rounded-md hover:bg-sidebar-accent transition-colors">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
+                  {userName?.charAt(0).toUpperCase() || userEmail?.charAt(0).toUpperCase() || "A"}
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem>
+                <Settings className="h-4 w-4 mr-2" />
+                <span>Edit profil</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/logout" className="flex items-center cursor-pointer">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  <span>Logout</span>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
     </div>
