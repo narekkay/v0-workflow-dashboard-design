@@ -109,14 +109,7 @@ export function Sidebar({
 
             {/* ESPACE DECLARATIF or ONBOARDING */}
             {!isCollapsed ? (
-              !onboardingCompleted ? (
-                // Show ONBOARDING link when onboarding not completed
-                <div className="mt-4">
-                  <h4 className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wide px-3 py-2">
-                    ONBOARDING
-                  </h4>
-                </div>
-              ) : onboardingCompleted ? (
+              onboardingCompleted ? (
                 // Show ESPACE DECLARATIF when onboarding completed
                 <Collapsible open={declaratifOpen} onOpenChange={setDeclaratifOpen} className="mt-4">
                   <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-2 hover:bg-sidebar-accent rounded-lg transition-colors">
@@ -226,7 +219,14 @@ export function Sidebar({
                     )}
                   </CollapsibleContent>
                 </Collapsible>
-              ) : null
+              ) : (
+                // Show ONBOARDING when onboarding not completed
+                <div className="mt-4">
+                  <h4 className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wide px-3 py-2">
+                    ONBOARDING
+                  </h4>
+                </div>
+              )
             ) : onboardingCompleted ? (
               <div className="space-y-1">
                 {clientTabs.map((tab) => {
