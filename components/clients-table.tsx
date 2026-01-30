@@ -54,7 +54,12 @@ function computeProgress(client: Client): number {
   }
 }
 
-function computeStatus(client: Client): "complete" | "incomplete" | "action" {
+function computeStatus(client: Client): "complete" | "incomplete" | "action" | "onboarding" {
+  // Check if onboarding is not completed
+  if (client.onboarding_form_completed === false) {
+    return "onboarding"
+  }
+  
   const progress = computeProgress(client)
   if (progress >= 75) return "complete"
   if (progress >= 50) return "incomplete"
@@ -63,6 +68,8 @@ function computeStatus(client: Client): "complete" | "incomplete" | "action" {
 
 function getStatusBadgeConfig(status: string) {
   switch (status) {
+    case "onboarding":
+      return { label: "Onboarding", className: "bg-blue-50 text-blue-700 border-blue-200" }
     case "complete":
       return { label: "Complet", className: "bg-emerald-50 text-emerald-700 border-emerald-200" }
     case "incomplete":
