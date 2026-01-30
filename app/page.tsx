@@ -21,28 +21,32 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <main>
-        <section className="relative py-24 md:py-32 overflow-hidden">
+        <section className="relative py-24 md:py-32 overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
           {/* Background Image with Grid Overlay */}
           <div className="absolute inset-0 z-0">
-            <div className="absolute inset-0 bg-[url('/placeholder.svg?height=1080&width=1920')] bg-cover bg-center opacity-10" 
-                 style={{ 
-                   backgroundImage: "url('/placeholder.svg?height=1080&width=1920')",
-                   filter: "grayscale(100%)"
-                 }}>
-            </div>
+            {/* Lawyer silhouette background */}
+            <div 
+              className="absolute inset-0 opacity-[0.08] dark:opacity-[0.12]" 
+              style={{ 
+                backgroundImage: "url('/placeholder.svg?height=1080&width=1920')",
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                filter: 'grayscale(100%) contrast(1.2)'
+              }}
+            />
             {/* Grid Pattern Overlay */}
             <div 
-              className="absolute inset-0 opacity-[0.03]"
+              className="absolute inset-0 opacity-[0.15] dark:opacity-[0.08]"
               style={{
                 backgroundImage: `
-                  linear-gradient(to right, currentColor 1px, transparent 1px),
-                  linear-gradient(to bottom, currentColor 1px, transparent 1px)
+                  linear-gradient(to right, rgb(15 23 42 / 0.3) 1px, transparent 1px),
+                  linear-gradient(to bottom, rgb(15 23 42 / 0.3) 1px, transparent 1px)
                 `,
-                backgroundSize: '80px 80px'
+                backgroundSize: '60px 60px'
               }}
-            ></div>
-            {/* Gradient Overlay for Readability */}
-            <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background"></div>
+            />
+            {/* Subtle vignette for depth */}
+            <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-slate-100/50 dark:to-slate-950/50" />
           </div>
 
           <div className="max-w-7xl mx-auto px-6 relative z-10">
