@@ -141,7 +141,7 @@ function LoginForm() {
                 {error}
               </div>
             )}
-            <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={isLoading}>
+            <Button type="submit" className="w-full h-12 text-base font-semibold bg-[#171717] hover:bg-[#171717]/90 text-white" disabled={isLoading}>
               {isLoading ? (
                 <span className="flex items-center gap-2">
                   <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
