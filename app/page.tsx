@@ -21,7 +21,7 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <main>
-        <section className="relative py-32 md:py-40 overflow-hidden bg-[#1a1a1a]">
+        <section className="relative py-32 md:py-40 overflow-hidden bg-black">
           {/* Grille visible */}
           <div 
             className="absolute inset-0 opacity-[0.12]"
