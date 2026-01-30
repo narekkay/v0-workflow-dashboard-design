@@ -35,7 +35,10 @@ function LoginForm() {
         password,
       })
       if (error) throw error
+      
+      // Redirect to next param if present, otherwise to home
       router.push(next || '/')
+      router.refresh()
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'Identifiants invalides')
     } finally {
