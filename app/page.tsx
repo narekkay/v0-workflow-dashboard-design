@@ -21,8 +21,31 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <main>
-        <section className="py-24 md:py-32">
-          <div className="max-w-7xl mx-auto px-6">
+        <section className="relative py-24 md:py-32 overflow-hidden">
+          {/* Background Image with Grid Overlay */}
+          <div className="absolute inset-0 z-0">
+            <div className="absolute inset-0 bg-[url('/placeholder.svg?height=1080&width=1920')] bg-cover bg-center opacity-10" 
+                 style={{ 
+                   backgroundImage: "url('/placeholder.svg?height=1080&width=1920')",
+                   filter: "grayscale(100%)"
+                 }}>
+            </div>
+            {/* Grid Pattern Overlay */}
+            <div 
+              className="absolute inset-0 opacity-[0.03]"
+              style={{
+                backgroundImage: `
+                  linear-gradient(to right, currentColor 1px, transparent 1px),
+                  linear-gradient(to bottom, currentColor 1px, transparent 1px)
+                `,
+                backgroundSize: '80px 80px'
+              }}
+            ></div>
+            {/* Gradient Overlay for Readability */}
+            <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background"></div>
+          </div>
+
+          <div className="max-w-7xl mx-auto px-6 relative z-10">
             <div className="max-w-3xl mx-auto text-center">
               <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
                 Gestion fiscale simplifiee pour les avocats
