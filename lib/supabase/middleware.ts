@@ -35,26 +35,22 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
 
-  console.log('[v0] Middleware check:', { pathname, hasUser: !!user })
-
   // Public routes that don't require auth
-  const publicRoutes = ['/login', '/403']
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
-
+  const publicRoutes = ['/login', '/403', '/memberview']
+  
   // Protect dashboard (root /)
   if (pathname === '/' && !user) {
-    console.log('[v0] Redirecting to login - no user')
     const url = request.nextUrl.clone()
     url.pathname = '/login'
-    url.searchParams.set('next', pathname)
     return NextResponse.redirect(url)
   }
 
   // Redirect to dashboard if user tries to access login while authenticated
   if (pathname === '/login' && user) {
-    console.log('[v0] User already logged in, redirecting to dashboard')
+    const nextParam = request.nextUrl.searchParams.get('next')
     const url = request.nextUrl.clone()
-    url.pathname = '/'
+    url.pathname = nextParam && nextParam !== '/login' ? nextParam : '/'
+    url.searchParams.delete('next')
     return NextResponse.redirect(url)
   }
 
