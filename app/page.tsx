@@ -24,7 +24,7 @@ export default function HomePage() {
         <section className="relative py-32 md:py-40 overflow-hidden bg-[#171717]">
           {/* Grille visible */}
           <div 
-            className="absolute inset-0 opacity-[0.1]"
+            className="absolute inset-0 opacity-35"
             style={{
               backgroundImage: `
                 linear-gradient(to right, rgba(255, 255, 255, 0.15) 1px, transparent 1px),
