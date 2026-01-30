@@ -52,7 +52,7 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-6 relative z-10">
             <div className="max-w-3xl mx-auto text-center">
               <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-                Gestion fiscale simplifiee pour les avocats
+                Gestion fiscale simplifiée pour les avocats
               </h1>
               <p className="text-xl text-muted-foreground mb-10 leading-relaxed">
                 Fiscalia centralise la gestion de vos clients, leurs declarations fiscales et leurs documents. 
