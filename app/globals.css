@@ -1,5 +1,4 @@
 @import 'tailwindcss';
-@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -121,5 +120,78 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  @keyframes slide-in-from-top {
+    from {
+      transform: translateY(-100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes slide-in-from-bottom {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes slide-in-from-left {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+  
+  @keyframes slide-in-from-right {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+  
+  .animate-in {
+    animation-duration: 150ms;
+    animation-fill-mode: both;
+  }
+  
+  .fade-in-0 { animation-name: fade-in; opacity: 0; }
+  .fade-out-0 { animation-name: fade-out; opacity: 1; }
+  .zoom-in-95 { animation-name: zoom-in; transform: scale(0.95); }
+  .zoom-out-95 { animation-name: zoom-out; transform: scale(1); }
+  
+  .slide-in-from-top-2 { animation-name: slide-in-from-top; transform: translateY(-0.5rem); }
+  .slide-in-from-bottom-2 { animation-name: slide-in-from-bottom; transform: translateY(0.5rem); }
+  .slide-in-from-left-2 { animation-name: slide-in-from-left; transform: translateX(-0.5rem); }
+  .slide-in-from-right-2 { animation-name: slide-in-from-right; transform: translateX(0.5rem); }
+  
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+  
+  @keyframes zoom-in {
+    from { transform: scale(0.95); }
+    to { transform: scale(1); }
+  }
+  
+  @keyframes zoom-out {
+    from { transform: scale(1); }
+    to { transform: scale(0.95); }
   }
 }
