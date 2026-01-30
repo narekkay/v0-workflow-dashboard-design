@@ -106,8 +106,8 @@ export default function HomePage() {
   }
 
   function handleClientSelect(client: Client) {
-    // If convention not signed, open onboarding tab instead
-    if (!client.convention_signed) {
+    // If onboarding not completed, open onboarding tab instead
+    if (client.onboarding_form_completed === false || !client.convention_signed) {
       const onboardingTabId = `onboarding-${client.id}`
       const existingOnboardingTab = tabs.find(t => t.id === onboardingTabId)
       
@@ -281,6 +281,11 @@ export default function HomePage() {
           (isClientView || isOnboardingView) && activeTab.clientId 
             ? clientsData.get(activeTab.clientId)?.client.convention_signed ?? false
             : undefined
+        }
+        onboardingCompleted={
+          (isClientView || isOnboardingView) && activeTab.clientId 
+            ? clientsData.get(activeTab.clientId)?.client.onboarding_form_completed ?? true
+            : true
         }
       />
       {amountEntryView ? (

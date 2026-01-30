@@ -340,7 +340,7 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
                   return (
                     <TableRow
                       key={client.id}
-                      className="cursor-pointer hover:bg-muted/40 transition-colors"
+                      className="cursor-pointer"
                       onClick={() => onClientSelect(client)}
                     >
                       {/* Client */}

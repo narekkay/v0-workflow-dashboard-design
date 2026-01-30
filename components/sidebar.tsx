@@ -40,6 +40,7 @@ interface SidebarProps {
   onCloseYearTab?: (tabId: string) => void
   clientName?: string
   conventionSigned?: boolean
+  onboardingCompleted?: boolean
 }
 
 export function Sidebar({ 
@@ -53,6 +54,7 @@ export function Sidebar({
   onCloseYearTab,
   clientName,
   conventionSigned = true,
+  onboardingCompleted = true,
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [declaratifOpen, setDeclaratifOpen] = useState(true)
@@ -105,120 +107,126 @@ export function Sidebar({
               </div>
             )}
 
-            {/* ESPACE DECLARATIF category */}
+            {/* ESPACE DECLARATIF or ONBOARDING */}
             {!isCollapsed ? (
-              <Collapsible open={declaratifOpen} onOpenChange={setDeclaratifOpen} className="mt-4">
-                <CollapsibleTrigger className={cn(
-                  "flex w-full items-center justify-between px-3 py-2 hover:bg-sidebar-accent rounded-lg transition-colors",
-                  !conventionSigned && "opacity-40"
-                )}>
-                  <h4 className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wide">ESPACE DECLARATIF</h4>
-                  <ChevronDown className={cn("h-4 w-4 text-sidebar-foreground/60 transition-transform", declaratifOpen && "rotate-180")} />
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className={cn("space-y-1 mt-2", !conventionSigned && "opacity-40 pointer-events-none")}>
-                    {[...clientTabs].sort((a, b) => {
-                      const getOrder = (label: string) => {
-                        const lower = label.toLowerCase()
-                        if (lower.includes("apercu") || lower.includes("général") || lower.includes("general")) return 0
-                        if (lower.includes("fiche")) return 1
-                        if (lower.includes("foyer")) return 2
-                        if (lower.includes("declaration") || lower.includes("déclaration")) return 3
-                        if (lower.includes("document")) return 4
-                        if (lower.includes("partage")) return 5
-                        return 999
-                      }
-                      return getOrder(a.label) - getOrder(b.label)
-                    }).map((tab) => {
-                      const Icon = tab.icon
-                      return (
-                        <button
-                          key={tab.id}
-                          onClick={() => onClientTabChange?.(tab.id)}
-                          disabled={!conventionSigned}
-                          className={cn(
-                            "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
-                            activeClientTab === tab.id
-                              ? "bg-primary/10 text-primary"
-                              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                          )}
-                        >
-                          <Icon className="h-4 w-4 flex-shrink-0" />
-                          <span className="truncate">{tab.label}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-
-                  {/* Revenue tabs */}
-                  {revenueTabs.length > 0 && (
-                    <div className="mt-4">
-                      <div className="px-3 py-2 text-xs font-semibold text-sidebar-foreground/60 uppercase">
-                        Revenus
-                      </div>
-                      <div className="space-y-1">
-                        {revenueTabs.map((tab) => (
-                          <div
+              !onboardingCompleted ? (
+                // Show ONBOARDING link when onboarding not completed
+                <div className="mt-4">
+                  <h4 className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wide px-3 py-2">
+                    ONBOARDING
+                  </h4>
+                </div>
+              ) : (
+                // Show ESPACE DECLARATIF when onboarding completed
+                <Collapsible open={declaratifOpen} onOpenChange={setDeclaratifOpen} className="mt-4">
+                  <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-2 hover:bg-sidebar-accent rounded-lg transition-colors">
+                    <h4 className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wide">ESPACE DECLARATIF</h4>
+                    <ChevronDown className={cn("h-4 w-4 text-sidebar-foreground/60 transition-transform", declaratifOpen && "rotate-180")} />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="space-y-1 mt-2">
+                      {[...clientTabs].sort((a, b) => {
+                        const getOrder = (label: string) => {
+                          const lower = label.toLowerCase()
+                          if (lower.includes("apercu") || lower.includes("général") || lower.includes("general")) return 0
+                          if (lower.includes("fiche")) return 1
+                          if (lower.includes("foyer")) return 2
+                          if (lower.includes("declaration") || lower.includes("déclaration")) return 3
+                          if (lower.includes("document")) return 4
+                          if (lower.includes("partage")) return 5
+                          return 999
+                        }
+                        return getOrder(a.label) - getOrder(b.label)
+                      }).map((tab) => {
+                        const Icon = tab.icon
+                        return (
+                          <button
                             key={tab.id}
+                            onClick={() => onClientTabChange?.(tab.id)}
                             className={cn(
-                              "group flex items-center gap-2 rounded-lg px-3 py-2 text-sm cursor-pointer transition-colors",
+                              "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
                               activeClientTab === tab.id
                                 ? "bg-primary/10 text-primary"
                                 : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                             )}
-                            onClick={() => onClientTabChange?.(tab.id)}
                           >
-                            <span className="truncate flex-1">{tab.categoryName}</span>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                onCloseRevenueTab?.(tab.id)
-                              }}
-                              className="rounded-sm opacity-0 group-hover:opacity-100 hover:bg-sidebar-accent/50 p-1 transition-all"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
+                            <Icon className="h-4 w-4 flex-shrink-0" />
+                            <span className="truncate">{tab.label}</span>
+                          </button>
+                        )
+                      })}
                     </div>
-                  )}
 
-                  {/* Year tabs */}
-                  {yearTabs.length > 0 && (
-                    <div className="mt-4">
-                      <div className="px-3 py-2 text-xs font-semibold text-sidebar-foreground/60 uppercase">
-                        Annees
-                      </div>
-                      <div className="space-y-1">
-                        {yearTabs.map((tab) => (
-                          <div
-                            key={tab.id}
-                            className={cn(
-                              "group flex items-center gap-2 rounded-lg px-3 py-2 text-sm cursor-pointer transition-colors",
-                              activeClientTab === tab.id
-                                ? "bg-primary/10 text-primary"
-                                : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                            )}
-                            onClick={() => onClientTabChange?.(tab.id)}
-                          >
-                            <span className="truncate flex-1">Annee {tab.year}</span>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                onCloseYearTab?.(tab.id)
-                              }}
-                              className="rounded-sm opacity-0 group-hover:opacity-100 hover:bg-sidebar-accent/50 p-1 transition-all"
+                    {/* Revenue tabs */}
+                    {revenueTabs.length > 0 && (
+                      <div className="mt-4">
+                        <div className="px-3 py-2 text-xs font-semibold text-sidebar-foreground/60 uppercase">
+                          Revenus
+                        </div>
+                        <div className="space-y-1">
+                          {revenueTabs.map((tab) => (
+                            <div
+                              key={tab.id}
+                              className={cn(
+                                "group flex items-center gap-2 rounded-lg px-3 py-2 text-sm cursor-pointer transition-colors",
+                                activeClientTab === tab.id
+                                  ? "bg-primary/10 text-primary"
+                                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                              )}
+                              onClick={() => onClientTabChange?.(tab.id)}
                             >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
-                        ))}
+                              <span className="truncate flex-1">{tab.categoryName}</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onCloseRevenueTab?.(tab.id)
+                                }}
+                                className="rounded-sm opacity-0 group-hover:opacity-100 hover:bg-sidebar-accent/50 p-1 transition-all"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </CollapsibleContent>
-              </Collapsible>
+                    )}
+
+                    {/* Year tabs */}
+                    {yearTabs.length > 0 && (
+                      <div className="mt-4">
+                        <div className="px-3 py-2 text-xs font-semibold text-sidebar-foreground/60 uppercase">
+                          Annees
+                        </div>
+                        <div className="space-y-1">
+                          {yearTabs.map((tab) => (
+                            <div
+                              key={tab.id}
+                              className={cn(
+                                "group flex items-center gap-2 rounded-lg px-3 py-2 text-sm cursor-pointer transition-colors",
+                                activeClientTab === tab.id
+                                  ? "bg-primary/10 text-primary"
+                                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                              )}
+                              onClick={() => onClientTabChange?.(tab.id)}
+                            >
+                              <span className="truncate flex-1">Annee {tab.year}</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onCloseYearTab?.(tab.id)
+                                }}
+                                className="rounded-sm opacity-0 group-hover:opacity-100 hover:bg-sidebar-accent/50 p-1 transition-all"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
+              )
             ) : (
               <div className="space-y-1">
                 {clientTabs.map((tab) => {
