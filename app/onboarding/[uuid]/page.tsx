@@ -984,19 +984,18 @@ export default function ClientOnboardingPage() {
             <FieldLabel required>Situation matrimoniale</FieldLabel>
             <RadioPills
               options={[
-                { value: "celibataire", label: "Célibataire" },
-                { value: "marie", label: "Marié(e)" },
-                { value: "pacse", label: "Pacsé(e)" },
-                { value: "divorce", label: "Divorcé(e)" },
-                { value: "veuf", label: "Veuf/Veuve" },
-                { value: "separe", label: "Séparé(e)" },
+                { value: "single", label: "Célibataire" },
+                { value: "married", label: "Marié(e)" },
+                { value: "pacs", label: "Pacsé(e)" },
+                { value: "divorced", label: "Divorcé(e)" },
+                { value: "widowed", label: "Veuf/Veuve" },
               ]}
               value={formData.maritalStatus}
               onChange={(v) => updateField("maritalStatus", v)}
             />
           </div>
           
-          {formData.maritalStatus === "marie" && (
+          {(formData.maritalStatus === "married" || formData.maritalStatus === "pacs") && (
             <div>
               <FieldLabel>Date de mariage</FieldLabel>
               <Input
@@ -1008,7 +1007,7 @@ export default function ClientOnboardingPage() {
             </div>
           )}
           
-          {formData.maritalStatus === "pacse" && (
+          {formData.maritalStatus === "pacs" && (
             <div>
               <FieldLabel>Date du PACS</FieldLabel>
               <Input
