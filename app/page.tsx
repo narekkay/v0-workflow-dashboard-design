@@ -21,22 +21,36 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <main>
-        <section className="relative py-24 md:py-32 overflow-hidden bg-primary">
-          {/* Grid Pattern Overlay */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+        <section className="relative py-24 md:py-32 overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+          {/* Background avec grille */}
+          <div className="absolute inset-0 z-0">
+            {/* Grille de fond */}
+            <div 
+              className="absolute inset-0 opacity-[0.15] dark:opacity-[0.08]"
+              style={{
+                backgroundImage: `
+                  linear-gradient(to right, rgb(15 23 42 / 0.3) 1px, transparent 1px),
+                  linear-gradient(to bottom, rgb(15 23 42 / 0.3) 1px, transparent 1px)
+                `,
+                backgroundSize: '60px 60px'
+              }}
+            />
+            {/* Vignette subtile */}
+            <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-slate-100/50 dark:to-slate-950/50" />
+          </div>
 
           <div className="max-w-7xl mx-auto px-6 relative z-10">
             <div className="max-w-3xl mx-auto text-center">
-              <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 text-primary-foreground">
+              <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
                 Gestion fiscale simplifiée pour les avocats
               </h1>
-              <p className="text-xl text-primary-foreground/80 mb-10 leading-relaxed">
+              <p className="text-xl text-muted-foreground mb-10 leading-relaxed">
                 Fiscalia centralise la gestion de vos clients, leurs déclarations fiscales et leurs documents. 
                 Une plateforme sécurisée pour optimiser votre pratique.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/login">
-                  <Button size="lg" className="h-12 px-8 text-base bg-background text-foreground hover:bg-background/90">
+                  <Button size="lg" className="h-12 px-8 text-base">
                     Accéder à la plateforme
                   </Button>
                 </Link>
