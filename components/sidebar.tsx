@@ -1,7 +1,9 @@
 "use client"
 
-import { LayoutDashboardIcon,Users, FileText, ChevronLeft, ChevronRight, ChevronDown, Home, User, FolderOpen, Share2, Trash2, X, LayoutDashboard, ExternalLink } from "lucide-react"
+import { LayoutDashboardIcon,Users, FileText, ChevronLeft, ChevronRight, ChevronDown, Home, User, FolderOpen, Share2, Trash2, X, LayoutDashboard, ExternalLink, LogOut } from "lucide-react"
 import Link from "next/link"
+import { useEffect, useState } from "react"
+import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -62,6 +64,16 @@ export function Sidebar({
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [declaratifOpen, setDeclaratifOpen] = useState(true)
   const [contentieuxOpen, setContentieuxOpen] = useState(true)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function loadUser() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      setUserEmail(user?.email ?? null)
+    }
+    loadUser()
+  }, [])
 
   return (
     <div
@@ -282,6 +294,34 @@ export function Sidebar({
           </div>
         )}
       </nav>
+
+      {/* User section */}
+      <div className="mt-auto border-t p-4">
+        {!isCollapsed ? (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-sm">
+                {userEmail?.charAt(0).toUpperCase() || "U"}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-sidebar-foreground truncate">{userEmail || "Utilisateur"}</p>
+                <p className="text-xs text-muted-foreground">Avocat</p>
+              </div>
+            </div>
+            <Link href="/logout">
+              <button className="p-1.5 rounded-md hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-foreground">
+                <LogOut className="h-4 w-4" />
+              </button>
+            </Link>
+          </div>
+        ) : (
+          <Link href="/logout" className="flex justify-center">
+            <button className="p-1.5 rounded-md hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-foreground">
+              <LogOut className="h-4 w-4" />
+            </button>
+          </Link>
+        )}
+      </div>
     </div>
   )
 }
