@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
-import { FileText, Upload, Download, History, Lock, File, FileSpreadsheet, FileImage, FileArchive } from "lucide-react"
+import { FileText, Upload, Download, History, Lock, File, FileSpreadsheet, FileImage, FileArchive, ArrowLeft } from "lucide-react"
+import Link from "next/link"
 
 interface Client {
   id: string
@@ -240,14 +241,22 @@ export default function MemberViewPage() {
       {/* Header */}
       <header className="h-20 border-b bg-white/90 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-[1200px] mx-auto px-6 h-full flex items-center justify-between">
-          <div className="flex flex-col justify-center">
-            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-                <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
-              </svg>
-              Fiscalia
+          <div className="flex items-center gap-4">
+            <Link href="/">
+              <Button variant="outline" size="lg" className="gap-2 h-11 px-5">
+                <ArrowLeft className="h-5 w-5" />
+                Retour
+              </Button>
+            </Link>
+            <div className="flex flex-col justify-center">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                  <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
+                </svg>
+                Fiscalia
+              </div>
+              <h1 className="text-2xl font-bold tracking-tight">{clientName}</h1>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">{clientName}</h1>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right text-sm">
