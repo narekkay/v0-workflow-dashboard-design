@@ -21,6 +21,13 @@ export function OnboardingProgress({
   formPending,
   formCompleted,
 }: OnboardingProgressProps) {
+  console.log("[v0] OnboardingProgress props:", {
+    conventionSent,
+    conventionSigned,
+    formPending,
+    formCompleted,
+  })
+
   const steps: Step[] = [
     { label: "Convention envoyée", completed: conventionSent, number: 1 },
     { label: "Convention signée", completed: conventionSigned, number: 2 },
@@ -41,7 +48,7 @@ export function OnboardingProgress({
                 className={cn(
                   "w-16 h-16 rounded-full flex items-center justify-center text-xl font-semibold transition-all z-10",
                   step.completed
-                    ? "bg-foreground text-background"
+                    ? "bg-green-600 text-white"
                     : "bg-background border-2 border-border text-muted-foreground"
                 )}
               >
@@ -50,7 +57,7 @@ export function OnboardingProgress({
               <p
                 className={cn(
                   "text-sm text-center font-medium max-w-[120px]",
-                  step.completed ? "text-foreground" : "text-muted-foreground"
+                  step.completed ? "text-green-700" : "text-muted-foreground"
                 )}
               >
                 {step.label}
