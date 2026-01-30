@@ -98,7 +98,7 @@ export function Sidebar({
         </div>
 
         {/* Client tabs section */}
-        {clientTabs && clientTabs.length > 0 && (
+        {clientTabs && clientTabs.length > 0 && onboardingCompleted && (
           <div className="mt-6 pt-4 border-t border-sidebar-border">
             {/* Client name */}
             {!isCollapsed && clientName && (
