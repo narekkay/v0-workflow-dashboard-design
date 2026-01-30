@@ -28,6 +28,7 @@ export interface Notification {
 interface NotificationsDropdownProps {
   notifications?: Notification[]
   onNotificationClick?: (notif: Notification) => void
+  onClientClick?: (clientId: string) => void
 }
 
 const defaultNotifications: Notification[] = [
@@ -57,7 +58,7 @@ const defaultNotifications: Notification[] = [
   },
 ]
 
-export function NotificationsDropdown({ notifications, onNotificationClick }: NotificationsDropdownProps) {
+export function NotificationsDropdown({ notifications, onNotificationClick, onClientClick }: NotificationsDropdownProps) {
   const [notifs, setNotifs] = useState<Notification[]>(notifications || defaultNotifications)
   const [loading, setLoading] = useState(true)
   
@@ -113,17 +114,38 @@ export function NotificationsDropdown({ notifications, onNotificationClick }: No
 
   const formatTimestamp = (date: Date) => {
     const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
+    const diff = Math.floor((now.getTime() - date.getTime()) / 1000 / 60)
     
-    if (diffMins < 1) return "À l'instant"
-    if (diffMins < 60) return `Il y a ${diffMins} min`
+    if (diff < 1) return "À l'instant"
+    if (diff < 60) return `il y a ${diff}min`
+    if (diff < 1440) return `il y a ${Math.floor(diff / 60)}h`
+    return `il y a ${Math.floor(diff / 1440)}j`
+  }
+  
+  const renderMessageWithClientLink = (message: string, clientId?: string) => {
+    // Pattern to detect client names (capitalized words)
+    const namePattern = /([A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎÇ][a-zéèêëàâäôöùûüïîç]+(?:\s+[A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎÇ][a-zéèêëàâäôöùûüïîç]+)*)/g
     
-    const diffHours = Math.floor(diffMins / 60)
-    if (diffHours < 24) return `Il y a ${diffHours}h`
+    const parts = message.split(namePattern)
     
-    const diffDays = Math.floor(diffHours / 24)
-    return `Il y a ${diffDays}j`
+    return parts.map((part, index) => {
+      // Check if this part matches a name pattern and we have a clientId
+      if (index % 2 === 1 && clientId && onClientClick) {
+        return (
+          <span
+            key={index}
+            onClick={(e) => {
+              e.stopPropagation()
+              onClientClick(clientId)
+            }}
+            className="text-blue-600 underline cursor-pointer hover:text-blue-800"
+          >
+            {part}
+          </span>
+        )
+      }
+      return <span key={index}>{part}</span>
+    })
   }
 
   const handleNotificationClick = async (notif: Notification) => {
@@ -188,7 +210,7 @@ export function NotificationsDropdown({ notifications, onNotificationClick }: No
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground line-clamp-2">
-                    {notif.message}
+                    {renderMessageWithClientLink(notif.message, notif.related_client_id)}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {formatTimestamp(notif.timestamp)}

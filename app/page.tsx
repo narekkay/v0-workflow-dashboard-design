@@ -332,6 +332,12 @@ export default function HomePage() {
                     }
                   }
                 }}
+                onClientClick={(clientId) => {
+                  const client = clients.find(c => c.id === clientId)
+                  if (client) {
+                    handleClientSelect(client)
+                  }
+                }}
               />
               
               <DropdownMenu>
