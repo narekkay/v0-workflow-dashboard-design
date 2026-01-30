@@ -31,13 +31,13 @@ export default function HomePage() {
                 Gestion fiscale simplifiée pour les avocats
               </h1>
               <p className="text-xl text-primary-foreground/80 mb-10 leading-relaxed">
-                Fiscalia centralise la gestion de vos clients, leurs declarations fiscales et leurs documents. 
-                Une plateforme securisee pour optimiser votre pratique.
+                Fiscalia centralise la gestion de vos clients, leurs déclarations fiscales et leurs documents. 
+                Une plateforme sécurisée pour optimiser votre pratique.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/login">
                   <Button size="lg" className="h-12 px-8 text-base bg-background text-foreground hover:bg-background/90">
-                    Acceder a la plateforme
+                    Accéder à la plateforme
                   </Button>
                 </Link>
               </div>
@@ -48,7 +48,7 @@ export default function HomePage() {
         {/* Features Section */}
         <section className="py-20 bg-background">
           <div className="max-w-7xl mx-auto px-6">
-            <h2 className="text-3xl font-bold text-center mb-12">Fonctionnalites principales</h2>
+            <h2 className="text-3xl font-bold text-center mb-12">Fonctionnalités principales</h2>
             <div className="grid md:grid-cols-3 gap-8">
               <div className="bg-background rounded-xl p-6 shadow-sm border">
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
@@ -58,7 +58,7 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Gestion des clients</h3>
                 <p className="text-muted-foreground">
-                  Centralisez les informations de vos clients et suivez leurs dossiers fiscaux en temps reel.
+                  Centralisez les informations de vos clients et suivez leurs dossiers fiscaux en temps réel.
                 </p>
               </div>
               <div className="bg-background rounded-xl p-6 shadow-sm border">
@@ -67,9 +67,9 @@ export default function HomePage() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Documents securises</h3>
+                <h3 className="text-lg font-semibold mb-2">Documents sécurisés</h3>
                 <p className="text-muted-foreground">
-                  Echangez des documents de maniere securisee avec vos clients via un espace dedie.
+                  Échangez des documents de manière sécurisée avec vos clients via un espace dédié.
                 </p>
               </div>
               <div className="bg-background rounded-xl p-6 shadow-sm border">
@@ -78,9 +78,9 @@ export default function HomePage() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Declarations 2042</h3>
+                <h3 className="text-lg font-semibold mb-2">Déclarations 2042</h3>
                 <p className="text-muted-foreground">
-                  Generez automatiquement les formulaires fiscaux a partir des revenus de vos clients.
+                  Générez automatiquement les formulaires fiscaux à partir des revenus de vos clients.
                 </p>
               </div>
             </div>
@@ -90,9 +90,9 @@ export default function HomePage() {
         {/* CTA Section */}
         <section className="py-20">
           <div className="max-w-7xl mx-auto px-6 text-center">
-            <h2 className="text-3xl font-bold mb-4">Pret a commencer ?</h2>
+            <h2 className="text-3xl font-bold mb-4">Prêt à commencer ?</h2>
             <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-              Connectez-vous a votre espace avocat pour acceder a toutes les fonctionnalites de la plateforme.
+              Connectez-vous à votre espace avocat pour accéder à toutes les fonctionnalités de la plateforme.
             </p>
             <Link href="/login">
               <Button size="lg" className="h-12 px-8">
