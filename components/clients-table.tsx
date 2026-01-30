@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Plus, Search, Users, ArrowUpDown, ArrowUp, ArrowDown, ChevronRight } from "lucide-react"
+import { Plus, Search, Users, ArrowUpDown, ArrowUp, ArrowDown, MoreVertical, Archive, PanelRightOpen } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -9,6 +9,17 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { Client } from "@/lib/types"
 import { createClient } from "@/lib/supabase/client"
@@ -92,6 +103,21 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const [drawerClient, setDrawerClient] = useState<Client | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [clientToArchive, setClientToArchive] = useState<Client | null>(null)
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false)
+
+  const handleArchiveClient = async () => {
+    if (!clientToArchive) return
+
+    const supabase = createClient()
+    const { error } = await supabase.from("clients").update({ archived: !showArchived }).eq("id", clientToArchive.id)
+
+    if (!error) {
+      setShowArchiveDialog(false)
+      setClientToArchive(null)
+      onClientAdded()
+    }
+  }
 
   useEffect(() => {
     async function loadDisplayClients() {
@@ -363,20 +389,49 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
 
                       {/* Actions */}
                       <TableCell className="py-5 px-6">
-                        <div className="flex items-center justify-end">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 gap-1"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setDrawerClient(client)
-                              setDrawerOpen(true)
-                            }}
-                          >
-                            Détails
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setDrawerClient(client)
+                                  setDrawerOpen(true)
+                                }}
+                              >
+                                <PanelRightOpen className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Détails du dossier</TooltipContent>
+                          </Tooltip>
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setClientToArchive(client)
+                                  setShowArchiveDialog(true)
+                                }}
+                              >
+                                <Archive className="mr-2 h-4 w-4" />
+                                {showArchived ? "Désarchiver" : "Archiver"}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -391,6 +446,26 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
         {isDialogOpen && (
           <AddClientDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} onClientAdded={onClientAdded} />
         )}
+
+        {/* Archive Dialog */}
+        <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{showArchived ? "Désarchiver ce client ?" : "Archiver ce client ?"}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {showArchived
+                  ? `Le client ${clientToArchive?.first_name} ${clientToArchive?.last_name} sera restauré dans la liste des clients actifs.`
+                  : `Le client ${clientToArchive?.first_name} ${clientToArchive?.last_name} sera déplacé vers les archives.`}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction onClick={handleArchiveClient}>
+                {showArchived ? "Désarchiver" : "Archiver"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Client Details Drawer */}
         <ClientDrawer
