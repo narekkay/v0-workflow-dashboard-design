@@ -24,11 +24,11 @@ export default function HomePage() {
         <section className="relative py-32 md:py-40 overflow-hidden bg-[#1a1a1a]">
           {/* Grille visible */}
           <div 
-            className="absolute inset-0 opacity-[0.08]"
+            className="absolute inset-0 opacity-[0.12]"
             style={{
               backgroundImage: `
-                linear-gradient(to right, rgba(255, 255, 255, 0.15) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(255, 255, 255, 0.15) 1px, transparent 1px)
+                linear-gradient(to right, rgba(255, 255, 255, 0.2) 2px, transparent 2px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.2) 2px, transparent 2px)
               `,
               backgroundSize: '60px 60px'
             }}
