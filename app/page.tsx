@@ -18,7 +18,7 @@ import type { Client, TaxProfile, Document } from "@/lib/types"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { NotificationsDropdown } from "@/components/notifications-dropdown"
-import { OnboardingProgress } from "@/components/onboarding-progress"
+import { OnboardingView } from "@/components/onboarding-view"
 
 type View = "clients" | "documents" | "settings" | "archives" | "dashboard"
 
@@ -481,46 +481,7 @@ export default function HomePage() {
                 onCancel={() => handleCloseTab(activeTab.id)}
               />
             ) : activeTab?.type === "onboarding" && activeTab.clientId ? (
-              (() => {
-                const client = clients.find(c => c.id === activeTab.clientId)
-                if (!client) return <div className="p-6">Client introuvable</div>
-                
-                console.log("[v0] Client data for onboarding:", {
-                  id: client.id,
-                  name: `${client.first_name} ${client.last_name}`,
-                  convention_sent: client.convention_sent,
-                  convention_signed: client.convention_signed,
-                  onboarding_form_pending: client.onboarding_form_pending,
-                  onboarding_form_completed: client.onboarding_form_completed,
-                })
-                
-                return (
-                  <div className="p-6 space-y-8">
-                    <div>
-                      <h2 className="text-2xl font-semibold mb-2">
-                        Onboarding {client.first_name} {client.last_name}
-                      </h2>
-                      <p className="text-muted-foreground">
-                        Suivez la progression de l'onboarding du client
-                      </p>
-                    </div>
-                    
-                    <OnboardingProgress
-                      conventionSent={client.convention_sent ?? false}
-                      conventionSigned={client.convention_signed ?? false}
-                      formPending={client.onboarding_form_pending ?? false}
-                      formCompleted={client.onboarding_form_completed ?? false}
-                    />
-                    
-                    <div className="border rounded-lg p-6">
-                      <h3 className="font-semibold mb-2">Actions disponibles</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Contenu de gestion d'onboarding à venir
-                      </p>
-                    </div>
-                  </div>
-                )
-              })()
+              <OnboardingView clientId={activeTab.clientId} />
             ) : null}
           </main>
         </div>
