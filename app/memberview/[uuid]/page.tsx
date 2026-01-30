@@ -101,8 +101,8 @@ function StatusBadge({ status }: { status: string }) {
 function FileItem({ filename, label }: { filename?: string; label: string }) {
   const kind = filename ? fileKindFromName(filename) : "FILE"
   return (
-    <div className="flex items-center gap-3">
-      <div className="w-9 h-9 rounded-md bg-muted flex items-center justify-center border">
+    <div className="flex items-center gap-4">
+      <div className="w-10 h-10 rounded-lg bg-muted/60 flex items-center justify-center text-muted-foreground">
         <FileIcon kind={kind} />
       </div>
       <div className="flex flex-col min-w-0">
@@ -401,39 +401,44 @@ export default function MemberViewPage() {
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-1/2">Document</TableHead>
-                        <TableHead className="w-1/4">Statut</TableHead>
-                        <TableHead className="w-1/4 text-right">Action</TableHead>
+                      <TableRow className="border-b">
+                        <TableHead className="w-1/2 text-xs font-semibold uppercase tracking-wider text-muted-foreground py-4 px-6">Document</TableHead>
+                        <TableHead className="w-1/4 text-xs font-semibold uppercase tracking-wider text-muted-foreground py-4 px-6">Statut</TableHead>
+                        <TableHead className="w-1/4 text-xs font-semibold uppercase tracking-wider text-muted-foreground py-4 px-6 text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {documentRequests.map((doc) => {
                         const canUpload = doc.status === "needed" || doc.status === "refused"
                         return (
-                          <TableRow key={doc.id}>
-                            <TableCell>
-                              <FileItem label={doc.name} />
-                              <div className="ml-12 mt-1">
-                                <p className="text-xs text-muted-foreground">{doc.description}</p>
-                                {doc.active_file && (
-                                  <p className="text-xs text-muted-foreground mt-0.5">
-                                    Reçu : {doc.active_file.filename}
-                                  </p>
-                                )}
-                                {doc.refusal_reason && (
-                                  <p className="text-xs text-red-600 mt-0.5">{doc.refusal_reason}</p>
-                                )}
+                          <TableRow key={doc.id} className="border-b last:border-0">
+                            <TableCell className="py-5 px-6">
+                              <div className="flex items-start gap-4">
+                                <div className="w-10 h-10 rounded-lg bg-muted/60 flex items-center justify-center text-muted-foreground shrink-0 mt-0.5">
+                                  <FileIcon kind={doc.active_file ? fileKindFromName(doc.active_file.filename) : "FILE"} />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-medium text-sm">{doc.name}</span>
+                                  <span className="text-xs text-muted-foreground mt-0.5">{doc.description}</span>
+                                  {doc.active_file && (
+                                    <span className="text-xs text-muted-foreground mt-0.5">
+                                      Reçu : {doc.active_file.filename}
+                                    </span>
+                                  )}
+                                  {doc.refusal_reason && (
+                                    <span className="text-xs text-red-600 mt-0.5">{doc.refusal_reason}</span>
+                                  )}
+                                </div>
                               </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="py-5 px-6">
                               <StatusBadge status={doc.status} />
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="py-5 px-6 text-right">
                               <Button
                                 variant={canUpload ? "default" : "outline"}
                                 size="sm"
-                                onClick={() => handleFileUpload(doc.id)}
+                              onClick={() => handleFileUpload(doc.id)}
                               >
                                 {canUpload ? "Déposer" : "Remplacer"}
                               </Button>
@@ -444,14 +449,14 @@ export default function MemberViewPage() {
                     </TableBody>
                   </Table>
                 </div>
-                <CardContent className="bg-muted/50 border-t">
-                  <p className="text-sm text-muted-foreground mb-3">
+                <div className="px-6 py-5 border-t bg-muted/30">
+                  <p className="text-sm text-muted-foreground mb-4">
                     Formats acceptés : PDF, JPEG, PNG, ZIP. Max 25Mo.
                   </p>
-                  <Button className="w-full" onClick={handleSubmitAll}>
+                  <Button className="w-full h-11" onClick={handleSubmitAll}>
                     Soumettre les documents
                   </Button>
-                </CardContent>
+                </div>
               </Card>
             )}
 
@@ -464,10 +469,10 @@ export default function MemberViewPage() {
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Document</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
+                      <TableRow className="border-b">
+                        <TableHead className="w-1/2 text-xs font-semibold uppercase tracking-wider text-muted-foreground py-4 px-6">Document</TableHead>
+                        <TableHead className="w-1/4 text-xs font-semibold uppercase tracking-wider text-muted-foreground py-4 px-6">Date</TableHead>
+                        <TableHead className="w-1/4 text-xs font-semibold uppercase tracking-wider text-muted-foreground py-4 px-6 text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -479,14 +484,22 @@ export default function MemberViewPage() {
                         </TableRow>
                       ) : (
                         sharedFiles.map((file) => (
-                          <TableRow key={file.id}>
-                            <TableCell>
-                              <FileItem filename={file.filename} label={file.name} />
+                          <TableRow key={file.id} className="border-b last:border-0">
+                            <TableCell className="py-5 px-6">
+                              <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-lg bg-muted/60 flex items-center justify-center text-muted-foreground">
+                                  <FileIcon kind={fileKindFromName(file.filename)} />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-medium text-sm">{file.filename}</span>
+                                  <span className="text-xs text-muted-foreground">{fileKindFromName(file.filename)}</span>
+                                </div>
+                              </div>
                             </TableCell>
-                            <TableCell className="whitespace-nowrap">
+                            <TableCell className="py-5 px-6 whitespace-nowrap text-sm">
                               {formatDate(file.date)}
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="py-5 px-6 text-right">
                               <Button
                                 variant="outline"
                                 size="sm"
