@@ -56,8 +56,8 @@ function computeProgress(client: Client): number {
 }
 
 function computeStatus(client: Client): "complete" | "incomplete" | "action" | "onboarding" {
-  // Check if onboarding is not completed
-  if (client.onboarding_form_completed === false) {
+  // Check if onboarding is not completed (treat null/undefined as not completed)
+  if (client.onboarding_form_completed !== true) {
     return "onboarding"
   }
   
