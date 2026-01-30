@@ -485,6 +485,18 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
             console.error("[v0] Convention document save error:", conventionDocError)
           } else {
             console.log("[v0] Convention document saved successfully")
+            
+            // Update convention_sent status
+            const { error: updateError } = await supabase
+              .from("clients")
+              .update({ convention_sent: true })
+              .eq("id", client.id)
+            
+            if (updateError) {
+              console.error("[v0] Failed to update convention_sent:", updateError)
+            } else {
+              console.log("[v0] convention_sent set to true for client")
+            }
           }
         } catch (error) {
           console.error("[v0] Convention PDF generation/upload failed:", error)
