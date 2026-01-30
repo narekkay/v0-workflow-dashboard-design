@@ -47,66 +47,85 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10 bg-muted/30">
-      <div className="w-full max-w-sm">
-        <div className="flex flex-col gap-6">
-          <Card className="border-0 shadow-lg">
-            <CardHeader className="text-center pb-2">
-              {/* Logo */}
-              <div className="flex justify-center mb-4">
-                <div className="flex items-center gap-2 text-primary">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
-                    <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
-                  </svg>
-                  <span className="text-2xl font-bold tracking-tight">Fiscalia</span>
-                </div>
-              </div>
-              <CardTitle className="text-xl">Connexion</CardTitle>
-              <CardDescription>
-                Entrez vos identifiants pour accéder à votre espace
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleLogin}>
-                <div className="flex flex-col gap-5">
-                  <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="votre@email.com"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="h-11"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="password">Mot de passe</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="h-11"
-                    />
-                  </div>
-                  {error && (
-                    <p className="text-sm text-red-500 text-center bg-red-50 py-2 px-3 rounded-lg">
-                      {error}
-                    </p>
-                  )}
-                  <Button type="submit" className="w-full h-11" disabled={isLoading}>
-                    {isLoading ? 'Connexion...' : 'Se connecter'}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-          <p className="text-center text-xs text-muted-foreground">
-            Accès réservé aux utilisateurs autorisés
+    <div className="flex min-h-svh w-full">
+      {/* Left side - Branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-primary items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+        <div className="relative z-10 text-center text-primary-foreground px-12">
+          <div className="flex items-center justify-center gap-3 mb-8">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-14 h-14">
+              <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
+            </svg>
+          </div>
+          <h1 className="text-5xl font-bold tracking-tight mb-4">Fiscalia</h1>
+          <p className="text-xl text-primary-foreground/80 max-w-md mx-auto leading-relaxed">
+            Plateforme de gestion fiscale pour avocats et leurs clients
           </p>
+        </div>
+      </div>
+
+      {/* Right side - Login form */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-background">
+        <div className="w-full max-w-md">
+          {/* Mobile logo */}
+          <div className="flex lg:hidden items-center justify-center gap-2 text-primary mb-10">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
+              <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
+            </svg>
+            <span className="text-3xl font-bold tracking-tight">Fiscalia</span>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold tracking-tight mb-2">Espace Avocat</h2>
+            <p className="text-muted-foreground">
+              Connectez-vous pour accéder à votre tableau de bord
+            </p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email">Adresse email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="avocat@cabinet.fr"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-12"
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Mot de passe</Label>
+                <button type="button" className="text-sm text-primary hover:underline">
+                  Mot de passe oublié ?
+                </button>
+              </div>
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-12"
+              />
+            </div>
+            {error && (
+              <div className="text-sm text-red-600 text-center bg-red-50 py-3 px-4 rounded-lg border border-red-100">
+                {error}
+              </div>
+            )}
+            <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={isLoading}>
+              {isLoading ? 'Connexion en cours...' : 'Se connecter'}
+            </Button>
+          </form>
+
+          <div className="mt-8 pt-6 border-t text-center">
+            <p className="text-sm text-muted-foreground">
+              Accès réservé aux avocats du cabinet
+            </p>
+          </div>
         </div>
       </div>
     </div>
