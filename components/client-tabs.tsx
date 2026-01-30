@@ -1197,16 +1197,6 @@ export function ClientTabs({
     <div className="p-6">
       {activeTab === "overview" && (
             <div className="space-y-6">
-              {!client.convention_signed && (
-                <Alert className="bg-yellow-50 border-yellow-200">
-                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                  <AlertTitle className="text-yellow-800">Convention non signée</AlertTitle>
-                  <AlertDescription className="text-yellow-700">
-                    Ce client n'a pas encore signé la convention d'honoraires. Les fonctionnalités déclaratives sont désactivées.
-                  </AlertDescription>
-                </Alert>
-              )}
-              
               <div className="grid gap-6 md:grid-cols-2">
                 <Card>
                   <CardHeader>
