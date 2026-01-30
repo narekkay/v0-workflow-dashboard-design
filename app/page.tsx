@@ -70,9 +70,9 @@ export default function HomePage() {
         </section>
 
         {/* Features Section */}
-        <section className="py-20 bg-muted/30">
+        <section className="py-20 bg-zinc-800">
           <div className="max-w-7xl mx-auto px-6">
-            <h2 className="text-3xl font-bold text-center mb-12">Fonctionnalites principales</h2>
+            <h2 className="text-3xl font-bold text-center mb-12 text-background">Fonctionnalites principales</h2>
             <div className="grid md:grid-cols-3 gap-8">
               <div className="bg-background rounded-xl p-6 shadow-sm border">
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
