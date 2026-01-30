@@ -94,14 +94,14 @@ export default function HomePage() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20">
+        <section className="py-20 bg-black">
           <div className="max-w-7xl mx-auto px-6 text-center">
-            <h2 className="text-3xl font-bold mb-4">Prêt à commencer ?</h2>
-            <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
+            <h2 className="text-3xl font-bold mb-4 text-white">Prêt à commencer ?</h2>
+            <p className="text-gray-300 mb-8 max-w-xl mx-auto">
               Connectez-vous à votre espace avocat pour accéder à toutes les fonctionnalités de la plateforme.
             </p>
             <Link href="/login">
-              <Button size="lg" className="h-12 px-8">
+              <Button size="lg" className="h-12 px-8 bg-white hover:bg-gray-100 text-black rounded-md">
                 Se connecter
               </Button>
             </Link>
