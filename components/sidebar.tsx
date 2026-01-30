@@ -1,6 +1,7 @@
 "use client"
 
-import { LayoutDashboardIcon,Users, FileText, ChevronLeft, ChevronRight, ChevronDown, Home, User, FolderOpen, Share2, Trash2, X, LayoutDashboard } from "lucide-react"
+import { LayoutDashboardIcon,Users, FileText, ChevronLeft, ChevronRight, ChevronDown, Home, User, FolderOpen, Share2, Trash2, X, LayoutDashboard, ExternalLink } from "lucide-react"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -41,6 +42,7 @@ interface SidebarProps {
   clientName?: string
   conventionSigned?: boolean
   onboardingCompleted?: boolean
+  clientId?: string
 }
 
 export function Sidebar({ 
@@ -55,6 +57,7 @@ export function Sidebar({
   clientName,
   conventionSigned = true,
   onboardingCompleted = true,
+  clientId,
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [declaratifOpen, setDeclaratifOpen] = useState(true)
@@ -105,6 +108,18 @@ export function Sidebar({
               <div className="px-3 py-2 text-sm font-medium text-sidebar-foreground truncate">
                 {clientName}
               </div>
+            )}
+
+            {/* View client portal button */}
+            {!isCollapsed && clientId && (
+              <Link
+                href={`/memberview/${clientId}`}
+                target="_blank"
+                className="flex items-center gap-2 mx-3 mb-4 px-3 py-2 text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 rounded-lg transition-colors"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Voir la vue client
+              </Link>
             )}
 
             {/* ESPACE DECLARATIF or ONBOARDING */}

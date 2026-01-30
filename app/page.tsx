@@ -287,6 +287,7 @@ export default function HomePage() {
             ? clientsData.get(activeTab.clientId)?.client.onboarding_form_completed ?? false
             : true
         }
+        clientId={(isClientView || isOnboardingView) ? activeTab.clientId : undefined}
       />
       {amountEntryView ? (
         <RevenueAmountEntry
