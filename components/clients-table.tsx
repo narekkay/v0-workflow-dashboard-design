@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Plus, MoreVertical, Archive, Trash2, Search, FolderOpen, Mail, FileText, Users, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle } from "lucide-react"
+import { Plus, Search, Users, ArrowUpDown, ArrowUp, ArrowDown, ChevronRight } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -9,21 +9,11 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { Client } from "@/lib/types"
 import { createClient } from "@/lib/supabase/client"
-import { AddClientDialog } from "@/components/add-client-dialog" // Declare the AddClientDialog variable
+import { AddClientDialog } from "@/components/add-client-dialog"
+import { ClientDrawer } from "@/components/client-drawer"
 
 interface ClientsTableProps {
   clients: Client[]
@@ -93,17 +83,15 @@ function getInitials(firstName: string, lastName: string): string {
 
 export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClientClick, showArchived = false }: ClientsTableProps) {
   const [displayClients, setDisplayClients] = useState<Client[]>([])
-  const [clientToArchive, setClientToArchive] = useState<Client | null>(null)
-  const [showArchiveDialog, setShowArchiveDialog] = useState(false)
-  const [clientToDelete, setClientToDelete] = useState<Client | null>(null)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [viewMode, setViewMode] = useState<ViewMode>("list")
   const [isLoading, setIsLoading] = useState(true)
-  const [isDialogOpen, setIsDialogOpen] = useState(false) // Declare the setIsDialogOpen variable
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [sortColumn, setSortColumn] = useState<"name" | "status" | null>(null)
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+  const [drawerClient, setDrawerClient] = useState<Client | null>(null)
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
     async function loadDisplayClients() {
@@ -203,31 +191,7 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
     return result
   }, [displayClients, searchQuery, statusFilter, viewMode, sortColumn, sortDirection])
 
-  const handleArchiveClient = async () => {
-    if (!clientToArchive) return
 
-    const supabase = createClient()
-    const { error } = await supabase.from("clients").update({ archived: !showArchived }).eq("id", clientToArchive.id)
-
-    if (!error) {
-      setShowArchiveDialog(false)
-      setClientToArchive(null)
-      onClientAdded()
-    }
-  }
-
-  const handleDeleteClient = async () => {
-    if (!clientToDelete) return
-
-    const supabase = createClient()
-    const { error } = await supabase.from("clients").delete().eq("id", clientToDelete.id)
-
-    if (!error) {
-      setShowDeleteDialog(false)
-      setClientToDelete(null)
-      onClientAdded()
-    }
-  }
 
   const filterChips: { key: StatusFilter; label: string }[] = [
     { key: "all", label: "Tous" },
@@ -399,77 +363,20 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
 
                       {/* Actions */}
                       <TableCell className="py-5 px-6">
-                        <div className="flex items-center justify-end gap-1">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  onClientSelect(client)
-                                }}
-                              >
-                                <FolderOpen className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Ouvrir dossier</TooltipContent>
-                          </Tooltip>
-
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Mail className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Relancer client</TooltipContent>
-                          </Tooltip>
-
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <FileText className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Ajouter declaration</TooltipContent>
-                          </Tooltip>
-
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setClientToArchive(client)
-                                  setShowArchiveDialog(true)
-                                }}
-                              >
-                                <Archive className="mr-2 h-4 w-4" />
-                                {showArchived ? "Desarchiver" : "Archiver"}
-                              </DropdownMenuItem>
-                              
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                        <div className="flex items-center justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 gap-1"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setDrawerClient(client)
+                              setDrawerOpen(true)
+                            }}
+                          >
+                            Détails
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -480,47 +387,17 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
           </Table>
         </div>
 
-        <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{showArchived ? "Desarchiver ce client ?" : "Archiver ce client ?"}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {showArchived
-                  ? `Le client ${clientToArchive?.first_name} ${clientToArchive?.last_name} sera restaure dans la liste des clients actifs.`
-                  : `Le client ${clientToArchive?.first_name} ${clientToArchive?.last_name} sera deplace vers les archives. Vous pourrez le restaurer depuis le menu Parametres > Archives clients.`}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Annuler</AlertDialogCancel>
-              <AlertDialogAction onClick={handleArchiveClient}>
-                {showArchived ? "Desarchiver" : "Archiver"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Supprimer ce client ?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Cette action est irreversible. Le client {clientToDelete?.first_name} {clientToDelete?.last_name} et
-                toutes ses donnees associees (revenus, documents, profils fiscaux) seront definitivement supprimes.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Annuler</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteClient} className="bg-red-600 hover:bg-red-700">
-                Supprimer definitivement
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
         {/* Add Client Dialog */}
         {isDialogOpen && (
           <AddClientDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} onClientAdded={onClientAdded} />
         )}
+
+        {/* Client Details Drawer */}
+        <ClientDrawer
+          client={drawerClient}
+          open={drawerOpen}
+          onOpenChange={setDrawerOpen}
+        />
       </div>
     </TooltipProvider>
   )
