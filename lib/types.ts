@@ -12,6 +12,7 @@ export interface Client {
   children?: Array<{ first_name: string; last_name: string; date_of_birth: string }>
   archived?: boolean
   is_complex?: boolean
+  convention_signed?: boolean
 }
 
 export interface TaxProfile {
