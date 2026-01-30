@@ -1292,12 +1292,13 @@ export function ClientTabs({
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex flex-col gap-2 items-start">
+                    <div className={`flex flex-col gap-2 items-start ${!client.convention_signed ? "opacity-40 pointer-events-none" : ""}`}>
                       <Button
                         variant="outline"
                         size="sm"
                         className="bg-blue-50 border-blue-200 hover:bg-blue-100 w-24 justify-center"
                         onClick={() => onOpen2042View(client.id, `${client.first_name} ${client.last_name}`)}
+                        disabled={!client.convention_signed}
                       >
                         <span className="font-semibold text-blue-700">2042</span>
                       </Button>
@@ -1315,6 +1316,7 @@ export function ClientTabs({
                               onClick={() => {
                                 loadAnnexeDocuments(annexe)
                               }}
+                              disabled={!client.convention_signed}
                             >
                               <span className="font-semibold">{annexe.annexe_name}</span>
                               {stats && (
