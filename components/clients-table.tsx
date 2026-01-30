@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Plus, Search, Users, ArrowUpDown, ArrowUp, ArrowDown, MoreVertical, Archive, PanelRightOpen } from "lucide-react"
+import { Plus, Search, Users, ArrowUpDown, ArrowUp, ArrowDown, MoreVertical, Archive, PanelRight } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -402,7 +402,7 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
                                   setDrawerOpen(true)
                                 }}
                               >
-                                <PanelRightOpen className="h-4 w-4" />
+                                <PanelRight className="h-4 w-4" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>Détails du dossier</TooltipContent>

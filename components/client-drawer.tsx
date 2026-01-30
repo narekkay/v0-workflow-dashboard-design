@@ -77,7 +77,7 @@ export function ClientDrawer({ client, open, onOpenChange }: ClientDrawerProps) 
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:w-[400px]">
+      <SheetContent className="w-full sm:w-[400px] pl-8">
         <SheetHeader>
           <SheetTitle className="text-xl">
             {client.first_name} {client.last_name}
