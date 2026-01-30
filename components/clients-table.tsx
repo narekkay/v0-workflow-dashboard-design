@@ -370,11 +370,12 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
 
                       {/* Statut */}
                       <TableCell className="py-5 px-6">
+                        <Badge variant="outline" className={`${statusConfig.className} font-medium`}>
+                          {statusConfig.label}
+                        </Badge>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Badge variant="outline" className={`${statusConfig.className} font-medium`}>
-                              {statusConfig.label}
-                            </Badge>
+                            <span className="sr-only">Status info</span>
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>
