@@ -65,16 +65,25 @@ function LoginForm() {
       )}
       
       {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:4rem_4rem]" />
-        <div className="relative z-10 text-center text-primary-foreground px-12">
+      <div className="hidden lg:flex lg:w-1/2 bg-black items-center justify-center relative overflow-hidden">
+        <div 
+          className="absolute inset-0 opacity-[0.12]"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, rgba(255, 255, 255, 0.2) 2px, transparent 2px),
+              linear-gradient(to bottom, rgba(255, 255, 255, 0.2) 2px, transparent 2px)
+            `,
+            backgroundSize: '60px 60px'
+          }}
+        />
+        <div className="relative z-10 text-center text-white px-12">
           <div className="flex items-center justify-center gap-3 mb-8">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-14 h-14">
               <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
             </svg>
           </div>
           <h1 className="text-5xl font-bold tracking-tight mb-4">Fiscalia</h1>
-          <p className="text-xl text-primary-foreground/80 max-w-md mx-auto leading-relaxed">
+          <p className="text-xl text-gray-300 max-w-md mx-auto leading-relaxed">
             Plateforme de gestion fiscale pour avocats et leurs clients
           </p>
         </div>
