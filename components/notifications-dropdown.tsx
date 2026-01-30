@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Bell, CheckCircle, AlertTriangle, XCircle } from "lucide-react"
+import { createBrowserClient } from "@/lib/supabase/client"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,8 +54,43 @@ const defaultNotifications: Notification[] = [
   },
 ]
 
-export function NotificationsDropdown({ notifications = defaultNotifications }: NotificationsDropdownProps) {
-  const [notifs, setNotifs] = useState<Notification[]>(notifications)
+export function NotificationsDropdown({ notifications }: NotificationsDropdownProps) {
+  const [notifs, setNotifs] = useState<Notification[]>(notifications || defaultNotifications)
+  const [loading, setLoading] = useState(true)
+  
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      const supabase = createBrowserClient()
+      
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10)
+      
+      if (error) {
+        console.error("[v0] Error fetching notifications:", error)
+        setLoading(false)
+        return
+      }
+      
+      if (data) {
+        const mappedNotifications: Notification[] = data.map(notif => ({
+          id: notif.id,
+          type: notif.alert_type as NotificationType,
+          title: notif.title,
+          message: notif.content,
+          timestamp: new Date(notif.created_at),
+          read: notif.read_status,
+        }))
+        setNotifs(mappedNotifications)
+      }
+      
+      setLoading(false)
+    }
+    
+    fetchNotifications()
+  }, [])
   
   const unreadCount = notifs.filter(n => !n.read).length
   const latestThree = notifs.slice(0, 3)
@@ -85,10 +121,17 @@ export function NotificationsDropdown({ notifications = defaultNotifications }: 
     return `Il y a ${diffDays}j`
   }
 
-  const handleNotificationClick = (id: string) => {
+  const handleNotificationClick = async (id: string) => {
     setNotifs(prev => prev.map(n => 
       n.id === id ? { ...n, read: true } : n
     ))
+    
+    // Update read status in database
+    const supabase = createBrowserClient()
+    await supabase
+      .from("notifications")
+      .update({ read_status: true })
+      .eq("id", id)
   }
 
   return (
