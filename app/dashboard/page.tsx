@@ -74,14 +74,36 @@ export default function HomePage() {
   }, [])
 
   async function loadClients() {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from("clients")
-      .select("*")
-      .eq("archived", false)
-      .order("created_at", { ascending: false })
-    setClients(data || [])
-    setLoading(false)
+    console.log("[v0] loadClients: Starting to fetch clients...")
+    try {
+      const supabase = createClient()
+      console.log("[v0] loadClients: Supabase client created")
+      
+      const { data, error } = await supabase
+        .from("clients")
+        .select("*")
+        .eq("archived", false)
+        .order("created_at", { ascending: false })
+      
+      console.log("[v0] loadClients: Query completed", { 
+        dataCount: data?.length, 
+        error: error?.message 
+      })
+      
+      if (error) {
+        console.error("[v0] loadClients: Error fetching clients:", error)
+        setLoading(false)
+        return
+      }
+      
+      setClients(data || [])
+      console.log("[v0] loadClients: Clients set, count:", data?.length || 0)
+      setLoading(false)
+      console.log("[v0] loadClients: Loading completed")
+    } catch (err) {
+      console.error("[v0] loadClients: Caught exception:", err)
+      setLoading(false)
+    }
   }
 
   async function loadClientData(clientId: string) {
