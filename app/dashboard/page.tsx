@@ -422,6 +422,8 @@ export default function HomePage() {
                   setActiveTabId(newTab.id)
                 }}
               />
+            ) : activeTab?.type === "view" && activeTab.view === "integrations" ? (
+              <IntegrationsView />
             ) : activeTab?.type === "view" && activeTab.view === "documents" ? (
               <div className="p-6">
                 <h2 className="text-2xl font-semibold text-foreground">Documents</h2>
