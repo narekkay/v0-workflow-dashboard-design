@@ -277,6 +277,7 @@ export default function HomePage() {
         onCloseRevenueTab={isClientView ? (id) => setClientRevenueTabs(prev => prev.filter(t => t.id !== id)) : undefined}
         onCloseYearTab={isClientView ? (id) => setClientYearTabs(prev => prev.filter(t => t.id !== id)) : undefined}
         clientName={(isClientView || isOnboardingView) ? currentClientName : undefined}
+        clientId={(isClientView || isOnboardingView) ? activeTab.clientId : undefined}
         conventionSigned={
           (isClientView || isOnboardingView) && activeTab.clientId 
             ? clientsData.get(activeTab.clientId)?.client.convention_signed ?? false
