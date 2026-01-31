@@ -175,7 +175,10 @@ const initialMessage: Message = {
                           selectedFilter === filter.id && "bg-muted"
                         )}
                       >
-                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        <div className={cn(
+                          "w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0 border-2",
+                          selectedFilter === filter.id ? "border-primary" : "border-transparent"
+                        )}>
                           <img
                             src={filter.logo}
                             alt={filter.name}
