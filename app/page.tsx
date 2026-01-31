@@ -14,7 +14,7 @@ export default function LandingPage() {
             </svg>
             <span className="text-lg font-semibold text-black">Fiscalia</span>
           </div>
-          <Link href="/dashboard">
+          <Link href="/login">
             <Button className="bg-black hover:bg-zinc-800 text-white h-10 px-6 font-medium">
               Se connecter
             </Button>
@@ -31,7 +31,7 @@ export default function LandingPage() {
           <p className="text-xl text-zinc-300 mb-8 max-w-3xl mx-auto leading-relaxed">
             Fiscalia centralise la gestion de vos clients, leurs déclarations fiscales et leurs documents. Une plateforme sécurisée pour optimiser votre pratique.
           </p>
-          <Link href="/dashboard">
+          <Link href="/login">
             <Button className="bg-white hover:bg-zinc-100 text-black h-12 px-8 text-base font-semibold">
               Accéder à la plateforme
             </Button>
@@ -97,7 +97,7 @@ export default function LandingPage() {
           <p className="text-xl text-zinc-300 mb-8">
             Connectez-vous à votre espace avocat pour accéder à toutes les fonctionnalités de la plateforme.
           </p>
-          <Link href="/dashboard">
+          <Link href="/login">
             <Button className="bg-white hover:bg-zinc-100 text-black h-12 px-8 text-base font-semibold">
               Se connecter
             </Button>
