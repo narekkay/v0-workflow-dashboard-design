@@ -278,6 +278,24 @@ export function Sidebar({
                 </CollapsibleContent>
               </Collapsible>
             )}
+
+            {/* Onboarding link - Always show at bottom when client is selected */}
+            {!isCollapsed && onboardingCompleted && clientId && (
+              <div className="mt-4 pt-4 border-t border-sidebar-border">
+                <button
+                  onClick={() => onClientTabChange?.("onboarding")}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                    activeClientTab === "onboarding"
+                      ? "bg-primary/10 text-primary"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  )}
+                >
+                  <FileText className="h-4 w-4 flex-shrink-0" />
+                  <span>Onboarding</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
       </nav>
