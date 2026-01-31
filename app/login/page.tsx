@@ -36,9 +36,6 @@ function LoginForm() {
       })
       if (error) throw error
       
-      // Small delay for smooth transition and visual feedback
-      await new Promise(resolve => setTimeout(resolve, 800))
-      
       // Redirect to next param if present, otherwise to dashboard
       router.push(next || '/dashboard')
       router.refresh()
