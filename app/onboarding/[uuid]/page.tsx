@@ -36,6 +36,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import {
+  saveIdentity,
+  saveResidenceFiscale,
+  saveSituationFamiliale,
+  saveRevenus,
+  saveChargesDeductions,
+  saveFiles,
+  finalizeSubmission,
+} from "@/app/actions/save-onboarding"
 
 // ============================================
 // TYPES
@@ -431,6 +440,19 @@ export default function OnboardingPage() {
   const [newChild, setNewChild] = useState({ name: "", birthDate: "", custody: "principale" as const })
   const [referenceNumber, setReferenceNumber] = useState("")
   const [loading, setLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submissionStep, setSubmissionStep] = useState(0)
+  const [submissionError, setSubmissionError] = useState<string | null>(null)
+  
+  const submissionSteps = [
+    { id: 1, label: "Sauvegarde de l'identité", icon: "user" },
+    { id: 2, label: "Résidence fiscale", icon: "home" },
+    { id: 3, label: "Situation familiale", icon: "users" },
+    { id: 4, label: "Revenus & patrimoine", icon: "wallet" },
+    { id: 5, label: "Charges & déductions", icon: "receipt" },
+    { id: 6, label: "Upload des documents", icon: "folder" },
+    { id: 7, label: "Finalisation", icon: "check" },
+  ]
   
   const saveStatus = useAutosave(formData, uploadedFiles)
   const progress = useProgressCalculation(formData, uploadedFiles)
@@ -557,10 +579,77 @@ export default function OnboardingPage() {
     }))
   }
   
-  const handleSubmit = () => {
-    setReferenceNumber(`FIS-2024-${Math.random().toString(36).substring(2, 7).toUpperCase()}`)
-    setIsSubmitted(true)
+  const handleSubmit = async () => {
     setShowConfirmDialog(false)
+    setIsSubmitting(true)
+    setSubmissionStep(0)
+    setSubmissionError(null)
+    
+    try {
+      // Étape 1: Identité
+      setSubmissionStep(1)
+      await saveIdentity(uuid, formData)
+      await new Promise(r => setTimeout(r, 400)) // Petit délai pour l'UX
+      
+      // Étape 2: Résidence fiscale
+      setSubmissionStep(2)
+      await saveResidenceFiscale(uuid, formData)
+      await new Promise(r => setTimeout(r, 400))
+      
+      // Étape 3: Situation familiale
+      setSubmissionStep(3)
+      await saveSituationFamiliale(uuid, formData)
+      await new Promise(r => setTimeout(r, 400))
+      
+      // Étape 4: Revenus
+      setSubmissionStep(4)
+      await saveRevenus(uuid, formData)
+      await new Promise(r => setTimeout(r, 400))
+      
+      // Étape 5: Charges & déductions
+      setSubmissionStep(5)
+      await saveChargesDeductions(uuid, formData)
+      await new Promise(r => setTimeout(r, 400))
+      
+      // Étape 6: Fichiers
+      setSubmissionStep(6)
+      // Convertir les fichiers en base64 pour l'envoi
+      const filesData = await Promise.all(
+        uploadedFiles.map(async (f) => {
+          const base64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve(reader.result as string)
+            reader.readAsDataURL(f.file)
+          })
+          return {
+            id: f.id,
+            name: f.name,
+            size: f.size,
+            base64,
+            type: f.file.type,
+          }
+        })
+      )
+      await saveFiles(uuid, filesData)
+      await new Promise(r => setTimeout(r, 400))
+      
+      // Étape 7: Finalisation
+      setSubmissionStep(7)
+      const result = await finalizeSubmission(uuid, formData)
+      await new Promise(r => setTimeout(r, 600))
+      
+      // Nettoyer localStorage
+      localStorage.removeItem(STORAGE_KEY)
+      
+      // Succès
+      setReferenceNumber(result.referenceNumber)
+      setIsSubmitting(false)
+      setIsSubmitted(true)
+      
+    } catch (error) {
+      setSubmissionError(error instanceof Error ? error.message : "Une erreur est survenue")
+      setIsSubmitting(false)
+    }
   }
   
   const formatFileSize = (bytes: number) => {
@@ -576,6 +665,111 @@ export default function OnboardingPage() {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center" style={{ fontFamily: "'Inter', sans-serif" }}>
         <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    )
+  }
+  
+  // ÉCRAN DE SOUMISSION EN COURS
+  if (isSubmitting) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4" style={{ fontFamily: "'Inter', sans-serif" }}>
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Loader2 className="h-8 w-8 text-white animate-spin" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Enregistrement en cours</h1>
+            <p className="text-gray-500">Veuillez patienter pendant la sauvegarde de vos données...</p>
+          </div>
+          
+          {/* Progress Bar */}
+          <div className="mb-6">
+            <div className="flex justify-between text-sm text-gray-500 mb-2">
+              <span>Progression</span>
+              <span>{Math.round((submissionStep / submissionSteps.length) * 100)}%</span>
+            </div>
+            <Progress 
+              value={(submissionStep / submissionSteps.length) * 100} 
+              className="h-2 bg-gray-100"
+            />
+          </div>
+          
+          {/* Stepper */}
+          <div className="space-y-3">
+            {submissionSteps.map((step) => {
+              const isCompleted = submissionStep > step.id
+              const isCurrent = submissionStep === step.id
+              const isPending = submissionStep < step.id
+              
+              return (
+                <div 
+                  key={step.id}
+                  className={`flex items-center gap-4 p-3 rounded-lg transition-all duration-300 ${
+                    isCompleted ? "bg-emerald-50" :
+                    isCurrent ? "bg-gray-100" :
+                    "bg-gray-50"
+                  }`}
+                >
+                  {/* Icône */}
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                    isCompleted ? "bg-emerald-500" :
+                    isCurrent ? "bg-gray-900" :
+                    "bg-gray-200"
+                  }`}>
+                    {isCompleted ? (
+                      <Check className="h-4 w-4 text-white" />
+                    ) : isCurrent ? (
+                      <Loader2 className="h-4 w-4 text-white animate-spin" />
+                    ) : (
+                      <span className="text-xs font-medium text-gray-500">{step.id}</span>
+                    )}
+                  </div>
+                  
+                  {/* Label */}
+                  <span className={`text-sm font-medium transition-colors duration-300 ${
+                    isCompleted ? "text-emerald-700" :
+                    isCurrent ? "text-gray-900" :
+                    "text-gray-400"
+                  }`}>
+                    {step.label}
+                  </span>
+                  
+                  {/* Status */}
+                  {isCompleted && (
+                    <span className="ml-auto text-xs text-emerald-600 font-medium">Terminé</span>
+                  )}
+                  {isCurrent && (
+                    <span className="ml-auto text-xs text-gray-500">En cours...</span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          
+          {/* Message d'erreur si échec */}
+          {submissionError && (
+            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-red-800">Erreur lors de la sauvegarde</p>
+                  <p className="text-sm text-red-600 mt-1">{submissionError}</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-3 text-red-700 border-red-300 hover:bg-red-100"
+                    onClick={() => {
+                      setIsSubmitting(false)
+                      setSubmissionError(null)
+                    }}
+                  >
+                    Réessayer
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     )
   }
