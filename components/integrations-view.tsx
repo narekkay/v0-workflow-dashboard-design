@@ -100,7 +100,8 @@ export function IntegrationsView() {
                   console.log("[v0] Connecting to:", app.name)
                 }}
                 size="sm"
-                className="flex-shrink-0 text-xs"
+                variant="outline"
+                className="flex-shrink-0 text-xs bg-gray-100 hover:bg-gray-200 border-gray-200 text-gray-700"
               >
                 Connecter
               </Button>
