@@ -1,15 +1,13 @@
 "use client"
 
-import { LayoutDashboardIcon,Users, FileText, ChevronLeft, ChevronRight, ChevronDown, Home, User, FolderOpen, Share2, Trash2, X, LayoutDashboard, ExternalLink, LogOut } from "lucide-react"
-import Link from "next/link"
-import { useEffect, useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { LayoutDashboardIcon,Users, FileText, ChevronLeft, ChevronRight, ChevronDown, Home, User, FolderOpen, Share2, Trash2, X, LayoutDashboard, LogOut, ExternalLink, Plug } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { LucideIcon } from "lucide-react"
 
-type View = "clients" | "documents" | "settings" | "dashboard"
+type View = "clients" | "documents" | "settings" | "dashboard" | "integrations"
 
 const navigation: Array<{ name: string; view: View; icon: typeof Users }> = [
   { name: "Tableau de bord", view: "dashboard", icon: LayoutDashboard },
@@ -42,9 +40,9 @@ interface SidebarProps {
   onCloseRevenueTab?: (tabId: string) => void
   onCloseYearTab?: (tabId: string) => void
   clientName?: string
+  clientId?: string
   conventionSigned?: boolean
   onboardingCompleted?: boolean
-  clientId?: string
 }
 
 export function Sidebar({ 
@@ -57,23 +55,13 @@ export function Sidebar({
   onCloseRevenueTab,
   onCloseYearTab,
   clientName,
+  clientId,
   conventionSigned = true,
   onboardingCompleted = true,
-  clientId,
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [declaratifOpen, setDeclaratifOpen] = useState(true)
   const [contentieuxOpen, setContentieuxOpen] = useState(true)
-  const [userEmail, setUserEmail] = useState<string | null>(null)
-
-  useEffect(() => {
-    async function loadUser() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      setUserEmail(user?.email ?? null)
-    }
-    loadUser()
-  }, [])
 
   return (
     <div
@@ -110,6 +98,19 @@ export function Sidebar({
             <LayoutDashboardIcon className="h-5 w-5 flex-shrink-0" />
             {!isCollapsed && <span className="font-medium">Tableau de bord</span>}
           </button>
+          
+          <button
+            onClick={() => onViewChange("integrations")}
+            className={cn(
+              "flex w-full items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors",
+              "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              isCollapsed && "justify-center",
+            )}
+            title={isCollapsed ? "Intégrations" : undefined}
+          >
+            <Plug className="h-5 w-5 flex-shrink-0" />
+            {!isCollapsed && <span className="font-medium">Intégrations</span>}
+          </button>
         </div>
 
         {/* Client tabs section */}
@@ -122,16 +123,15 @@ export function Sidebar({
               </div>
             )}
 
-            {/* View client portal button */}
+            {/* Client Portal Button */}
             {!isCollapsed && clientId && (
-              <Link
+              <a
                 href={`/memberview/${clientId}`}
-                target="_blank"
-                className="flex items-center justify-center gap-2 mx-3 mb-4 px-4 py-2.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg transition-all hover:shadow-sm text-sm font-semibold"
+                className="flex items-center gap-2 mx-3 mt-2 px-3 py-2 text-sm rounded-lg border border-sidebar-border bg-sidebar hover:bg-sidebar-accent transition-colors text-sidebar-foreground hover:text-sidebar-accent-foreground"
               >
-                <ExternalLink className="h-4 w-4" />
-                Ouvrir vue client
-              </Link>
+                <ExternalLink className="h-4 w-4 flex-shrink-0" />
+                <span>Portail client</span>
+              </a>
             )}
 
             {/* ESPACE DECLARATIF or ONBOARDING */}
@@ -295,32 +295,46 @@ export function Sidebar({
         )}
       </nav>
 
-      {/* User section */}
-      <div className="mt-auto border-t p-4">
-        {!isCollapsed ? (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-sm">
-                {userEmail?.charAt(0).toUpperCase() || "U"}
+      {/* User Profile Section */}
+      <div className="border-t border-sidebar-border p-4">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className={cn(
+                "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent",
+                isCollapsed && "justify-center"
+              )}
+            >
+              <div className="relative flex-shrink-0">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="h-4 w-4 text-primary" />
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">{userEmail || "Utilisateur"}</p>
-                <p className="text-xs text-muted-foreground">Avocat</p>
-              </div>
-            </div>
-            <Link href="/logout">
-              <button className="p-1.5 rounded-md hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-foreground">
-                <LogOut className="h-4 w-4" />
-              </button>
-            </Link>
-          </div>
-        ) : (
-          <Link href="/logout" className="flex justify-center">
-            <button className="p-1.5 rounded-md hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-foreground">
-              <LogOut className="h-4 w-4" />
+              {!isCollapsed && (
+                <div className="flex-1 text-left overflow-hidden">
+                  <p className="text-sm font-medium text-sidebar-foreground truncate">
+                    Maître Dupont
+                  </p>
+                  <p className="text-xs text-sidebar-foreground/60 truncate">
+                    avocat@fiscalia.com
+                  </p>
+                </div>
+              )}
             </button>
-          </Link>
-        )}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem
+              className="cursor-pointer text-destructive focus:text-destructive"
+              onClick={() => {
+                // Handle logout
+                window.location.href = '/logout'
+              }}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Se déconnecter</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   )
