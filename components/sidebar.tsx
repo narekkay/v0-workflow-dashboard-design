@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutDashboardIcon,Users, FileText, ChevronLeft, ChevronRight, ChevronDown, Home, User, FolderOpen, Share2, Trash2, X, LayoutDashboard, LogOut } from "lucide-react"
+import { LayoutDashboardIcon,Users, FileText, ChevronLeft, ChevronRight, ChevronDown, Home, User, FolderOpen, Share2, Trash2, X, LayoutDashboard, LogOut, ExternalLink } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -40,6 +40,7 @@ interface SidebarProps {
   onCloseRevenueTab?: (tabId: string) => void
   onCloseYearTab?: (tabId: string) => void
   clientName?: string
+  clientId?: string
   conventionSigned?: boolean
   onboardingCompleted?: boolean
 }
@@ -54,6 +55,7 @@ export function Sidebar({
   onCloseRevenueTab,
   onCloseYearTab,
   clientName,
+  clientId,
   conventionSigned = true,
   onboardingCompleted = true,
 }: SidebarProps) {
@@ -106,6 +108,19 @@ export function Sidebar({
               <div className="px-3 py-2 text-sm font-medium text-sidebar-foreground truncate">
                 {clientName}
               </div>
+            )}
+
+            {/* Client Portal Button */}
+            {!isCollapsed && clientId && (
+              <a
+                href={`/memberview/${clientId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 mx-3 mt-2 px-3 py-2 text-sm rounded-lg border border-sidebar-border bg-sidebar hover:bg-sidebar-accent transition-colors text-sidebar-foreground hover:text-sidebar-accent-foreground"
+              >
+                <ExternalLink className="h-4 w-4 flex-shrink-0" />
+                <span>Portail client</span>
+              </a>
             )}
 
             {/* ESPACE DECLARATIF or ONBOARDING */}
