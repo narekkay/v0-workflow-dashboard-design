@@ -456,11 +456,29 @@ export function OnboardingView({ clientId }: OnboardingViewProps) {
           )}
 
           {status === "en_revision" && (
-            <div className="flex items-center gap-3 pt-4 border-t">
-              <Edit3 className="h-5 w-5 text-amber-600" />
-              <span className="text-amber-700 font-medium">
-                En attente de modifications du client
-              </span>
+            <div className="space-y-4 pt-4 border-t">
+              <div className="flex items-center gap-3">
+                <Edit3 className="h-5 w-5 text-amber-600" />
+                <span className="text-amber-700 font-medium">
+                  En attente de modifications du client
+                </span>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setShowConfirmDialog(true)}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  <Check className="h-4 w-4 mr-2" />
+                  Annuler la révision et confirmer
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={openEditNotesDialog}
+                >
+                  <Edit3 className="h-4 w-4 mr-2" />
+                  Modifier la note
+                </Button>
+              </div>
             </div>
           )}
         </div>
