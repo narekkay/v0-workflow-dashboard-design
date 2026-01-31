@@ -16,13 +16,17 @@ interface Message {
   timestamp: Date
 }
 
-export function ChatWidget() {
+interface ChatWidgetProps {
+  userName?: string
+}
+
+export function ChatWidget({ userName = "Dupont" }: ChatWidgetProps = {}) {
   const [isOpen, setIsOpen] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [sessionId] = useState(() => Date.now().toString())
 const initialMessage: Message = {
     id: "1",
-    content: "Bonjour Maitre X, une question sur un client ? Un process flou ? Je suis la pour vous aider ☀️",
+    content: `Bonjour Maître ${userName},\nUne question sur un client ?\nUn process flou ?\nJe suis la pour vous aider ☀️`,
     role: "assistant",
     timestamp: new Date(),
   }
@@ -194,7 +198,7 @@ const initialMessage: Message = {
                 )}
                 <div
                   className={cn(
-                    "max-w-[75%] rounded-2xl px-4 py-2 text-sm",
+                    "max-w-[75%] rounded-2xl px-4 py-2 text-sm whitespace-pre-line",
                     message.role === "user"
                       ? "bg-primary text-primary-foreground rounded-br-md"
                       : "bg-card border rounded-bl-md"
