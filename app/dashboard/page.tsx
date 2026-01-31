@@ -106,8 +106,10 @@ export default function HomePage() {
   }
 
   function handleClientSelect(client: Client) {
-    // If onboarding not completed (treat null/undefined as not completed), open onboarding tab instead
-    if (client.onboarding_form_completed !== true) {
+    // If onboarding status is not "confirme", open onboarding tab for validation
+    // This includes: en_attente, soumis, en_revision
+    const onboardingStatus = client.onboarding_status || "en_attente"
+    if (onboardingStatus !== "confirme") {
       const onboardingTabId = `onboarding-${client.id}`
       const existingOnboardingTab = tabs.find(t => t.id === onboardingTabId)
       
