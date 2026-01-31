@@ -117,7 +117,7 @@ const initialMessage: Message = {
           </div>
 
           {/* Messages */}
-          <div className="h-80 overflow-y-auto p-4 space-y-3 bg-muted/30">
+          <div className="h-80 overflow-y-auto p-4 space-y-3 bg-muted/30 relative">
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -143,6 +143,22 @@ const initialMessage: Message = {
                 </div>
               </div>
             ))}
+            
+            {/* Selected Filter Logo */}
+            {selectedFilter && (
+              <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-card border rounded-full px-3 py-1.5 shadow-sm">
+                <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <img
+                    src={searchFilters.find(f => f.id === selectedFilter)?.logo}
+                    alt={searchFilters.find(f => f.id === selectedFilter)?.name}
+                    className="w-4 h-4 object-contain"
+                  />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground">
+                  {searchFilters.find(f => f.id === selectedFilter)?.name}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Input */}
