@@ -547,7 +547,7 @@ export default function OnboardingPage() {
       {/* Main */}
       <main className="max-w-[720px] mx-auto px-8 py-8 pb-36">
         {/* Progress */}
-        <div className="bg-gray-50 rounded-xl p-6 mb-8">
+        <div className="bg-gray-50 rounded-xl p-6 mb-8 border border-gray-200">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[13px] font-medium text-gray-500">Progression</span>
             <span className="text-[13px] font-semibold text-gray-900">{progress}%</span>
@@ -556,13 +556,13 @@ export default function OnboardingPage() {
         </div>
 
         {/* Accordion */}
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-3">
           {sections.map(section => (
-            <div key={section.id} className="border-b border-gray-100 first:border-t">
+            <div key={section.id} className="border border-gray-200 rounded-xl bg-white shadow-sm overflow-hidden">
               {/* Accordion Header */}
               <button
                 onClick={() => toggleSection(section.id)}
-                className="w-full flex items-center justify-between py-5 text-left hover:bg-gray-50/50 transition-colors"
+                className="w-full flex items-center justify-between py-5 px-5 text-left hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center gap-4">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${
@@ -586,7 +586,7 @@ export default function OnboardingPage() {
 
               {/* Accordion Content */}
               {openSections.includes(section.id) && (
-                <div className="pb-8 pl-10">
+                <div className="px-5 pb-6 pt-0 border-t border-gray-100">
                   {/* Identity Section */}
                   {section.id === "identity" && (
                     <div className="space-y-6">
@@ -602,7 +602,7 @@ export default function OnboardingPage() {
                             value={formData.identity.lastName}
                             onChange={e => updateField("identity", "lastName", e.target.value)}
                             placeholder="Dupont"
-                            className="bg-gray-50 border-0 focus:bg-gray-100 focus:ring-2 focus:ring-gray-900"
+                            className="bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
                           />
                         </div>
                         <div className="space-y-2">
@@ -613,7 +613,7 @@ export default function OnboardingPage() {
                             value={formData.identity.firstName}
                             onChange={e => updateField("identity", "firstName", e.target.value)}
                             placeholder="Jean"
-                            className="bg-gray-50 border-0 focus:bg-gray-100 focus:ring-2 focus:ring-gray-900"
+                            className="bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
                           />
                         </div>
                       </div>
@@ -626,7 +626,7 @@ export default function OnboardingPage() {
                             type="date"
                             value={formData.identity.birthDate}
                             onChange={e => updateField("identity", "birthDate", e.target.value)}
-                            className="bg-gray-50 border-0 focus:bg-gray-100 focus:ring-2 focus:ring-gray-900"
+                            className="bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
                           />
                         </div>
                         <div className="space-y-2">
@@ -635,7 +635,7 @@ export default function OnboardingPage() {
                             value={formData.identity.birthPlace}
                             onChange={e => updateField("identity", "birthPlace", e.target.value)}
                             placeholder="Paris, France"
-                            className="bg-gray-50 border-0 focus:bg-gray-100 focus:ring-2 focus:ring-gray-900"
+                            className="bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
                           />
                         </div>
                       </div>
@@ -648,7 +648,7 @@ export default function OnboardingPage() {
                           onChange={e => updateField("identity", "address", e.target.value)}
                           placeholder="12 rue de la Paix&#10;75002 Paris"
                           rows={3}
-                          className="bg-gray-50 border-0 focus:bg-gray-100 focus:ring-2 focus:ring-gray-900 resize-none"
+                          className="bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-gray-900 focus:border-gray-900 resize-none"
                         />
                       </div>
                     </div>
@@ -671,8 +671,8 @@ export default function OnboardingPage() {
                               onClick={() => updateField("residence", "taxResident", option.toLowerCase())}
                               className={`px-4 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
                                 formData.residence.taxResident === option.toLowerCase()
-                                  ? "bg-gray-900 text-white"
-                                  : "bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                                  ? "bg-gray-900 text-white border border-gray-900"
+                                  : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 hover:text-gray-900 hover:border-gray-300"
                               }`}
                             >
                               {option}
@@ -691,8 +691,8 @@ export default function OnboardingPage() {
                               onClick={() => updateField("residence", "livedAbroad", option.toLowerCase())}
                               className={`px-4 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
                                 formData.residence.livedAbroad === option.toLowerCase()
-                                  ? "bg-gray-900 text-white"
-                                  : "bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                                  ? "bg-gray-900 text-white border border-gray-900"
+                                  : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 hover:text-gray-900 hover:border-gray-300"
                               }`}
                             >
                               {option}
@@ -700,13 +700,13 @@ export default function OnboardingPage() {
                           ))}
                         </div>
                         {formData.residence.livedAbroad === "oui" && (
-                          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                          <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                             <Label className="text-[13px] font-medium text-gray-900">Pays et Période</Label>
                             <Input
                               value={formData.residence.abroadCountry}
                               onChange={e => updateField("residence", "abroadCountry", e.target.value)}
                               placeholder="Ex: Suisse (Jan - Juin)"
-                              className="mt-2 bg-white border-0 focus:ring-2 focus:ring-gray-900"
+                              className="mt-2 bg-white border border-gray-200 focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
                             />
                           </div>
                         )}
@@ -725,7 +725,7 @@ export default function OnboardingPage() {
                           value={formData.family.status}
                           onValueChange={value => updateField("family", "status", value)}
                         >
-                          <SelectTrigger className="bg-gray-50 border-0 focus:ring-2 focus:ring-gray-900">
+                          <SelectTrigger className="bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-gray-900 focus:border-gray-900">
                             <SelectValue placeholder="Sélectionnez..." />
                           </SelectTrigger>
                           <SelectContent>
@@ -750,8 +750,8 @@ export default function OnboardingPage() {
                               onClick={() => updateField("family", "hasChange", option.toLowerCase())}
                               className={`px-4 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
                                 formData.family.hasChange === option.toLowerCase()
-                                  ? "bg-gray-900 text-white"
-                                  : "bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                                  ? "bg-gray-900 text-white border border-gray-900"
+                                  : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 hover:text-gray-900 hover:border-gray-300"
                               }`}
                             >
                               {option}
@@ -780,7 +780,7 @@ export default function OnboardingPage() {
                             </Button>
                           </div>
                           {formData.spouse && (
-                            <div className="bg-gray-50 rounded-xl p-4">
+                            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                               <div className="flex items-start justify-between">
                                 <div>
                                   <div className="font-medium text-gray-900">
@@ -815,7 +815,7 @@ export default function OnboardingPage() {
                             </Button>
                           </div>
                           {formData.exSpouse && (
-                            <div className="bg-gray-50 rounded-xl p-4">
+                            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                               <div className="flex items-start justify-between">
                                 <div>
                                   <div className="font-medium text-gray-900">
@@ -857,8 +857,8 @@ export default function OnboardingPage() {
                               }))}
                               className={`px-4 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
                                 formData.children.hasChildren === option.toLowerCase()
-                                  ? "bg-gray-900 text-white"
-                                  : "bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                                  ? "bg-gray-900 text-white border border-gray-900"
+                                  : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 hover:text-gray-900 hover:border-gray-300"
                               }`}
                             >
                               {option}
@@ -886,7 +886,7 @@ export default function OnboardingPage() {
                               </p>
                             ) : (
                               formData.children.list.map(child => (
-                                <div key={child.id} className="bg-gray-50 rounded-xl p-4">
+                                <div key={child.id} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
                                   <div className="flex items-start justify-between">
                                     <div>
                                       <div className="font-medium text-gray-900">
@@ -929,8 +929,8 @@ export default function OnboardingPage() {
                               }))}
                               className={`px-4 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
                                 formData.pensions.hasPension === option.toLowerCase()
-                                  ? "bg-gray-900 text-white"
-                                  : "bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                                  ? "bg-gray-900 text-white border border-gray-900"
+                                  : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 hover:text-gray-900 hover:border-gray-300"
                               }`}
                             >
                               {option}
@@ -958,7 +958,7 @@ export default function OnboardingPage() {
                               </p>
                             ) : (
                               formData.pensions.list.map(pension => (
-                                <div key={pension.id} className="bg-gray-50 rounded-xl p-4">
+                                <div key={pension.id} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
                                   <div className="flex items-start justify-between">
                                     <div>
                                       <div className="font-medium text-gray-900">{pension.type}</div>
@@ -1004,7 +1004,7 @@ export default function OnboardingPage() {
                           </p>
                         ) : (
                           formData.events.map(event => (
-                            <div key={event.id} className="bg-gray-50 rounded-xl p-4">
+                            <div key={event.id} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
                               <div className="flex items-start justify-between">
                                 <div>
                                   <div className="font-medium text-gray-900">{event.type}</div>
@@ -1138,7 +1138,7 @@ export default function OnboardingPage() {
                           <h4 className="text-[13px] font-semibold text-gray-900 mb-3">Documents déposés</h4>
                           <div className="space-y-2">
                             {formData.documents.map(doc => (
-                              <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                              <div key={doc.id} className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
                                 <div className="flex items-center gap-3">
                                   <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center">
                                     <FileText className="w-4 h-4 text-gray-400" />
@@ -1173,7 +1173,7 @@ export default function OnboardingPage() {
                               d.name.toLowerCase().includes(doc.name.toLowerCase().split(" ")[0])
                             )
                             return (
-                              <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                              <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
                                 <div className="flex items-center gap-3">
                                   <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center">
                                     <FileText className="w-4 h-4 text-gray-400" />
