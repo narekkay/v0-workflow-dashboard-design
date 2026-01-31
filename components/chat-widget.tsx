@@ -3,9 +3,10 @@
 import React from "react"
 
 import { useState } from "react"
-import { MessageCircle, X, Send, RotateCcw, Bot } from "lucide-react"
+import { MessageCircle, X, Send, RotateCcw, Bot, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 
 interface Message {
@@ -26,6 +27,26 @@ const initialMessage: Message = {
 
   const [messages, setMessages] = useState<Message[]>([initialMessage])
   const [inputValue, setInputValue] = useState("")
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(null)
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+
+  const searchFilters = [
+    { 
+      id: "legifiscal", 
+      name: "LegiFiscal", 
+      logo: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/legifiscal-AkGgTX8PLSiPQ56iV63Wp8rHD1aQ9k.png" 
+    },
+    { 
+      id: "wisetax", 
+      name: "Wisetax", 
+      logo: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo-wisetax-b9mBRHRm5WaMBHxGivAX0d9svbowq9.svg" 
+    },
+    { 
+      id: "lexisai", 
+      name: "Lexis+AI", 
+      logo: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/lexisai-9p9fE4pHIptNh6nPAlnPeQGvfWzu4T.png" 
+    },
+  ]
 
   const handleSend = () => {
     if (!inputValue.trim()) return
@@ -127,6 +148,49 @@ const initialMessage: Message = {
           {/* Input */}
           <div className="p-3 border-t bg-card">
             <div className="flex items-center gap-2">
+              <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-9 w-9 shrink-0"
+                  >
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-2" align="start">
+                  <div className="space-y-1">
+                    <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
+                      Rechercher dans:
+                    </div>
+                    {searchFilters.map((filter) => (
+                      <button
+                        key={filter.id}
+                        onClick={() => {
+                          setSelectedFilter(selectedFilter === filter.id ? null : filter.id)
+                          setIsFilterOpen(false)
+                        }}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-muted transition-colors",
+                          selectedFilter === filter.id && "bg-muted"
+                        )}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                          <img
+                            src={filter.logo}
+                            alt={filter.name}
+                            className="w-6 h-6 object-contain"
+                          />
+                        </div>
+                        <span className="text-sm font-medium">{filter.name}</span>
+                        {selectedFilter === filter.id && (
+                          <div className="ml-auto w-2 h-2 rounded-full bg-primary" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
               <Input
                 placeholder="Ecrivez votre message..."
                 value={inputValue}
@@ -143,6 +207,17 @@ const initialMessage: Message = {
                 <Send className="h-4 w-4" />
               </Button>
             </div>
+            {selectedFilter && (
+              <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                <span>Recherche dans: {searchFilters.find(f => f.id === selectedFilter)?.name}</span>
+                <button
+                  onClick={() => setSelectedFilter(null)}
+                  className="text-primary hover:underline"
+                >
+                  Effacer
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
