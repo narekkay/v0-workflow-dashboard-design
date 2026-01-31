@@ -1,9 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Plug, CheckCircle2 } from "lucide-react"
+import { ChevronRight } from "lucide-react"
 import { useState } from "react"
 
 interface Integration {
@@ -11,112 +9,99 @@ interface Integration {
   name: string
   description: string
   category: string
-  connected: boolean
+  icon: string
 }
 
 const integrations: Integration[] = [
-  { id: "gmail", name: "Gmail", description: "Synchronisez vos emails et envois de documents", category: "Communication", connected: false },
-  { id: "bofip", name: "Bofip", description: "Base officielle des impôts", category: "Documentation fiscale", connected: false },
-  { id: "legifrance", name: "LegiFrance", description: "Service public de diffusion du droit", category: "Documentation juridique", connected: false },
-  { id: "pappers", name: "Pappers", description: "Données légales et financières des entreprises", category: "Recherche d'entreprises", connected: false },
-  { id: "navis", name: "Navis", description: "Plateforme de veille fiscale", category: "Veille fiscale", connected: false },
-  { id: "wisetax", name: "Wisetax", description: "Solution de gestion fiscale", category: "Gestion fiscale", connected: false },
-  { id: "revue-fiduciaire", name: "Revue Fiduciaire", description: "Documentation fiscale et sociale", category: "Documentation fiscale", connected: false },
-  { id: "doctrine", name: "Doctrine", description: "Base de données juridique", category: "Documentation juridique", connected: false },
-  { id: "lexbase", name: "Lexbase", description: "Plateforme juridique et fiscale", category: "Documentation juridique", connected: false },
-  { id: "lexisnexis", name: "Lexisnexis", description: "Solutions juridiques professionnelles", category: "Documentation juridique", connected: false },
-  { id: "lamyline", name: "Lamyline", description: "Documentation juridique Lamy", category: "Documentation juridique", connected: false },
-  { id: "legifiscale", name: "LegiFiscale", description: "Documentation et veille fiscale", category: "Documentation fiscale", connected: false },
+  { id: "gmail", name: "Gmail", description: "Synchronisez vos emails et envois de documents", category: "Communication", icon: "✉️" },
+  { id: "bofip", name: "Bofip", description: "Base officielle des impôts", category: "Documentation", icon: "📚" },
+  { id: "legifrance", name: "LegiFrance", description: "Service public de diffusion du droit", category: "Documentation", icon: "⚖️" },
+  { id: "pappers", name: "Pappers", description: "Données légales et financières des entreprises", category: "Recherche", icon: "🔍" },
+  { id: "navis", name: "Navis", description: "Plateforme de veille fiscale", category: "Veille", icon: "📊" },
+  { id: "wisetax", name: "Wisetax", description: "Solution de gestion fiscale", category: "Gestion", icon: "💼" },
+  { id: "revue-fiduciaire", name: "Revue Fiduciaire", description: "Documentation fiscale et sociale", category: "Documentation", icon: "📖" },
+  { id: "doctrine", name: "Doctrine", description: "Base de données juridique", category: "Documentation", icon: "📑" },
+  { id: "lexbase", name: "Lexbase", description: "Plateforme juridique et fiscale", category: "Documentation", icon: "📘" },
+  { id: "lexisnexis", name: "Lexisnexis", description: "Solutions juridiques professionnelles", category: "Documentation", icon: "📕" },
+  { id: "lamyline", name: "Lamyline", description: "Documentation juridique Lamy", category: "Documentation", icon: "📗" },
+  { id: "legifiscale", name: "LegiFiscale", description: "Documentation et veille fiscale", category: "Documentation", icon: "📙" },
 ]
 
 export function IntegrationsView() {
-  const [apps, setApps] = useState<Integration[]>(integrations)
-
-  const handleConnect = (id: string) => {
-    setApps(prev => prev.map(app => 
-      app.id === id ? { ...app, connected: true } : app
-    ))
-  }
-
-  const handleDisconnect = (id: string) => {
-    setApps(prev => prev.map(app => 
-      app.id === id ? { ...app, connected: false } : app
-    ))
-  }
-
-  const groupedApps = apps.reduce((acc, app) => {
-    if (!acc[app.category]) {
-      acc[app.category] = []
-    }
-    acc[app.category].push(app)
-    return acc
-  }, {} as Record<string, Integration[]>)
+  const [selectedCategory, setSelectedCategory] = useState<string>("Tous")
+  
+  const categories = ["Tous", "Documentation", "Communication", "Recherche", "Veille", "Gestion"]
+  
+  const filteredApps = selectedCategory === "Tous" 
+    ? integrations 
+    : integrations.filter(app => app.category === selectedCategory)
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="p-8">
+    <div className="h-full overflow-y-auto bg-gray-50">
+      <div className="max-w-7xl mx-auto p-8">
+        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight mb-2">Intégrations</h1>
           <p className="text-muted-foreground">
-            Connectez vos outils préférés pour optimiser votre workflow
+            Connectez vos outils juridiques et fiscaux préférés
           </p>
         </div>
 
-        <div className="space-y-8">
-          {Object.entries(groupedApps).map(([category, categoryApps]) => (
-            <div key={category}>
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <div className="h-1 w-1 rounded-full bg-primary" />
-                {category}
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {categoryApps.map((app) => (
-                  <Card key={app.id} className="relative">
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <Plug className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <CardTitle className="text-base">{app.name}</CardTitle>
-                            {app.connected && (
-                              <Badge variant="secondary" className="mt-1 text-xs bg-emerald-50 text-emerald-700 border-emerald-200">
-                                <CheckCircle2 className="h-3 w-3 mr-1" />
-                                Connecté
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <CardDescription className="mt-2">
-                        {app.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {app.connected ? (
-                        <Button
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => handleDisconnect(app.id)}
-                        >
-                          Déconnecter
-                        </Button>
-                      ) : (
-                        <Button
-                          className="w-full"
-                          onClick={() => handleConnect(app.id)}
-                        >
-                          Intégrer
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
+        {/* Category Tabs */}
+        <div className="flex gap-2 mb-8 overflow-x-auto">
+          {categories.map((category) => (
+            <button
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                selectedCategory === category
+                  ? "bg-gray-900 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              {category}
+            </button>
           ))}
         </div>
+
+        {/* Integrations Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredApps.map((app) => (
+            <button
+              key={app.id}
+              className="bg-white rounded-2xl p-6 flex items-center gap-4 hover:shadow-md transition-shadow text-left group"
+              onClick={() => {
+                // Handle integration click
+                console.log("[v0] Opening integration:", app.name)
+              }}
+            >
+              {/* Icon */}
+              <div className="flex-shrink-0 w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center text-2xl">
+                {app.icon}
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  {app.name}
+                </h3>
+                <p className="text-sm text-gray-500 line-clamp-1">
+                  {app.description}
+                </p>
+              </div>
+
+              {/* Arrow */}
+              <ChevronRight className="flex-shrink-0 h-5 w-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+            </button>
+          ))}
+        </div>
+
+        {/* Empty State */}
+        {filteredApps.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500">Aucune intégration trouvée dans cette catégorie</p>
+          </div>
+        )}
       </div>
     </div>
   )
