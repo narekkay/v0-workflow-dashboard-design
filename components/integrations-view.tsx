@@ -67,13 +67,9 @@ export function IntegrationsView() {
         {/* Integrations Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredApps.map((app) => (
-            <button
+            <div
               key={app.id}
-              className="bg-white rounded-2xl p-6 flex items-center gap-4 hover:shadow-md transition-shadow text-left group"
-              onClick={() => {
-                // Handle integration click
-                console.log("[v0] Opening integration:", app.name)
-              }}
+              className="bg-white rounded-2xl p-6 flex items-center gap-4 hover:shadow-md transition-shadow"
             >
               {/* Icon */}
               <div className="flex-shrink-0 w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
@@ -98,9 +94,16 @@ export function IntegrationsView() {
                 </p>
               </div>
 
-              {/* Arrow */}
-              <ChevronRight className="flex-shrink-0 h-5 w-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
-            </button>
+              {/* Connect Button */}
+              <Button
+                onClick={() => {
+                  console.log("[v0] Connecting to:", app.name)
+                }}
+                className="flex-shrink-0"
+              >
+                Connecter
+              </Button>
+            </div>
           ))}
         </div>
 
