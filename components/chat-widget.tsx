@@ -192,8 +192,13 @@ const initialMessage: Message = {
                 )}
               >
                 {message.role === "assistant" && (
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                    <Bot className="h-4 w-4" />
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white border border-gray-200">
+                    <div className="grid grid-cols-2 gap-0.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-black" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-black" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-black" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-black" />
+                    </div>
                   </div>
                 )}
                 <div
