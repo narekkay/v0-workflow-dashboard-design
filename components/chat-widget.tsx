@@ -128,10 +128,10 @@ const initialMessage: Message = {
       {/* Chat Window */}
       {isOpen && (
         <div className={cn(
-          "fixed z-50 border bg-card shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200",
+          "fixed z-50 border bg-card shadow-2xl overflow-hidden transition-all duration-300 ease-in-out",
           isFullscreen 
             ? "inset-4 rounded-lg" 
-            : "bottom-24 right-6 w-80 sm:w-96 rounded-2xl"
+            : "bottom-24 right-6 w-80 sm:w-96 rounded-2xl animate-in slide-in-from-bottom-4 fade-in"
         )}>
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b bg-primary text-primary-foreground">
@@ -180,7 +180,7 @@ const initialMessage: Message = {
 
           {/* Messages */}
           <div className={cn(
-            "overflow-y-auto p-4 space-y-3 bg-muted/30 relative",
+            "overflow-y-auto p-4 space-y-3 bg-muted/30 relative transition-all duration-300 ease-in-out",
             isFullscreen ? "h-[calc(100vh-12rem)]" : "h-80"
           )}>
             {messages.map((message) => (
