@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Bell, CheckCircle, AlertTriangle, XCircle } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
+import { createBrowserClient } from "@/lib/supabase/client"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,7 +65,7 @@ export function NotificationsDropdown({ notifications, onNotificationClick, onCl
   
   useEffect(() => {
     const fetchNotifications = async () => {
-      const supabase = createClient()
+      const supabase = createBrowserClient()
       
       const { data, error } = await supabase
         .from("notifications")
@@ -176,7 +176,7 @@ export function NotificationsDropdown({ notifications, onNotificationClick, onCl
     ))
     
     // Update read status in database
-    const supabase = createClient()
+    const supabase = createBrowserClient()
     await supabase
       .from("notifications")
       .update({ read_status: true })

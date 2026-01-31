@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { createBrowserClient } from "@/lib/supabase/client"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -41,7 +41,7 @@ export function ClientRevenuesTable({ clientId }: ClientRevenuesTableProps) {
   }, [clientId])
 
   async function loadRevenues() {
-    const supabase = createClient()
+    const supabase = createBrowserClient()
 
     // Load revenues for this client
     const { data: revenuesData, error } = await supabase
@@ -92,7 +92,7 @@ export function ClientRevenuesTable({ clientId }: ClientRevenuesTableProps) {
   }
 
   async function loadOutboxDocuments() {
-    const supabase = createClient()
+    const supabase = createBrowserClient()
     const { data, error } = await supabase
       .from("boite_envoi_files")
       .select("document_id")
@@ -114,7 +114,7 @@ export function ClientRevenuesTable({ clientId }: ClientRevenuesTableProps) {
       return
     }
 
-    const supabase = createClient()
+    const supabase = createBrowserClient()
     const { error } = await supabase.from("boite_envoi_files").insert({
       client_id: clientId,
       file_name: docName,

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import { createClient } from "@/lib/supabase/client"
+import { createBrowserClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 
 interface RevenueCategory {
@@ -71,7 +71,7 @@ function RevenueFullPageMulti({
 
   const loadSubCategories = async () => {
     setIsLoadingData(true)
-    const supabase = createClient()
+    const supabase = createBrowserClient()
 
     const { data, error } = await supabase
       .from("categories_revenus_sub")
@@ -90,7 +90,7 @@ function RevenueFullPageMulti({
   const loadSubBisCategories = async () => {
     if (selectedSubCategories.size === 0) return
 
-    const supabase = createClient()
+    const supabase = createBrowserClient()
     const { data, error } = await supabase
       .from("categories_revenus_sub_bis")
       .select("*")
@@ -110,7 +110,7 @@ function RevenueFullPageMulti({
       return
     }
 
-    const supabase = createClient()
+    const supabase = createBrowserClient()
     const queryParts = []
 
     if (selectedSubCategories.size > 0) {
@@ -429,7 +429,7 @@ export function AddRevenueDialog({
   }, [searchQuery, categories])
 
   const loadCategories = async () => {
-    const supabase = createClient()
+    const supabase = createBrowserClient()
     const { data, error } = await supabase.from("categories_revenus").select("id, code, nom").order("code")
 
     if (error) {
@@ -537,7 +537,7 @@ export function AddRevenueDialog({
   const loadCreditsSubCategories = async (categoryId: number) => {
     setIsLoadingCreditsSubCategories(true)
     try {
-      const supabase = createClient()
+      const supabase = createBrowserClient()
       const { data, error } = await supabase
         .from("categories_revenus_sub")
         .select("id, nom")

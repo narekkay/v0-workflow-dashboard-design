@@ -45,7 +45,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { createClient } from "@/lib/supabase/client"
+import { createBrowserClient } from "@/lib/supabase/client"
 import { AddRevenueDialog } from "./add-revenue-dialog"
 import { SendEmailDialog } from "./send-email-dialog"
 import {
@@ -413,7 +413,7 @@ export function ClientTabs({
   }, [client.id])
 
   async function loadRevenues() {
-    const supabase = createClient()
+    const supabase = createBrowserClient()
 
     const { data: revenuesData, error } = await supabase
       .from("client_revenues")
@@ -485,7 +485,7 @@ export function ClientTabs({
 
   async function loadAnnexes() {
     setLoadingAnnexes(true)
-    const supabase = createClient()
+    const supabase = createBrowserClient()
 
     // Get all revenues for this client
     const { data: revenuesData } = await supabase
@@ -577,7 +577,7 @@ export function ClientTabs({
     setSelectedAnnexe(annexe)
     setAnnexeModalOpen(true)
 
-    const supabase = createClient()
+    const supabase = createBrowserClient()
 
     // Get sub-categories that have this case_code
     const { data: caseLabels } = await supabase
@@ -669,7 +669,7 @@ export function ClientTabs({
   }
 
   async function addDocumentToOutbox(documentId: number) {
-    const supabase = createClient()
+    const supabase = createBrowserClient()
 
     // Get document info
     const { data: docData } = await supabase
@@ -731,7 +731,7 @@ export function ClientTabs({
       return
     }
 
-    const supabase = createClient()
+    const supabase = createBrowserClient()
 
     const inserts = missingDocs.map((doc) => ({
       client_id: client.id,
@@ -757,7 +757,7 @@ export function ClientTabs({
   }
 
   async function loadOutboxFiles() {
-    const supabase = createClient()
+    const supabase = createBrowserClient()
     const { data, error } = await supabase
       .from("boite_envoi_files")
       .select("*")
@@ -773,7 +773,7 @@ export function ClientTabs({
   }
 
   async function loadClientFiles() {
-    const supabase = createClient()
+    const supabase = createBrowserClient()
     
     // Load from client_files, documents, and conventions tables
     const [clientFilesResult, documentsResult, conventionsResult] = await Promise.all([
@@ -835,7 +835,7 @@ export function ClientTabs({
   async function confirmDeleteOutboxFile() {
     if (!fileToDelete) return
 
-    const supabase = createClient()
+    const supabase = createBrowserClient()
     const { error } = await supabase.from("boite_envoi_files").delete().eq("id", fileToDelete)
 
     if (error) {
@@ -857,7 +857,7 @@ export function ClientTabs({
     const confirmed = window.confirm(`Êtes-vous sûr de vouloir supprimer ${selectedOutboxFiles.size} fichier(s) ?`)
     if (!confirmed) return
 
-    const supabase = createClient()
+    const supabase = createBrowserClient()
     const fileIds = Array.from(selectedOutboxFiles)
 
     const { error } = await supabase.from("boite_envoi_files").delete().in("id", fileIds)
@@ -881,7 +881,7 @@ export function ClientTabs({
   async function confirmDeleteClientFile() {
     if (!clientFileToDelete) return
 
-    const supabase = createClient()
+    const supabase = createBrowserClient()
     const { error } = await supabase.from("client_files").delete().eq("id", clientFileToDelete)
 
     if (error) {
@@ -987,7 +987,7 @@ export function ClientTabs({
 
     if (!confirmed) return
 
-    const supabase = createClient()
+    const supabase = createBrowserClient()
     const { error } = await supabase.from("client_revenues").delete().eq("id", revenueId)
 
     if (error) {
@@ -1005,7 +1005,7 @@ export function ClientTabs({
 
   const handleSaveChanges = async () => {
     try {
-      const supabase = createClient()
+      const supabase = createBrowserClient()
       const { error } = await supabase
         .from("clients")
         .update({
@@ -1066,7 +1066,7 @@ export function ClientTabs({
 
   const handleSaveCustomFields = async () => {
     try {
-      const supabase = createClient()
+      const supabase = createBrowserClient()
       const { error } = await supabase
         .from("clients")
         .update({
@@ -1106,7 +1106,7 @@ export function ClientTabs({
 
   const handleSaveChildren = async () => {
     try {
-      const supabase = createClient()
+      const supabase = createBrowserClient()
       const { error } = await supabase
         .from("clients")
         .update({
@@ -1146,7 +1146,7 @@ export function ClientTabs({
 
   const handleSaveSpouseChildren = async () => {
     try {
-      const supabase = createClient()
+      const supabase = createBrowserClient()
       // Note: This assumes you have a spouse_children field in the database
       // You may need to adjust this based on your schema
       const { error } = await supabase

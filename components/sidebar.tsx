@@ -1,10 +1,8 @@
 "use client"
 
-import { LayoutDashboardIcon,Users, FileText, ChevronLeft, ChevronRight, ChevronDown, Home, User, FolderOpen, Share2, Trash2, X, LayoutDashboard, ExternalLink, LogOut, Settings } from "lucide-react"
-import Link from "next/link"
-import { useEffect, useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { LayoutDashboardIcon,Users, FileText, ChevronLeft, ChevronRight, ChevronDown, Home, User, FolderOpen, Share2, Trash2, X, LayoutDashboard, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useState } from "react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { LucideIcon } from "lucide-react"
@@ -44,7 +42,6 @@ interface SidebarProps {
   clientName?: string
   conventionSigned?: boolean
   onboardingCompleted?: boolean
-  clientId?: string
 }
 
 export function Sidebar({ 
@@ -59,35 +56,10 @@ export function Sidebar({
   clientName,
   conventionSigned = true,
   onboardingCompleted = true,
-  clientId,
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [declaratifOpen, setDeclaratifOpen] = useState(true)
   const [contentieuxOpen, setContentieuxOpen] = useState(true)
-  const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [userName, setUserName] = useState<string | null>(null)
-
-  useEffect(() => {
-    async function loadUser() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      setUserEmail(user?.email ?? null)
-      
-      if (user) {
-        // Fetch user profile to get name
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('first_name, last_name')
-          .eq('id', user.id)
-          .single()
-        
-        if (profile) {
-          setUserName(`${profile.first_name} ${profile.last_name}`)
-        }
-      }
-    }
-    loadUser()
-  }, [])
 
   return (
     <div
@@ -134,18 +106,6 @@ export function Sidebar({
               <div className="px-3 py-2 text-sm font-medium text-sidebar-foreground truncate">
                 {clientName}
               </div>
-            )}
-
-            {/* View client portal button */}
-            {!isCollapsed && clientId && (
-              <Link
-                href={`/dashboard/memberview/${clientId}`}
-                target="_blank"
-                className="flex items-center justify-center gap-2 mx-3 mb-4 px-4 py-2.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg transition-all hover:shadow-sm text-sm font-semibold"
-              >
-                <ExternalLink className="h-4 w-4" />
-                Ouvrir vue client
-              </Link>
             )}
 
             {/* ESPACE DECLARATIF or ONBOARDING */}
@@ -309,65 +269,46 @@ export function Sidebar({
         )}
       </nav>
 
-      {/* User section */}
-      <div className="mt-auto border-t p-4">
-        {!isCollapsed ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-3 w-full rounded-lg px-3 py-2 hover:bg-sidebar-accent transition-colors">
-                <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm flex-shrink-0">
-                  {userName?.charAt(0).toUpperCase() || userEmail?.charAt(0).toUpperCase() || "A"}
+      {/* User Profile Section */}
+      <div className="border-t border-sidebar-border p-4">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className={cn(
+                "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent",
+                isCollapsed && "justify-center"
+              )}
+            >
+              <div className="relative flex-shrink-0">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="h-4 w-4 text-primary" />
                 </div>
-                <div className="min-w-0 flex-1 text-left">
-                  <p className="text-sm font-bold text-sidebar-foreground truncate">
-                    {userName || "Avocat"}
+              </div>
+              {!isCollapsed && (
+                <div className="flex-1 text-left overflow-hidden">
+                  <p className="text-sm font-medium text-sidebar-foreground truncate">
+                    Maître Dupont
                   </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {userEmail || "email@example.com"}
+                  <p className="text-xs text-sidebar-foreground/60 truncate">
+                    avocat@fiscalia.com
                   </p>
                 </div>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/settings" className="flex items-center cursor-pointer">
-                  <Settings className="h-4 w-4 mr-2" />
-                  <span>Edit profil</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/logout" className="flex items-center cursor-pointer">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  <span>Logout</span>
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex justify-center w-full p-1.5 rounded-md hover:bg-sidebar-accent transition-colors">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
-                  {userName?.charAt(0).toUpperCase() || userEmail?.charAt(0).toUpperCase() || "A"}
-                </div>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/settings" className="flex items-center cursor-pointer">
-                  <Settings className="h-4 w-4 mr-2" />
-                  <span>Edit profil</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/logout" className="flex items-center cursor-pointer">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  <span>Logout</span>
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+              )}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem
+              className="cursor-pointer text-destructive focus:text-destructive"
+              onClick={() => {
+                // Handle logout
+                window.location.href = '/logout'
+              }}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Se déconnecter</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   )

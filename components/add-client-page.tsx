@@ -16,7 +16,7 @@ import { ArrowLeft, FileText, Clock, FolderOpen, Check, X, FileUp, ChevronRight,
 import { useToast } from "@/components/ui/use-toast"
 import { uploadDocument } from "@/app/actions/upload-document"
 import { generateAndUploadConventionPdf } from "@/lib/pdf-utils"
-import { createClient } from "@/lib/supabase/client"
+import { createBrowserClient } from "@/lib/supabase/client"
 import { ConventionEditor } from "@/components/convention-editor"
 
 interface AddClientPageProps {
@@ -378,7 +378,7 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
     if (!existantFile) return
     
     try {
-      const supabase = createClient()
+      const supabase = createBrowserClient()
       
       // Delete from database if it exists
       if (existantFile.id) {
@@ -419,7 +419,7 @@ export function AddClientPage({ onSuccess, onCancel }: AddClientPageProps) {
     console.log("[v0] Form submitted", formData)
     setIsLoading(true)
 
-    const supabase = createClient()
+    const supabase = createBrowserClient()
 
     try {
       console.log("[v0] Inserting client into database...")

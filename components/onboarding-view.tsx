@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { createBrowserClient } from "@/lib/supabase/client"
 import { OnboardingProgress } from "./onboarding-progress"
 import type { Client } from "@/lib/types"
 
@@ -15,7 +15,7 @@ export function OnboardingView({ clientId }: OnboardingViewProps) {
 
   useEffect(() => {
     async function loadClient() {
-      const supabase = createClient()
+      const supabase = createBrowserClient()
       // Force cache bypass by adding timestamp to headers
       const { data, error } = await supabase
         .from("clients")

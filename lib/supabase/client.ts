@@ -1,37 +1,24 @@
-import { createBrowserClient } from '@supabase/ssr'
+import { createBrowserClient as createSupabaseBrowserClient } from "@supabase/ssr"
 
-export function createClient() {
+let supabaseInstance: ReturnType<typeof createSupabaseBrowserClient> | null = null
+
+export function createBrowserClient() {
+  if (supabaseInstance) {
+    return supabaseInstance
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  
+
   if (!supabaseUrl || !supabaseKey) {
-    console.error('[v0] Missing Supabase environment variables!')
-    throw new Error('Supabase configuration is missing. Please check your environment variables.')
-  }
-  
-  const client = createBrowserClient(supabaseUrl, supabaseKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-      storageKey: 'fiscalia-auth',
-      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    },
-    global: {
-      headers: {
-        'X-Client-Info': 'supabase-js-web',
-      },
-    },
-  })
-
-  // Log helpful debugging info
-  if (typeof window !== 'undefined') {
-    console.log('[v0] Supabase client initialized')
-    console.log('[v0] Project URL:', supabaseUrl)
-    console.log('[v0] Preview domain:', window.location.origin)
-    console.log('[v0] IMPORTANT: Add this URL to Supabase Auth settings:')
-    console.log(`[v0] ${window.location.origin}/**`)
+    throw new Error("Missing Supabase environment variables")
   }
 
-  return client
+  supabaseInstance = createSupabaseBrowserClient(supabaseUrl, supabaseKey)
+  return supabaseInstance
+}
+
+// Legacy export for compatibility
+export function createClient() {
+  return createBrowserClient()
 }
