@@ -1,13 +1,13 @@
 "use client"
 
-import { LayoutDashboardIcon,Users, FileText, ChevronLeft, ChevronRight, ChevronDown, Home, User, FolderOpen, Share2, Trash2, X, LayoutDashboard, LogOut, ExternalLink } from "lucide-react"
+import { LayoutDashboardIcon,Users, FileText, ChevronLeft, ChevronRight, ChevronDown, Home, User, FolderOpen, Share2, Trash2, X, LayoutDashboard, LogOut, ExternalLink, Plug } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { LucideIcon } from "lucide-react"
 
-type View = "clients" | "documents" | "settings" | "dashboard"
+type View = "clients" | "documents" | "settings" | "dashboard" | "integrations"
 
 const navigation: Array<{ name: string; view: View; icon: typeof Users }> = [
   { name: "Tableau de bord", view: "dashboard", icon: LayoutDashboard },
@@ -97,6 +97,19 @@ export function Sidebar({
           >
             <LayoutDashboardIcon className="h-5 w-5 flex-shrink-0" />
             {!isCollapsed && <span className="font-medium">Tableau de bord</span>}
+          </button>
+          
+          <button
+            onClick={() => onViewChange("integrations")}
+            className={cn(
+              "flex w-full items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors",
+              "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              isCollapsed && "justify-center",
+            )}
+            title={isCollapsed ? "Intégrations" : undefined}
+          >
+            <Plug className="h-5 w-5 flex-shrink-0" />
+            {!isCollapsed && <span className="font-medium">Intégrations</span>}
           </button>
         </div>
 
@@ -277,24 +290,6 @@ export function Sidebar({
                   </div>
                 </CollapsibleContent>
               </Collapsible>
-            )}
-
-            {/* Onboarding link - Always show at bottom when client is selected */}
-            {!isCollapsed && onboardingCompleted && clientId && (
-              <div className="mt-4 pt-4 border-t border-sidebar-border">
-                <button
-                  onClick={() => onClientTabChange?.("onboarding")}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
-                    activeClientTab === "onboarding"
-                      ? "bg-primary/10 text-primary"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                  )}
-                >
-                  <FileText className="h-4 w-4 flex-shrink-0" />
-                  <span>Onboarding</span>
-                </button>
-              </div>
             )}
           </div>
         )}

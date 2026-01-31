@@ -19,8 +19,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from "@/components/ui/button"
 import { NotificationsDropdown } from "@/components/notifications-dropdown"
 import { OnboardingView } from "@/components/onboarding-view"
+import { IntegrationsView } from "@/components/integrations-view"
 
-type View = "clients" | "documents" | "settings" | "archives" | "dashboard"
+type View = "clients" | "documents" | "settings" | "archives" | "dashboard" | "integrations"
 
 const clientBaseTabs: ClientTab[] = [
   { id: "overview", label: "Aperçu général", icon: Home },
