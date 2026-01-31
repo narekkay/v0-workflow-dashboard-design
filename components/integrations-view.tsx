@@ -22,7 +22,7 @@ const integrations: Integration[] = [
   { id: "revue-fiduciaire", name: "Revue Fiduciaire", description: "Documentation fiscale et sociale", category: "Documentation", icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/revue_fiduciaire_png-w37fpimTeiHlxsPWFv03emz5VbJfbt.jpeg" },
   { id: "doctrine", name: "Doctrine", description: "Base de données juridique", category: "Documentation", icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/doctrine_png-A8RlT0XKwckZqFGohIRKgau9ZxCIk8.png" },
   { id: "lexbase", name: "Lexbase", description: "Plateforme juridique et fiscale", category: "Documentation", icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/lexbase-QPy7H1bt8dktwujt9Kasmx8vdDg679.png" },
-  { id: "lexisnexis", name: "Lexisnexis", description: "Solutions juridiques professionnelles", category: "Documentation", icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/lexisnaxis-bZI3bK616gmlAe5D8CPCOKo2O1tO7I.png" },
+  { id: "lexisnexis", name: "Lexis+AI", description: "Solutions juridiques professionnelles", category: "Documentation", icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/lexisai-9p9fE4pHIptNh6nPAlnPeQGvfWzu4T.png" },
   { id: "lamyline", name: "Lamyline", description: "Documentation juridique Lamy", category: "Documentation", icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/lamyline-DlPwFTHyojNxWt1FYS7lS2vbF6cF7L.png" },
   { id: "legifiscale", name: "LegiFiscale", description: "Documentation et veille fiscale", category: "Documentation", icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/legifiscal-AkGgTX8PLSiPQ56iV63Wp8rHD1aQ9k.png" },
 ]
