@@ -492,7 +492,10 @@ export default function HomePage() {
                 onCancel={() => handleCloseTab(activeTab.id)}
               />
             ) : activeTab?.type === "onboarding" && activeTab.clientId ? (
-              <OnboardingView clientId={activeTab.clientId} />
+              <OnboardingView 
+                clientId={activeTab.clientId} 
+                onBack={() => handleCloseTab(activeTab.id)}
+              />
             ) : null}
           </main>
         </div>
