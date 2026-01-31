@@ -31,7 +31,7 @@ import {
   CheckCircle2,
   Edit3
 } from "lucide-react"
-import { confirmOnboarding, requestRevision } from "@/app/actions/save-onboarding"
+import { confirmOnboarding, requestRevision, updateOnboardingNotes } from "@/app/actions/save-onboarding"
 import type { Client } from "@/lib/types"
 
 interface OnboardingViewProps {
@@ -52,8 +52,10 @@ export function OnboardingView({ clientId }: OnboardingViewProps) {
   const [loading, setLoading] = useState(true)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [showRevisionDialog, setShowRevisionDialog] = useState(false)
+  const [showEditNotesDialog, setShowEditNotesDialog] = useState(false)
   const [revisionNotes, setRevisionNotes] = useState("")
   const [confirmNotes, setConfirmNotes] = useState("")
+  const [editNotes, setEditNotes] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const loadClient = async () => {
@@ -101,6 +103,23 @@ export function OnboardingView({ clientId }: OnboardingViewProps) {
       console.error("Erreur demande révision:", error)
     }
     setIsSubmitting(false)
+  }
+
+  const handleUpdateNotes = async () => {
+    setIsSubmitting(true)
+    try {
+      await updateOnboardingNotes(clientId, editNotes.trim() || null)
+      await loadClient()
+      setShowEditNotesDialog(false)
+    } catch (error) {
+      console.error("Erreur mise à jour notes:", error)
+    }
+    setIsSubmitting(false)
+  }
+
+  const openEditNotesDialog = () => {
+    setEditNotes(client?.onboarding_notes_avocat || "")
+    setShowEditNotesDialog(true)
   }
 
   if (loading) {
@@ -418,11 +437,21 @@ export function OnboardingView({ clientId }: OnboardingViewProps) {
           )}
 
           {status === "confirme" && (
-            <div className="flex items-center gap-3 pt-4 border-t">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-              <span className="text-emerald-700 font-medium">
-                Onboarding confirmé le {formatDate(client.onboarding_confirme_le)}
-              </span>
+            <div className="flex items-center justify-between pt-4 border-t">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                <span className="text-emerald-700 font-medium">
+                  Onboarding confirmé le {formatDate(client.onboarding_confirme_le)}
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={openEditNotesDialog}
+              >
+                <Edit3 className="h-4 w-4 mr-2" />
+                {client.onboarding_notes_avocat ? "Modifier la note" : "Ajouter une note"}
+              </Button>
             </div>
           )}
 
@@ -515,6 +544,59 @@ export function OnboardingView({ clientId }: OnboardingViewProps) {
                 <Check className="h-4 w-4 mr-2" />
               )}
               Confirmer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Notes Dialog */}
+      <Dialog open={showEditNotesDialog} onOpenChange={setShowEditNotesDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifier la note</DialogTitle>
+            <DialogDescription>
+              Modifiez ou supprimez la note associée à cet onboarding.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Note (optionnel)</label>
+              <Textarea
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                placeholder="Ajoutez une note..."
+                className="mt-1.5"
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowEditNotesDialog(false)}>
+              Annuler
+            </Button>
+            {client?.onboarding_notes_avocat && (
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  setEditNotes("")
+                  handleUpdateNotes()
+                }}
+                disabled={isSubmitting}
+                className="text-red-600 hover:bg-red-50 hover:text-red-700"
+              >
+                Supprimer la note
+              </Button>
+            )}
+            <Button 
+              onClick={handleUpdateNotes} 
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Check className="h-4 w-4 mr-2" />
+              )}
+              Enregistrer
             </Button>
           </DialogFooter>
         </DialogContent>

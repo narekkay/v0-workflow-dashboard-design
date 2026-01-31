@@ -343,3 +343,18 @@ export async function getOnboardingData(clientId: string) {
   if (error) throw new Error(`Erreur récupération données: ${error.message}`)
   return data
 }
+
+// Action pour mettre à jour les notes de l'avocat
+export async function updateOnboardingNotes(clientId: string, notes: string | null) {
+  const supabase = await createClient()
+  
+  const { error } = await supabase
+    .from("clients")
+    .update({
+      onboarding_notes_avocat: notes,
+    })
+    .eq("id", clientId)
+  
+  if (error) throw new Error(`Erreur mise à jour notes: ${error.message}`)
+  return { success: true }
+}
