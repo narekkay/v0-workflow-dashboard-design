@@ -287,6 +287,7 @@ export async function finalizeSubmission(clientId: string, data: OnboardingFormD
       onboarding_soumis_le: new Date().toISOString(),
       onboarding_reference: referenceNumber,
       onboarding_form_completed: true,
+      onboarding_status: "soumis",
     })
     .eq("id", clientId)
   
@@ -294,4 +295,51 @@ export async function finalizeSubmission(clientId: string, data: OnboardingFormD
   
   // Nettoyer le localStorage côté client sera fait après le retour
   return { success: true, referenceNumber }
+}
+
+// Action pour l'avocat: Confirmer l'onboarding
+export async function confirmOnboarding(clientId: string, notes?: string) {
+  const supabase = await createClient()
+  
+  const { error } = await supabase
+    .from("clients")
+    .update({
+      onboarding_status: "confirme",
+      onboarding_confirme_le: new Date().toISOString(),
+      onboarding_notes_avocat: notes || null,
+    })
+    .eq("id", clientId)
+  
+  if (error) throw new Error(`Erreur confirmation: ${error.message}`)
+  return { success: true }
+}
+
+// Action pour l'avocat: Mettre en révision
+export async function requestRevision(clientId: string, notes: string) {
+  const supabase = await createClient()
+  
+  const { error } = await supabase
+    .from("clients")
+    .update({
+      onboarding_status: "en_revision",
+      onboarding_notes_avocat: notes,
+    })
+    .eq("id", clientId)
+  
+  if (error) throw new Error(`Erreur demande révision: ${error.message}`)
+  return { success: true }
+}
+
+// Action pour récupérer les données onboarding d'un client
+export async function getOnboardingData(clientId: string) {
+  const supabase = await createClient()
+  
+  const { data, error } = await supabase
+    .from("clients")
+    .select("*")
+    .eq("id", clientId)
+    .single()
+  
+  if (error) throw new Error(`Erreur récupération données: ${error.message}`)
+  return data
 }
