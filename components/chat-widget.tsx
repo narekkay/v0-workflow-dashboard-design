@@ -3,7 +3,7 @@
 import React from "react"
 
 import { useState } from "react"
-import { MessageCircle, X, Send, RotateCcw, Bot, LayoutGrid } from "lucide-react"
+import { MessageCircle, X, Send, RotateCcw, Bot, LayoutGrid, Maximize2, Minimize2, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -18,6 +18,8 @@ interface Message {
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [sessionId] = useState(() => Date.now().toString())
 const initialMessage: Message = {
     id: "1",
     content: "Bonjour Maitre X, une question sur un client ? Un process flou ? Je suis la pour vous aider ☀️",
@@ -84,11 +86,49 @@ const initialMessage: Message = {
     setMessages([{ ...initialMessage, id: Date.now().toString(), timestamp: new Date() }])
   }
 
+  const handleSaveHistory = async () => {
+    try {
+      // Save chat history to database
+      const response = await fetch('/api/chat-history', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId,
+          messages: messages.map(msg => ({
+            message_id: msg.id,
+            content: msg.content,
+            role: msg.role,
+            selected_filter: selectedFilter,
+            timestamp: msg.timestamp,
+          })),
+        }),
+      })
+
+      if (response.ok) {
+        console.log('[v0] Chat history saved successfully')
+        alert('Historique sauvegardé avec succès!')
+      } else {
+        console.error('[v0] Failed to save chat history')
+        alert('Erreur lors de la sauvegarde de l\'historique')
+      }
+    } catch (error) {
+      console.error('[v0] Error saving chat history:', error)
+      alert('Erreur lors de la sauvegarde de l\'historique')
+    }
+  }
+
   return (
     <>
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-80 sm:w-96 rounded-2xl border bg-card shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200">
+        <div className={cn(
+          "fixed z-50 border bg-card shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200",
+          isFullscreen 
+            ? "inset-4 rounded-lg" 
+            : "bottom-24 right-6 w-80 sm:w-96 rounded-2xl"
+        )}>
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b bg-primary text-primary-foreground">
             <div className="flex items-center gap-2">
@@ -96,6 +136,24 @@ const initialMessage: Message = {
               <span className="font-medium text-sm">Assistant FiscalPro</span>
             </div>
             <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-primary-foreground hover:bg-primary-foreground/10"
+                onClick={handleSaveHistory}
+                title="Sauvegarder l'historique"
+              >
+                <Save className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-primary-foreground hover:bg-primary-foreground/10"
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                title={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
+              >
+                {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -117,7 +175,10 @@ const initialMessage: Message = {
           </div>
 
           {/* Messages */}
-          <div className="h-80 overflow-y-auto p-4 space-y-3 bg-muted/30 relative">
+          <div className={cn(
+            "overflow-y-auto p-4 space-y-3 bg-muted/30 relative",
+            isFullscreen ? "h-[calc(100vh-12rem)]" : "h-80"
+          )}>
             {messages.map((message) => (
               <div
                 key={message.id}
