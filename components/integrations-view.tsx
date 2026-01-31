@@ -13,9 +13,9 @@ interface Integration {
 }
 
 const integrations: Integration[] = [
-  { id: "gmail", name: "Gmail", description: "Synchronisez vos emails et envois de documents", category: "Communication", icon: "✉️" },
-  { id: "bofip", name: "Bofip", description: "Base officielle des impôts", category: "Documentation", icon: "📚" },
-  { id: "legifrance", name: "LegiFrance", description: "Service public de diffusion du droit", category: "Documentation", icon: "⚖️" },
+  { id: "gmail", name: "Gmail", description: "Synchronisez vos emails et envois de documents", category: "Communication", icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/gmail_logo-dHcM2RBOUlXfyjOs08BddmGBDwnjtX.png" },
+  { id: "bofip", name: "Bofip", description: "Base officielle des impôts", category: "Documentation", icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/bofip_logo-OsG80Bfx2SSh4rOlNSF4JBsMWgrr0b.png" },
+  { id: "legifrance", name: "LegiFrance", description: "Service public de diffusion du droit", category: "Documentation", icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/legifrance_logo-CKsQXh4Gg3uXoaDl5mxWBSbyWVk8Xf.png" },
   { id: "pappers", name: "Pappers", description: "Données légales et financières des entreprises", category: "Recherche", icon: "🔍" },
   { id: "navis", name: "Navis", description: "Plateforme de veille fiscale", category: "Veille", icon: "📊" },
   { id: "wisetax", name: "Wisetax", description: "Solution de gestion fiscale", category: "Gestion", icon: "💼" },
@@ -76,8 +76,16 @@ export function IntegrationsView() {
               }}
             >
               {/* Icon */}
-              <div className="flex-shrink-0 w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center text-2xl">
-                {app.icon}
+              <div className="flex-shrink-0 w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                {app.icon.startsWith("http") ? (
+                  <img 
+                    src={app.icon} 
+                    alt={`${app.name} logo`}
+                    className="w-10 h-10 object-contain"
+                  />
+                ) : (
+                  <span className="text-2xl">{app.icon}</span>
+                )}
               </div>
 
               {/* Content */}
