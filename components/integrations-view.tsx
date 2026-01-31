@@ -65,31 +65,31 @@ export function IntegrationsView() {
         </div>
 
         {/* Integrations Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {filteredApps.map((app) => (
             <div
               key={app.id}
-              className="bg-white rounded-2xl p-6 flex items-center gap-4 hover:shadow-md transition-shadow"
+              className="bg-white rounded-xl p-4 flex items-center gap-3 hover:shadow-md transition-shadow"
             >
               {/* Icon */}
-              <div className="flex-shrink-0 w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
                 {app.icon.startsWith("http") ? (
                   <img 
                     src={app.icon} 
                     alt={`${app.name} logo`}
-                    className="w-10 h-10 object-contain"
+                    className="w-7 h-7 object-contain"
                   />
                 ) : (
-                  <span className="text-2xl">{app.icon}</span>
+                  <span className="text-lg">{app.icon}</span>
                 )}
               </div>
 
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                <h3 className="text-sm font-semibold text-gray-900 mb-0.5">
                   {app.name}
                 </h3>
-                <p className="text-sm text-gray-500 line-clamp-1">
+                <p className="text-xs text-gray-500 line-clamp-1">
                   {app.description}
                 </p>
               </div>
@@ -99,7 +99,8 @@ export function IntegrationsView() {
                 onClick={() => {
                   console.log("[v0] Connecting to:", app.name)
                 }}
-                className="flex-shrink-0"
+                size="sm"
+                className="flex-shrink-0 text-xs"
               >
                 Connecter
               </Button>
