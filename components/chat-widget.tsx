@@ -137,7 +137,7 @@ const initialMessage: Message = {
           <div className="flex items-center justify-between px-4 py-3 border-b bg-primary text-primary-foreground">
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="font-medium text-sm">Assistant FiscalPro</span>
+              <span className="font-medium text-sm">Assistant Fiscalia</span>
             </div>
             <div className="flex items-center gap-1">
               <Button
