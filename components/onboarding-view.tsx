@@ -165,27 +165,21 @@ export function OnboardingView({ clientId }: OnboardingViewProps) {
         </div>
       </div>
       
-      {/* Progress */}
-      <OnboardingProgress
-        conventionSent={client.convention_sent ?? false}
-        conventionSigned={client.convention_signed ?? false}
-        formPending={client.onboarding_form_pending ?? false}
-        formCompleted={client.onboarding_form_completed ?? false}
-      />
+      {/* Progress - Only show if form not yet submitted */}
+      {!isFormCompleted && (
+        <OnboardingProgress
+          conventionSent={client.convention_sent ?? false}
+          conventionSigned={client.convention_signed ?? false}
+          formPending={client.onboarding_form_pending ?? false}
+          formCompleted={client.onboarding_form_completed ?? false}
+        />
+      )}
 
       {/* Recap Section - Only show if form is completed */}
       {isFormCompleted && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">Récapitulatif des informations</h3>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => window.open(`/onboarding/${clientId}`, "_blank")}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Voir le formulaire complet
-            </Button>
           </div>
 
           {/* Grid of Cards */}
@@ -443,24 +437,47 @@ export function OnboardingView({ clientId }: OnboardingViewProps) {
         </div>
       )}
 
-      {/* If form not completed */}
+      {/* If form not completed - Show actions */}
       {!isFormCompleted && (
-        <Card className="border-dashed">
-          <CardContent className="p-8 text-center">
-            <Clock className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="font-medium text-gray-900 mb-2">En attente du client</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Le client n'a pas encore complété son formulaire d'onboarding.
-            </p>
-            <Button 
-              variant="outline"
-              onClick={() => window.open(`/onboarding/${clientId}`, "_blank")}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Voir le formulaire
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          <Card className="border-dashed">
+            <CardContent className="p-8 text-center">
+              <Clock className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <h3 className="font-medium text-gray-900 mb-2">En attente du client</h3>
+              <p className="text-sm text-muted-foreground">
+                Le client n'a pas encore complété son formulaire d'onboarding.
+              </p>
+            </CardContent>
+          </Card>
+          
+          {/* Actions disponibles - only when form not submitted */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Actions disponibles</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button 
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => {
+                  const link = `${window.location.origin}/onboarding/${clientId}`
+                  navigator.clipboard.writeText(link)
+                }}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Copier le lien du formulaire
+              </Button>
+              <Button 
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => window.open(`/onboarding/${clientId}`, "_blank")}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Ouvrir le formulaire client
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Confirm Dialog */}
