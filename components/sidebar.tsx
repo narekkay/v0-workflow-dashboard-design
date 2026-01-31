@@ -114,8 +114,6 @@ export function Sidebar({
             {!isCollapsed && clientId && (
               <a
                 href={`/memberview/${clientId}`}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="flex items-center gap-2 mx-3 mt-2 px-3 py-2 text-sm rounded-lg border border-sidebar-border bg-sidebar hover:bg-sidebar-accent transition-colors text-sidebar-foreground hover:text-sidebar-accent-foreground"
               >
                 <ExternalLink className="h-4 w-4 flex-shrink-0" />
