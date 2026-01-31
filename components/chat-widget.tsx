@@ -3,7 +3,7 @@
 import React from "react"
 
 import { useState } from "react"
-import { MessageCircle, X, Send, RotateCcw, Bot, Filter } from "lucide-react"
+import { MessageCircle, X, Send, RotateCcw, Bot, LayoutGrid } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -171,7 +171,7 @@ const initialMessage: Message = {
                     variant="ghost"
                     className="h-9 w-9 shrink-0"
                   >
-                    <Filter className="h-4 w-4" />
+                    <LayoutGrid className="h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-64 p-2" align="start">
