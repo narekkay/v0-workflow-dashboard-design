@@ -19,12 +19,12 @@ const integrations: Integration[] = [
   { id: "pappers", name: "Pappers", description: "Données légales et financières des entreprises", category: "Recherche", icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Pappers-logo-blue-mRwqKGqrPBTnRvyGlCeqv9EU7y31ES.png" },
   { id: "navis", name: "Navis", description: "Plateforme de veille fiscale", category: "Veille", icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Capture-decran-2023-10-26-a-16.29.26-lBYNJosgmMUr4czpn6rE9NCsRT6KA0.png" },
   { id: "wisetax", name: "Wisetax", description: "Solution de gestion fiscale", category: "Gestion", icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo-wisetax-b9mBRHRm5WaMBHxGivAX0d9svbowq9.svg" },
-  { id: "revue-fiduciaire", name: "Revue Fiduciaire", description: "Documentation fiscale et sociale", category: "Documentation", icon: "📖" },
-  { id: "doctrine", name: "Doctrine", description: "Base de données juridique", category: "Documentation", icon: "📑" },
-  { id: "lexbase", name: "Lexbase", description: "Plateforme juridique et fiscale", category: "Documentation", icon: "📘" },
-  { id: "lexisnexis", name: "Lexisnexis", description: "Solutions juridiques professionnelles", category: "Documentation", icon: "📕" },
-  { id: "lamyline", name: "Lamyline", description: "Documentation juridique Lamy", category: "Documentation", icon: "📗" },
-  { id: "legifiscale", name: "LegiFiscale", description: "Documentation et veille fiscale", category: "Documentation", icon: "📙" },
+  { id: "revue-fiduciaire", name: "Revue Fiduciaire", description: "Documentation fiscale et sociale", category: "Documentation", icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/revue_fiduciaire_png-w37fpimTeiHlxsPWFv03emz5VbJfbt.jpeg" },
+  { id: "doctrine", name: "Doctrine", description: "Base de données juridique", category: "Documentation", icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/doctrine_png-A8RlT0XKwckZqFGohIRKgau9ZxCIk8.png" },
+  { id: "lexbase", name: "Lexbase", description: "Plateforme juridique et fiscale", category: "Documentation", icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/lexbase-QPy7H1bt8dktwujt9Kasmx8vdDg679.png" },
+  { id: "lexisnexis", name: "Lexisnexis", description: "Solutions juridiques professionnelles", category: "Documentation", icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/lexisnaxis-bZI3bK616gmlAe5D8CPCOKo2O1tO7I.png" },
+  { id: "lamyline", name: "Lamyline", description: "Documentation juridique Lamy", category: "Documentation", icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/lamyline-DlPwFTHyojNxWt1FYS7lS2vbF6cF7L.png" },
+  { id: "legifiscale", name: "LegiFiscale", description: "Documentation et veille fiscale", category: "Documentation", icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/legifiscal-AkGgTX8PLSiPQ56iV63Wp8rHD1aQ9k.png" },
 ]
 
 export function IntegrationsView() {
