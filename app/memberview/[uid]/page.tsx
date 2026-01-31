@@ -129,7 +129,7 @@ export default function MemberViewPage({ params }: { params: { uid: string } }) 
         className="sticky top-0 z-50 bg-white border-b"
         style={{ height: "80px", borderColor: "#e5e5e5" }}
       >
-        <div className="h-full px-16 flex items-center justify-between max-w-[1440px] mx-auto">
+        <div className="h-full px-20 flex items-center justify-between max-w-[1280px] mx-auto">
           {/* Left side */}
           <div className="flex flex-col justify-center gap-1">
             <div className="flex items-center gap-2 text-zinc-400 text-[10px] uppercase tracking-[0.1em] font-medium">
@@ -158,7 +158,7 @@ export default function MemberViewPage({ params }: { params: { uid: string } }) 
       </header>
 
       {/* Main Layout */}
-      <div className="flex max-w-[1440px] mx-auto px-16">
+      <div className="flex max-w-[1280px] mx-auto px-20">
         {/* Sidebar */}
         <aside 
           className="sticky top-[80px] h-[calc(100vh-80px)] bg-transparent pt-12 pr-8"
@@ -354,7 +354,7 @@ export default function MemberViewPage({ params }: { params: { uid: string } }) 
 
       {/* Footer */}
       <footer className="border-t py-6 mt-12" style={{ borderColor: "#e5e5e5" }}>
-        <div className="max-w-[1440px] mx-auto px-16 flex items-center justify-between">
+        <div className="max-w-[1280px] mx-auto px-20 flex items-center justify-between">
           <p className="text-[13px] text-zinc-500">
             © 2026 Fiscalia. Tous droits réservés.
           </p>
