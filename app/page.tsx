@@ -1,8 +1,7 @@
-import Link from "next/link"
-import { Users, FileText, FileCheck, Shield } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { redirect } from "next/navigation"
 
 export default function LandingPage() {
+  redirect("/dashboard")
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Navigation */}
