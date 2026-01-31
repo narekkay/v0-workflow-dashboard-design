@@ -37,7 +37,7 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   // Public routes that don't require authentication
-  const publicRoutes = ['/', '/login', '/logout']
+  const publicRoutes = ['/', '/login', '/logout', '/403']
   const isPublicRoute = publicRoutes.includes(pathname)
 
   // Redirect to dashboard if already logged in and trying to access login
