@@ -2,6 +2,9 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
+  const startTime = Date.now()
+  console.log('[v0] Middleware: Starting for path:', request.nextUrl.pathname)
+  
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -29,10 +32,12 @@ export async function updateSession(request: NextRequest) {
     },
   )
 
+  const authStart = Date.now()
   // Refresh session to prevent auto-logout
   const {
     data: { user },
   } = await supabase.auth.getUser()
+  console.log('[v0] Middleware: getUser took', Date.now() - authStart, 'ms')
 
   const pathname = request.nextUrl.pathname
 
@@ -61,12 +66,14 @@ export async function updateSession(request: NextRequest) {
 
   // If user is authenticated and on a protected route, check profile
   if (user && isProtectedRoute) {
+    const profileStart = Date.now()
     // Fetch user profile for role check
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role, is_active')
       .eq('id', user.id)
       .maybeSingle()
+    console.log('[v0] Middleware: profile query took', Date.now() - profileStart, 'ms')
 
     if (profileError) {
       console.error('[v0] Error fetching profile:', profileError)
@@ -123,5 +130,6 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  console.log('[v0] Middleware: Total time', Date.now() - startTime, 'ms')
   return supabaseResponse
 }
