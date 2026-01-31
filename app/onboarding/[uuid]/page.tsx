@@ -1,1263 +1,1407 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { useParams } from "next/navigation"
-import { createBrowserClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/supabase/client"
 import { 
-  ChevronDown, 
-  Check, 
-  Upload, 
-  FileText, 
-  X, 
-  Trash2, 
-  Plus,
-  Clock
+  ChevronDown, Upload, FileText, Folder, Check, X, Trash2, 
+  AlertCircle, CheckCircle2, Loader2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Progress } from "@/components/ui/progress"
+import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Switch } from "@/components/ui/switch"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
-// Types
-interface FormData {
-  identity: {
-    lastName: string
-    firstName: string
-    birthDate: string
-    birthPlace: string
-    address: string
-  }
-  residence: {
-    taxResident: string
-    livedAbroad: string
-    abroadCountry: string
-  }
-  family: {
-    status: string
-    hasChange: string
-  }
-  children: {
-    hasChildren: string
-    list: Child[]
-  }
-  pensions: {
-    hasPension: string
-    list: Pension[]
-  }
-  events: Event[]
-  spouse: Spouse | null
-  exSpouse: Spouse | null
-  income: Record<string, boolean>
-  deductions: Record<string, boolean>
-  documents: UploadedFile[]
-  confirmAccuracy: boolean
-  confirmProcessing: boolean
-}
+// ============================================
+// TYPES
+// ============================================
 
 interface Child {
   id: string
-  firstName: string
-  lastName: string
+  name: string
   birthDate: string
-  attachment: string
-  isShared: boolean
-}
-
-interface Pension {
-  id: string
-  type: string
-  beneficiary: string
-  amount: string
-}
-
-interface Event {
-  id: string
-  type: string
-  date: string
-  details: string
-}
-
-interface Spouse {
-  firstName: string
-  lastName: string
-  birthDate: string
-  cohabiting: boolean
+  custody: "principale" | "alternee"
 }
 
 interface UploadedFile {
   id: string
   name: string
   size: number
-  type: string
+  file: File
+  uploadedAt: Date
 }
 
-// Income toggles configuration
-const incomeToggles = [
-  { id: "salaires", label: "Salaires et traitements" },
-  { id: "bnc", label: "BNC (professions libérales)" },
-  { id: "bic", label: "BIC (activité commerciale)" },
-  { id: "ba", label: "BA (activité agricole)" },
-  { id: "foncier", label: "Revenus fonciers" },
-  { id: "lmnp", label: "LMNP / LMP" },
-  { id: "rcm", label: "Revenus de capitaux mobiliers" },
-  { id: "plusvalues", label: "Plus-values mobilières" },
-  { id: "crypto", label: "Crypto-actifs" },
-  { id: "retraite", label: "Pensions de retraite" },
-  { id: "ifi", label: "Assujetti à l'IFI" },
-  { id: "etranger", label: "Revenus de source étrangère" },
-]
-
-// Deduction toggles configuration
-const deductionToggles = [
-  { id: "emploi_domicile", label: "Emploi à domicile" },
-  { id: "garde_enfants", label: "Garde d'enfants" },
-  { id: "dons", label: "Dons aux œuvres" },
-  { id: "pinel", label: "Investissement Pinel" },
-  { id: "per", label: "Épargne retraite (PER)" },
-  { id: "deficit_foncier", label: "Déficit foncier" },
-  { id: "csg", label: "CSG déductible" },
-  { id: "pension_alimentaire", label: "Pension alimentaire versée" },
-]
-
-// Suggested documents based on form selections
-const getSuggestedDocuments = (formData: FormData) => {
-  const docs: { name: string; category: string }[] = [
-    { name: "Pièce d'identité", category: "identity" },
-    { name: "Avis d'imposition N-1", category: "identity" },
-  ]
-
-  if (formData.income.salaires) {
-    docs.push({ name: "Bulletins de salaire", category: "income" })
-    docs.push({ name: "Attestation employeur", category: "income" })
-  }
-  if (formData.income.bnc || formData.income.bic) {
-    docs.push({ name: "Liasse fiscale 2035 ou 2031", category: "income" })
-  }
-  if (formData.income.foncier || formData.income.lmnp) {
-    docs.push({ name: "Relevés de loyers perçus", category: "income" })
-    docs.push({ name: "Charges déductibles", category: "income" })
-  }
-  if (formData.income.rcm) {
-    docs.push({ name: "IFU (relevé bancaire)", category: "income" })
-  }
-  if (formData.income.plusvalues || formData.income.crypto) {
-    docs.push({ name: "Relevés de cessions", category: "income" })
-  }
-  if (formData.income.ifi) {
-    docs.push({ name: "Justificatifs patrimoine IFI", category: "income" })
-  }
-  if (formData.income.etranger) {
-    docs.push({ name: "Justificatifs revenus étrangers", category: "income" })
-  }
-  if (formData.deductions.emploi_domicile) {
-    docs.push({ name: "Attestation URSSAF / CESU", category: "deduction" })
-  }
-  if (formData.deductions.dons) {
-    docs.push({ name: "Reçus fiscaux dons", category: "deduction" })
-  }
-  if (formData.deductions.per) {
-    docs.push({ name: "Relevé versements PER", category: "deduction" })
-  }
-
-  return docs
+interface FormData {
+  // Identité
+  firstName: string
+  lastName: string
+  birthDate: string
+  address: string
+  
+  // Résidence fiscale
+  taxResident: boolean | null
+  livedAbroad: boolean | null
+  abroadCountry: string
+  abroadDays: string
+  
+  // Situation familiale
+  familyStatus: string
+  spouseName: string
+  matrimonialRegime: string
+  jointDeclaration: boolean | null
+  exSpouseName: string
+  alimonyPaid: boolean | null
+  alimonyAmount: string
+  children: Child[]
+  familyChange: boolean
+  
+  // Revenus
+  salary: boolean
+  salaryExpenses: "standard" | "real"
+  salaryExpensesAmount: string
+  pension: boolean
+  pensionCount: string
+  unemployment: boolean
+  unemploymentStart: string
+  unemploymentEnd: string
+  independent: boolean
+  independentType: string
+  independentRegime: "real" | "micro"
+  independentCharges: string
+  foncier: boolean
+  foncierCount: string
+  foncierRegime: "micro" | "real"
+  lmnp: boolean
+  lmnpCount: string
+  lmnpRegime: "micro" | "real"
+  foreign: boolean
+  foreignCountry: string
+  foreignAmount: string
+  foreignTaxPaid: boolean | null
+  foreignTaxAmount: string
+  interest: boolean
+  interestPfu: boolean | null
+  dividends: boolean
+  dividendsPfu: boolean | null
+  crypto: boolean
+  cryptoTransactions: string
+  cryptoPlatforms: string
+  
+  // Charges & Déductions
+  donations: boolean
+  donationsAmount: string
+  childcare: boolean
+  childcareAmount: string
+  homeServices: boolean
+  homeServicesType: string
+  homeServicesAmount: string
+  alimonyDeduction: boolean
+  alimonyBeneficiary: string
+  alimonyDeductionAmount: string
+  
+  // Confirmations
+  accuracy: boolean
+  processing: boolean
 }
 
-// Accordion sections configuration
-const sections = [
-  { id: "identity", title: "Identité & coordonnées", subtitle: "Informations personnelles de base" },
-  { id: "residence", title: "Résidence fiscale & international", subtitle: "Votre situation de résidence" },
-  { id: "family", title: "Situation familiale", subtitle: "Votre situation au 31 décembre" },
-  { id: "relations", title: "Relations du foyer", subtitle: "Conjoint actuel ou ex-conjoint" },
-  { id: "children", title: "Enfants & personnes à charge", subtitle: "Enfants et autres personnes rattachées" },
-  { id: "pensions", title: "Pensions & obligations", subtitle: "Pensions versées ou reçues" },
-  { id: "events", title: "Événements familiaux", subtitle: "Événements survenus dans l'année" },
-  { id: "income", title: "Panorama Revenus & IFI", subtitle: "Types de revenus et patrimoine" },
-  { id: "deductions", title: "Charges / réductions / crédits", subtitle: "Dépenses ouvrant droit à réduction" },
-  { id: "documents", title: "Documents", subtitle: "Justificatifs et pièces à fournir" },
-  { id: "review", title: "Relecture & soumission", subtitle: "Validation finale de votre dossier" },
+interface SuggestedDocument {
+  id: string
+  name: string
+  keywords: string[]
+  mandatory: boolean
+  note?: string
+  status: "received" | "missing" | "optional"
+}
+
+// ============================================
+// CONSTANTES
+// ============================================
+
+const STORAGE_KEY = "fiscalia_onboarding_data"
+
+const COUNTRIES = [
+  "Allemagne", "Belgique", "Espagne", "États-Unis", "Italie", 
+  "Luxembourg", "Maroc", "Portugal", "Royaume-Uni", "Suisse", "Autre"
 ]
+
+const FAMILY_STATUSES = [
+  { value: "single", label: "Célibataire" },
+  { value: "married", label: "Marié(e)" },
+  { value: "pacs", label: "Pacsé(e)" },
+  { value: "cohabiting", label: "Union libre" },
+  { value: "divorced", label: "Divorcé(e)" },
+  { value: "separated", label: "Séparé(e)" },
+  { value: "widowed", label: "Veuf/Veuve" },
+]
+
+const MATRIMONIAL_REGIMES = [
+  { value: "community", label: "Communauté" },
+  { value: "separation", label: "Séparation de biens" },
+  { value: "participation", label: "Participation aux acquêts" },
+]
+
+const initialFormData: FormData = {
+  firstName: "",
+  lastName: "",
+  birthDate: "",
+  address: "",
+  taxResident: null,
+  livedAbroad: null,
+  abroadCountry: "",
+  abroadDays: "",
+  familyStatus: "",
+  spouseName: "",
+  matrimonialRegime: "",
+  jointDeclaration: null,
+  exSpouseName: "",
+  alimonyPaid: null,
+  alimonyAmount: "",
+  children: [],
+  familyChange: false,
+  salary: false,
+  salaryExpenses: "standard",
+  salaryExpensesAmount: "",
+  pension: false,
+  pensionCount: "",
+  unemployment: false,
+  unemploymentStart: "",
+  unemploymentEnd: "",
+  independent: false,
+  independentType: "",
+  independentRegime: "micro",
+  independentCharges: "",
+  foncier: false,
+  foncierCount: "",
+  foncierRegime: "micro",
+  lmnp: false,
+  lmnpCount: "",
+  lmnpRegime: "micro",
+  foreign: false,
+  foreignCountry: "",
+  foreignAmount: "",
+  foreignTaxPaid: null,
+  foreignTaxAmount: "",
+  interest: false,
+  interestPfu: null,
+  dividends: false,
+  dividendsPfu: null,
+  crypto: false,
+  cryptoTransactions: "",
+  cryptoPlatforms: "",
+  donations: false,
+  donationsAmount: "",
+  childcare: false,
+  childcareAmount: "",
+  homeServices: false,
+  homeServicesType: "",
+  homeServicesAmount: "",
+  alimonyDeduction: false,
+  alimonyBeneficiary: "",
+  alimonyDeductionAmount: "",
+  accuracy: false,
+  processing: false,
+}
+
+// ============================================
+// HOOKS CUSTOM
+// ============================================
+
+function useAutosave(data: FormData, uploadedFiles: UploadedFile[]) {
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "error">("saved")
+  
+  useEffect(() => {
+    setSaveStatus("saving")
+    
+    const timeout = setTimeout(() => {
+      try {
+        const dataToSave = {
+          ...data,
+          uploadedFilesMetadata: uploadedFiles.map(f => ({
+            id: f.id,
+            name: f.name,
+            size: f.size,
+            uploadedAt: f.uploadedAt.toISOString()
+          }))
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave))
+        setSaveStatus("saved")
+      } catch {
+        setSaveStatus("error")
+      }
+    }, 800)
+    
+    return () => clearTimeout(timeout)
+  }, [data, uploadedFiles])
+  
+  return saveStatus
+}
+
+function useProgressCalculation(data: FormData, uploadedFiles: UploadedFile[]) {
+  return useMemo(() => {
+    let completed = 0
+    
+    // 1. Identité complète
+    if (data.firstName && data.lastName && data.address) completed++
+    
+    // 2. Résidence fiscale renseignée
+    if (data.taxResident !== null) completed++
+    
+    // 3. Situation familiale renseignée
+    if (data.familyStatus) completed++
+    
+    // 4. Au moins 1 document uploadé
+    if (uploadedFiles.length > 0) completed++
+    
+    return Math.round((completed / 4) * 100)
+  }, [data.firstName, data.lastName, data.address, data.taxResident, data.familyStatus, uploadedFiles.length])
+}
+
+function useDocumentSuggestions(data: FormData, uploadedFiles: UploadedFile[]): SuggestedDocument[] {
+  return useMemo(() => {
+    const suggestions: SuggestedDocument[] = []
+    
+    const normalize = (text: string) => 
+      text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    
+    const checkFileMatch = (keywords: string[]) => {
+      return uploadedFiles.some(file => {
+        const normalizedName = normalize(file.name)
+        return keywords.some(kw => normalizedName.includes(normalize(kw)))
+      })
+    }
+    
+    const addDoc = (id: string, name: string, keywords: string[], mandatory: boolean, note?: string) => {
+      const matched = checkFileMatch(keywords)
+      suggestions.push({
+        id,
+        name,
+        keywords,
+        mandatory,
+        note,
+        status: matched ? "received" : (mandatory ? "missing" : "optional")
+      })
+    }
+    
+    // DOCUMENTS OBLIGATOIRES POUR TOUS
+    addDoc("iban", "Liste IBAN de vos comptes bancaires", ["iban", "rib", "compte", "bancaire"], true)
+    addDoc("identity", "Pièce d'identité", ["identite", "identité", "carte", "passeport", "cni"], true)
+    
+    // SALAIRES
+    if (data.salary) {
+      addDoc("salary-slips", "Bulletins de salaire", ["bulletin", "salaire", "paie", "fiche"], true, "Au minimum le dernier bulletin de décembre")
+      addDoc("employer-cert", "Attestation employeur / récapitulatif annuel", ["attestation", "employeur", "recap", "récap"], false, "Optionnel si bulletin insuffisant")
+      if (data.salaryExpenses === "real") {
+        addDoc("real-expenses", "Justificatifs frais réels", ["frais", "kilometrique", "kilomètre", "repas", "deplacement", "déplacement"], true)
+      }
+    }
+    
+    // PENSIONS
+    if (data.pension) {
+      addDoc("pension-cert", "Attestation annuelle de pension", ["pension", "retraite", "attestation", "carsat", "cnav"], true, "Pensions retraite ou invalidité")
+    }
+    
+    // CHÔMAGE
+    if (data.unemployment) {
+      addDoc("unemployment-cert", "Attestation Pôle emploi", ["pole", "pôle", "emploi", "chomage", "chômage", "allocation"], true, "Montants imposables")
+    }
+    
+    // INDÉPENDANTS
+    if (data.independent) {
+      if (data.independentRegime === "real") {
+        addDoc("tax-return", "Liasse fiscale", ["liasse", "fiscal", "2031", "2033", "bilan"], true, "Déclaration complète régime réel")
+        if (data.independentCharges) {
+          addDoc("charges-proof", "Justificatifs de charges", ["charge", "facture", "depense", "dépense"], false, "Charges déductibles BNC/BIC")
+        }
+      } else {
+        addDoc("income-table", "Tableau recettes/dépenses", ["recette", "micro", "chiffre", "affaires"], true, "Livre des recettes micro")
+      }
+    }
+    
+    // FONCIER
+    if (data.foncier) {
+      addDoc("rent-receipts", "Quittances / loyers encaissés", ["quittance", "loyer", "bail", "locataire"], true, "Montants bruts perçus")
+      addDoc("property-tax", "Taxe foncière", ["taxe", "fonciere", "foncière", "impot", "impôt"], true, "Charge déductible")
+      addDoc("condo-charges", "Charges de copropriété", ["copro", "syndic", "charge"], false, "Déductibles selon cas")
+    }
+    
+    // LMNP
+    if (data.lmnp) {
+      addDoc("lmnp-income", "Tableau recettes LMNP", ["lmnp", "recette", "meuble", "meublé"], true, "Base micro ou réel")
+      if (data.lmnpRegime === "real") {
+        addDoc("lmnp-depreciation", "Tableau amortissements", ["amortissement", "lmnp", "reel", "réel"], false, "Spécifique régime réel")
+        addDoc("lmnp-charges", "Factures charges LMNP", ["facture", "lmnp", "charge"], false, "Charges déductibles")
+      }
+    }
+    
+    // REVENUS ÉTRANGERS
+    if (data.foreign) {
+      addDoc("foreign-income", "Justificatifs revenus étrangers", ["etranger", "étranger", "foreign", "international"], true, "Avant crédits d'impôt")
+      if (data.foreignTaxPaid) {
+        addDoc("foreign-tax", "Justificatif impôt payé à l'étranger", ["impot", "impôt", "etranger", "étranger", "credit", "crédit"], false, "Pour crédit d'impôt ou exonération")
+      }
+    }
+    
+    // INTÉRÊTS
+    if (data.interest) {
+      addDoc("ifu-interest", "IFU / attestation bancaire (intérêts)", ["ifu", "interet", "intérêt", "bancaire", "livret"], true, "Imprimé Fiscal Unique")
+    }
+    
+    // DIVIDENDES
+    if (data.dividends) {
+      addDoc("ifu-dividends", "IFU dividendes", ["ifu", "dividende", "action"], true, "Flat tax ou barème")
+    }
+    
+    // CRYPTO
+    if (data.crypto) {
+      addDoc("crypto-history", "Historique des cessions crypto", ["crypto", "cession", "bitcoin", "blockchain", "binance"], true, "Calcul plus-values")
+      addDoc("crypto-statements", "Relevés plateformes crypto", ["plateforme", "crypto", "exchange", "releve", "relevé"], false, "Traçabilité des transactions")
+    }
+    
+    // DONS
+    if (data.donations) {
+      addDoc("donation-receipts", "Reçus fiscaux (dons)", ["don", "recu", "reçu", "cerfa", "association"], true, "Réduction d'impôt")
+    }
+    
+    // GARDE ENFANTS
+    if (data.childcare) {
+      addDoc("childcare-cert", "Attestation garde d'enfants", ["garde", "enfant", "creche", "crèche", "assistante"], true, "Crédit d'impôt")
+    }
+    
+    // SERVICES À LA PERSONNE
+    if (data.homeServices) {
+      addDoc("home-services-cert", "Attestation services à la personne", ["service", "personne", "sap", "menage", "ménage"], true, "Crédit d'impôt 50%")
+    }
+    
+    // PENSION ALIMENTAIRE
+    if (data.alimonyDeduction) {
+      addDoc("alimony-proof", "Justificatifs pension alimentaire", ["pension", "alimentaire", "versement", "virement"], true, "Déduction plafonnée")
+    }
+    
+    // CHANGEMENT SITUATION FAMILIALE
+    if (data.familyChange) {
+      addDoc("family-book", "Livret de famille", ["livret", "famille", "mariage", "divorce", "naissance"], false, "Justificatif changement situation")
+    }
+    
+    return suggestions.sort((a, b) => {
+      const order = { missing: 0, optional: 1, received: 2 }
+      return order[a.status] - order[b.status]
+    })
+  }, [data, uploadedFiles])
+}
+
+// ============================================
+// COMPOSANT PRINCIPAL
+// ============================================
 
 export default function OnboardingPage() {
   const params = useParams()
-  const clientId = params.uuid as string
-
-  const [clientName, setClientName] = useState("Nouveau Dossier")
-  const [openSections, setOpenSections] = useState<string[]>(["identity"])
-  const [saveStatus, setSaveStatus] = useState<"saved" | "saving">("saved")
-  const [isSubmitted, setIsSubmitted] = useState(false)
+  const uuid = params.uuid as string
   
-  // Modal states
-  const [childModalOpen, setChildModalOpen] = useState(false)
-  const [pensionModalOpen, setPensionModalOpen] = useState(false)
-  const [eventModalOpen, setEventModalOpen] = useState(false)
-  const [spouseModalOpen, setSpouseModalOpen] = useState(false)
-  const [exSpouseModalOpen, setExSpouseModalOpen] = useState(false)
-
-  // Form state
-  const [formData, setFormData] = useState<FormData>({
-    identity: { lastName: "", firstName: "", birthDate: "", birthPlace: "", address: "" },
-    residence: { taxResident: "", livedAbroad: "", abroadCountry: "" },
-    family: { status: "", hasChange: "" },
-    children: { hasChildren: "", list: [] },
-    pensions: { hasPension: "", list: [] },
-    events: [],
-    spouse: null,
-    exSpouse: null,
-    income: {},
-    deductions: {},
-    documents: [],
-    confirmAccuracy: false,
-    confirmProcessing: false,
-  })
-
-  // Temporary modal form states
-  const [tempChild, setTempChild] = useState<Partial<Child>>({})
-  const [tempPension, setTempPension] = useState<Partial<Pension>>({})
-  const [tempEvent, setTempEvent] = useState<Partial<Event>>({})
-  const [tempSpouse, setTempSpouse] = useState<Partial<Spouse>>({})
-
-  // Update client name in header
+  const [formData, setFormData] = useState<FormData>(initialFormData)
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
+  const [openSections, setOpenSections] = useState<string[]>(["identity"])
+  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+  const [showChildDialog, setShowChildDialog] = useState(false)
+  const [newChild, setNewChild] = useState({ name: "", birthDate: "", custody: "principale" as const })
+  const [referenceNumber, setReferenceNumber] = useState("")
+  const [loading, setLoading] = useState(true)
+  
+  const saveStatus = useAutosave(formData, uploadedFiles)
+  const progress = useProgressCalculation(formData, uploadedFiles)
+  const suggestedDocuments = useDocumentSuggestions(formData, uploadedFiles)
+  
+  const mandatoryMissing = suggestedDocuments.filter(d => d.mandatory && d.status === "missing").length
+  const canSubmit = progress === 100 && formData.accuracy && formData.processing && mandatoryMissing === 0
+  
+  // Charger les données du client et localStorage
   useEffect(() => {
-    const { firstName, lastName } = formData.identity
-    if (firstName || lastName) {
-      setClientName(`${firstName} ${lastName}`.trim() || "Nouveau Dossier")
-    } else {
-      setClientName("Nouveau Dossier")
+    const loadData = async () => {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved)
+          setFormData(prev => ({ ...prev, ...parsed }))
+        } catch {}
+      }
+      
+      const supabase = createClient()
+      const { data } = await supabase
+        .from("clients")
+        .select("first_name, last_name")
+        .eq("id", uuid)
+        .single()
+      
+      if (data) {
+        setFormData(prev => ({
+          ...prev,
+          firstName: prev.firstName || data.first_name || "",
+          lastName: prev.lastName || data.last_name || ""
+        }))
+      }
+      
+      setLoading(false)
     }
-  }, [formData.identity.firstName, formData.identity.lastName])
-
-  // Autosave simulation
-  const triggerAutosave = useCallback(() => {
-    setSaveStatus("saving")
-    setTimeout(() => setSaveStatus("saved"), 1500)
+    
+    loadData()
+  }, [uuid])
+  
+  // Nom du client dans le header (mise à jour instantanée)
+  const displayName = useMemo(() => {
+    if (formData.firstName && formData.lastName) {
+      return `${formData.firstName} ${formData.lastName}`
+    }
+    if (formData.firstName) return formData.firstName
+    if (formData.lastName) return formData.lastName
+    return "Nouveau Dossier"
+  }, [formData.firstName, formData.lastName])
+  
+  const updateField = useCallback(<K extends keyof FormData>(field: K, value: FormData[K]) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
   }, [])
-
-  // Calculate progress
-  const calculateProgress = () => {
-    let filled = 0
-    let total = 0
-
-    // Identity fields
-    const identityFields = ["lastName", "firstName", "birthDate", "address"]
-    identityFields.forEach(field => {
-      total++
-      if (formData.identity[field as keyof typeof formData.identity]) filled++
-    })
-
-    // Residence
-    total += 2
-    if (formData.residence.taxResident) filled++
-    if (formData.residence.livedAbroad) filled++
-
-    // Family
-    total++
-    if (formData.family.status) filled++
-
-    // Children
-    total++
-    if (formData.children.hasChildren) filled++
-
-    // Pensions
-    total++
-    if (formData.pensions.hasPension) filled++
-
-    // Confirmations
-    total += 2
-    if (formData.confirmAccuracy) filled++
-    if (formData.confirmProcessing) filled++
-
-    return Math.round((filled / total) * 100)
-  }
-
-  // Section status
-  const getSectionStatus = (sectionId: string): "complete" | "incomplete" | "neutral" => {
-    switch (sectionId) {
-      case "identity":
-        const { lastName, firstName, birthDate, address } = formData.identity
-        if (lastName && firstName && birthDate && address) return "complete"
-        if (lastName || firstName || birthDate || address) return "incomplete"
-        return "neutral"
-      case "residence":
-        if (formData.residence.taxResident && formData.residence.livedAbroad) return "complete"
-        if (formData.residence.taxResident || formData.residence.livedAbroad) return "incomplete"
-        return "neutral"
-      case "family":
-        if (formData.family.status) return "complete"
-        return "neutral"
-      case "relations":
-        const needsSpouse = ["married", "pacs"].includes(formData.family.status)
-        if (needsSpouse && formData.spouse) return "complete"
-        if (!needsSpouse) return "complete"
-        return "neutral"
-      case "children":
-        if (formData.children.hasChildren === "no") return "complete"
-        if (formData.children.hasChildren === "yes" && formData.children.list.length > 0) return "complete"
-        if (formData.children.hasChildren) return "incomplete"
-        return "neutral"
-      case "pensions":
-        if (formData.pensions.hasPension === "no") return "complete"
-        if (formData.pensions.hasPension === "yes" && formData.pensions.list.length > 0) return "complete"
-        if (formData.pensions.hasPension) return "incomplete"
-        return "neutral"
-      case "events":
-        return formData.events.length > 0 ? "complete" : "neutral"
-      case "income":
-        return Object.values(formData.income).some(v => v) ? "complete" : "neutral"
-      case "deductions":
-        return Object.values(formData.deductions).some(v => v) ? "complete" : "neutral"
-      case "documents":
-        return formData.documents.length > 0 ? "complete" : "neutral"
-      case "review":
-        if (formData.confirmAccuracy && formData.confirmProcessing) return "complete"
-        return "neutral"
-      default:
-        return "neutral"
-    }
-  }
-
-  // Toggle section
-  const toggleSection = (sectionId: string) => {
+  
+  const toggleSection = (id: string) => {
     setOpenSections(prev => 
-      prev.includes(sectionId) 
-        ? prev.filter(id => id !== sectionId)
-        : [...prev, sectionId]
+      prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
     )
   }
-
-  // Update form field
-  const updateField = (section: keyof FormData, field: string, value: string | boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      [section]: typeof prev[section] === "object" && !Array.isArray(prev[section])
-        ? { ...(prev[section] as object), [field]: value }
-        : value
-    }))
-    triggerAutosave()
+  
+  const isSectionComplete = (sectionId: string): boolean => {
+    switch (sectionId) {
+      case "identity":
+        return !!(formData.firstName && formData.lastName && formData.address)
+      case "residence":
+        return formData.taxResident !== null
+      case "family":
+        return !!formData.familyStatus
+      case "income":
+        return formData.salary || formData.pension || formData.unemployment || 
+               formData.independent || formData.foncier || formData.lmnp ||
+               formData.foreign || formData.interest || formData.dividends || formData.crypto
+      case "deductions":
+        return formData.donations || formData.childcare || formData.homeServices || formData.alimonyDeduction
+      case "documents":
+        return uploadedFiles.length > 0
+      case "summary":
+        return canSubmit
+      default:
+        return false
+    }
   }
-
-  // Handle file upload
+  
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files) return
-
+    
     const newFiles: UploadedFile[] = Array.from(files).map(file => ({
       id: crypto.randomUUID(),
       name: file.name,
       size: file.size,
-      type: file.type
+      file,
+      uploadedAt: new Date()
     }))
-
-    setFormData(prev => ({
-      ...prev,
-      documents: [...prev.documents, ...newFiles]
-    }))
-    triggerAutosave()
+    
+    setUploadedFiles(prev => [...prev, ...newFiles])
   }
-
-  // Delete uploaded file
-  const deleteFile = (id: string) => {
-    setFormData(prev => ({
-      ...prev,
-      documents: prev.documents.filter(doc => doc.id !== id)
-    }))
-    triggerAutosave()
+  
+  const removeFile = (id: string) => {
+    setUploadedFiles(prev => prev.filter(f => f.id !== id))
   }
-
-  // Save child
-  const saveChild = () => {
-    if (!tempChild.firstName || !tempChild.lastName) return
-    const newChild: Child = {
+  
+  const addChild = () => {
+    if (!newChild.name || !newChild.birthDate) return
+    
+    const child: Child = {
       id: crypto.randomUUID(),
-      firstName: tempChild.firstName,
-      lastName: tempChild.lastName,
-      birthDate: tempChild.birthDate || "",
-      attachment: tempChild.attachment || "exclusive",
-      isShared: tempChild.isShared || false
+      ...newChild
     }
+    
     setFormData(prev => ({
       ...prev,
-      children: { ...prev.children, list: [...prev.children.list, newChild] }
+      children: [...prev.children, child]
     }))
-    setTempChild({})
-    setChildModalOpen(false)
-    triggerAutosave()
+    
+    setNewChild({ name: "", birthDate: "", custody: "principale" })
+    setShowChildDialog(false)
   }
-
-  // Delete child
-  const deleteChild = (id: string) => {
+  
+  const removeChild = (id: string) => {
     setFormData(prev => ({
       ...prev,
-      children: { ...prev.children, list: prev.children.list.filter(c => c.id !== id) }
+      children: prev.children.filter(c => c.id !== id)
     }))
-    triggerAutosave()
   }
-
-  // Save pension
-  const savePension = () => {
-    if (!tempPension.type || !tempPension.amount) return
-    const newPension: Pension = {
-      id: crypto.randomUUID(),
-      type: tempPension.type,
-      beneficiary: tempPension.beneficiary || "",
-      amount: tempPension.amount
-    }
-    setFormData(prev => ({
-      ...prev,
-      pensions: { ...prev.pensions, list: [...prev.pensions.list, newPension] }
-    }))
-    setTempPension({})
-    setPensionModalOpen(false)
-    triggerAutosave()
-  }
-
-  // Delete pension
-  const deletePension = (id: string) => {
-    setFormData(prev => ({
-      ...prev,
-      pensions: { ...prev.pensions, list: prev.pensions.list.filter(p => p.id !== id) }
-    }))
-    triggerAutosave()
-  }
-
-  // Save event
-  const saveEvent = () => {
-    if (!tempEvent.type || !tempEvent.date) return
-    const newEvent: Event = {
-      id: crypto.randomUUID(),
-      type: tempEvent.type,
-      date: tempEvent.date,
-      details: tempEvent.details || ""
-    }
-    setFormData(prev => ({
-      ...prev,
-      events: [...prev.events, newEvent]
-    }))
-    setTempEvent({})
-    setEventModalOpen(false)
-    triggerAutosave()
-  }
-
-  // Delete event
-  const deleteEvent = (id: string) => {
-    setFormData(prev => ({
-      ...prev,
-      events: prev.events.filter(e => e.id !== id)
-    }))
-    triggerAutosave()
-  }
-
-  // Save spouse
-  const saveSpouse = (isEx: boolean = false) => {
-    if (!tempSpouse.firstName || !tempSpouse.lastName) return
-    const spouse: Spouse = {
-      firstName: tempSpouse.firstName,
-      lastName: tempSpouse.lastName,
-      birthDate: tempSpouse.birthDate || "",
-      cohabiting: tempSpouse.cohabiting ?? true
-    }
-    setFormData(prev => ({
-      ...prev,
-      [isEx ? "exSpouse" : "spouse"]: spouse
-    }))
-    setTempSpouse({})
-    if (isEx) setExSpouseModalOpen(false)
-    else setSpouseModalOpen(false)
-    triggerAutosave()
-  }
-
-  // Submit form
-  const handleSubmit = async () => {
+  
+  const handleSubmit = () => {
+    setReferenceNumber(`FIS-2024-${Math.random().toString(36).substring(2, 7).toUpperCase()}`)
     setIsSubmitted(true)
-    // TODO: Save to database
+    setShowConfirmDialog(false)
   }
-
-  const progress = calculateProgress()
-  const suggestedDocs = getSuggestedDocuments(formData)
-  const canSubmit = formData.confirmAccuracy && formData.confirmProcessing && progress > 50
-
-  // Submitted state screen
-  if (isSubmitted) {
+  
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} o`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`
+  }
+  
+  const showSpouseInfo = ["married", "pacs", "cohabiting"].includes(formData.familyStatus)
+  const showExSpouseInfo = ["divorced", "separated"].includes(formData.familyStatus)
+  
+  if (loading) {
     return (
-      <div className="min-h-screen bg-white" style={{ fontFamily: "Inter, sans-serif" }}>
-        {/* Header */}
-        <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
-          <div className="max-w-[900px] mx-auto flex items-center justify-between h-[72px] px-8">
-            <div className="flex items-center gap-8">
-              <span className="text-xl font-bold text-gray-900 tracking-tight">Fiscalia</span>
-              <div className="h-8 border-l border-gray-200" />
-              <span className="text-lg font-semibold text-gray-900">{clientName}</span>
-            </div>
-          </div>
-        </header>
-
-        {/* Success State */}
-        <main className="max-w-[720px] mx-auto px-8 py-20 text-center">
-          <div className="mb-6">
-            <Clock className="w-16 h-16 mx-auto text-gray-400" strokeWidth={1.5} />
-          </div>
-          <h1 className="text-2xl font-semibold text-gray-900 mb-4">Profil en cours de validation</h1>
-          <p className="text-gray-500 mb-8">
-            Votre dossier a été soumis avec succès. Il est maintenant en cours d'examen par votre avocat.
-          </p>
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-full text-sm font-medium">
-            <Check className="w-4 h-4" />
-            <span>Dossier soumis</span>
-          </div>
-        </main>
+      <div className="min-h-screen bg-white flex items-center justify-center" style={{ fontFamily: "'Inter', sans-serif" }}>
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
       </div>
     )
   }
-
+  
+  // ÉCRAN DE SUCCÈS
+  if (isSubmitted) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4" style={{ fontFamily: "'Inter', sans-serif" }}>
+        <div className="bg-white rounded-lg shadow-xl p-8 max-w-lg w-full text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Check className="h-10 w-10 text-emerald-600" />
+          </div>
+          
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Profil soumis avec succès !</h1>
+          <p className="text-gray-500 mb-4">Votre dossier est en cours de validation par notre équipe.</p>
+          <p className="text-sm font-mono text-gray-400 mb-8">Référence : #{referenceNumber}</p>
+          
+          <div className="space-y-4 text-left mb-8">
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Check className="h-3.5 w-3.5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">Profil soumis</p>
+                <p className="text-sm text-gray-500">{new Date().toLocaleString("fr-FR")}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 animate-pulse">
+                <div className="w-2 h-2 bg-amber-500 rounded-full" />
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">En cours de validation</p>
+                <p className="text-sm text-gray-500">Délai estimé : 24-48h</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-2 h-2 bg-gray-400 rounded-full" />
+              </div>
+              <div>
+                <p className="font-medium text-gray-400">Validation complète</p>
+                <p className="text-sm text-gray-400">En attente</p>
+              </div>
+            </div>
+          </div>
+          
+          <Button variant="outline" className="w-full" onClick={() => window.location.href = "/dashboard"}>
+            Retour au tableau de bord
+          </Button>
+        </div>
+      </div>
+    )
+  }
+  
+  const sections = [
+    { id: "identity", title: "Identité", subtitle: "Informations personnelles" },
+    { id: "residence", title: "Résidence fiscale", subtitle: "Votre domiciliation" },
+    { id: "family", title: "Situation familiale", subtitle: "Conjoint et enfants" },
+    { id: "income", title: "Revenus & Patrimoine", subtitle: "Sources de revenus" },
+    { id: "deductions", title: "Charges & Déductions", subtitle: "Réductions d'impôt" },
+    { id: "documents", title: "Documents", subtitle: "Pièces justificatives" },
+    { id: "summary", title: "Récapitulatif", subtitle: "Validation finale" },
+  ]
+  
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "Inter, sans-serif" }}>
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-[900px] mx-auto flex items-center justify-between h-[72px] px-8">
-          <div className="flex items-center gap-8">
-            <span className="text-xl font-bold text-gray-900 tracking-tight">Fiscalia</span>
-            <div className="h-8 border-l border-gray-200" />
-            <span className="text-lg font-semibold text-gray-900">{clientName}</span>
+    <div className="min-h-screen bg-white" style={{ fontFamily: "'Inter', sans-serif", WebkitFontSmoothing: "antialiased" }}>
+      {/* HEADER STICKY GLASSMORPHISM */}
+      <header className="sticky top-0 z-50 h-[72px] bg-white/80 backdrop-blur-md border-b border-gray-200">
+        <div className="max-w-[720px] mx-auto h-full px-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <span className="text-xl font-bold tracking-tight text-gray-900">Fiscalia</span>
+            <div className="w-px h-6 bg-gray-200" />
+            <span className="text-lg font-semibold text-gray-900 transition-all duration-200">{displayName}</span>
           </div>
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
-            saveStatus === "saving" 
-              ? "bg-amber-50 text-amber-600" 
-              : "bg-emerald-50 text-emerald-600"
-          }`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${
-              saveStatus === "saving" ? "bg-amber-500 animate-pulse" : "bg-emerald-500"
+          
+          <Badge 
+            variant="secondary"
+            className={`text-xs font-medium px-3 py-1.5 rounded-full transition-all duration-300 ${
+              saveStatus === "saved" 
+                ? "bg-emerald-50 text-emerald-700" 
+                : saveStatus === "saving"
+                ? "bg-amber-50 text-amber-700"
+                : "bg-red-50 text-red-700"
+            }`}
+          >
+            <span className={`inline-block w-1.5 h-1.5 rounded-full mr-2 ${
+              saveStatus === "saved" 
+                ? "bg-emerald-500" 
+                : saveStatus === "saving"
+                ? "bg-amber-500 animate-pulse"
+                : "bg-red-500"
             }`} />
-            <span>{saveStatus === "saving" ? "Enregistrement..." : "Enregistré"}</span>
-          </div>
+            {saveStatus === "saved" ? "Enregistré" : saveStatus === "saving" ? "Enregistrement..." : "Erreur"}
+          </Badge>
         </div>
       </header>
-
-      {/* Trust Banner */}
-      <div className="bg-gray-50 border-b border-gray-100 py-3 px-8">
-        <p className="max-w-[720px] mx-auto text-center text-[13px] text-gray-500">
-          Vos informations sont traitées par votre cabinet dans le cadre de votre dossier fiscal.{" "}
-          <a href="#" className="text-gray-900 font-medium hover:opacity-70">Confidentialité</a> · <a href="#" className="text-gray-900 font-medium hover:opacity-70">Mentions légales</a>
-        </p>
-      </div>
-
-      {/* Main */}
-      <main className="max-w-[720px] mx-auto px-8 py-8 pb-36">
-        {/* Progress */}
-        <div className="bg-gray-50 rounded-xl p-6 mb-8 border border-gray-200">
+      
+      {/* CONTENU PRINCIPAL */}
+      <main className="max-w-[720px] mx-auto px-6 py-8">
+        {/* BARRE DE PROGRESSION */}
+        <div className="bg-gray-50 rounded-lg p-5 mb-8 border border-gray-200">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[13px] font-medium text-gray-500">Progression</span>
-            <span className="text-[13px] font-semibold text-gray-900">{progress}%</span>
+            <span className="text-sm font-medium text-gray-700">Complétion du profil</span>
+            <span className="text-sm font-semibold text-gray-900">{progress}%</span>
           </div>
-          <Progress value={progress} className="h-1.5 bg-gray-200" />
+          <Progress value={progress} className="h-2 bg-gray-200 [&>div]:bg-gray-900 [&>div]:transition-all [&>div]:duration-500" />
         </div>
-
-        {/* Accordion */}
-        <div className="flex flex-col gap-3">
+        
+        {/* ACCORDÉON */}
+        <div className="space-y-3">
           {sections.map(section => (
-            <div key={section.id} className="border border-gray-200 rounded-xl bg-white shadow-sm overflow-hidden">
-              {/* Accordion Header */}
+            <div key={section.id} className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+              {/* HEADER SECTION */}
               <button
                 onClick={() => toggleSection(section.id)}
-                className="w-full flex items-center justify-between py-5 px-5 text-left hover:bg-gray-50 transition-colors"
+                className="w-full flex items-center gap-4 p-5 text-left hover:bg-gray-50 transition-colors"
               >
-                <div className="flex items-center gap-4">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${
-                    getSectionStatus(section.id) === "complete" 
-                      ? "bg-emerald-50 text-emerald-600" 
-                      : getSectionStatus(section.id) === "incomplete"
-                      ? "bg-amber-50 text-amber-600"
-                      : "bg-gray-100 text-gray-400"
-                  }`}>
-                    {getSectionStatus(section.id) === "complete" ? <Check className="w-3.5 h-3.5" /> : "•"}
-                  </div>
-                  <div>
-                    <div className="text-[15px] font-medium text-gray-900">{section.title}</div>
-                    <div className="text-[13px] text-gray-400 mt-0.5">{section.subtitle}</div>
-                  </div>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  isSectionComplete(section.id) 
+                    ? "bg-emerald-100" 
+                    : "bg-gray-100"
+                }`}>
+                  {isSectionComplete(section.id) ? (
+                    <Check className="h-3.5 w-3.5 text-emerald-600" />
+                  ) : (
+                    <div className="w-2 h-2 bg-gray-400 rounded-full" />
+                  )}
                 </div>
-                <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${
+                
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900">{section.title}</h3>
+                  <p className="text-sm text-gray-500">{section.subtitle}</p>
+                </div>
+                
+                <ChevronDown className={`h-5 w-5 text-gray-400 transition-transform duration-200 ${
                   openSections.includes(section.id) ? "rotate-180" : ""
                 }`} />
               </button>
-
-              {/* Accordion Content */}
+              
+              {/* CONTENU SECTION */}
               {openSections.includes(section.id) && (
-                <div className="px-5 pb-6 pt-0 border-t border-gray-100">
-                  {/* Identity Section */}
+                <div className="px-5 pb-6 pt-2 border-t border-gray-100">
+                  {/* SECTION IDENTITÉ */}
                   {section.id === "identity" && (
-                    <div className="space-y-6">
-                      <p className="text-[13px] text-gray-500 p-4 bg-gray-50 rounded-lg border-l-2 border-gray-900">
-                        Ces informations sont obligatoires pour établir votre déclaration fiscale (2042).
-                      </p>
+                    <div className="space-y-4 pl-10">
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label className="text-[13px] font-medium text-gray-900">
-                            Nom<span className="text-red-500 ml-0.5">*</span>
-                          </Label>
+                        <div>
+                          <Label className="text-sm text-gray-600 mb-1.5 block">Prénom *</Label>
                           <Input
-                            value={formData.identity.lastName}
-                            onChange={e => updateField("identity", "lastName", e.target.value)}
-                            placeholder="Dupont"
-                            className="bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-[13px] font-medium text-gray-900">
-                            Prénom<span className="text-red-500 ml-0.5">*</span>
-                          </Label>
-                          <Input
-                            value={formData.identity.firstName}
-                            onChange={e => updateField("identity", "firstName", e.target.value)}
+                            value={formData.firstName}
+                            onChange={e => updateField("firstName", e.target.value)}
                             placeholder="Jean"
-                            className="bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
+                            className="bg-gray-50 border-gray-200 focus:bg-white focus:border-gray-900 focus:ring-gray-900 rounded-md"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-sm text-gray-600 mb-1.5 block">Nom *</Label>
+                          <Input
+                            value={formData.lastName}
+                            onChange={e => updateField("lastName", e.target.value)}
+                            placeholder="Dupont"
+                            className="bg-gray-50 border-gray-200 focus:bg-white focus:border-gray-900 focus:ring-gray-900 rounded-md"
                           />
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label className="text-[13px] font-medium text-gray-900">
-                            Date de naissance<span className="text-red-500 ml-0.5">*</span>
-                          </Label>
-                          <Input
-                            type="date"
-                            value={formData.identity.birthDate}
-                            onChange={e => updateField("identity", "birthDate", e.target.value)}
-                            className="bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-[13px] font-medium text-gray-900">Lieu de naissance</Label>
-                          <Input
-                            value={formData.identity.birthPlace}
-                            onChange={e => updateField("identity", "birthPlace", e.target.value)}
-                            placeholder="Paris, France"
-                            className="bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
-                          />
-                        </div>
+                      
+                      <div>
+                        <Label className="text-sm text-gray-600 mb-1.5 block">Date de naissance</Label>
+                        <Input
+                          type="date"
+                          value={formData.birthDate}
+                          onChange={e => updateField("birthDate", e.target.value)}
+                          className="bg-gray-50 border-gray-200 focus:bg-white focus:border-gray-900 focus:ring-gray-900 rounded-md"
+                        />
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-[13px] font-medium text-gray-900">
-                          Adresse fiscale<span className="text-red-500 ml-0.5">*</span>
-                        </Label>
+                      
+                      <div>
+                        <Label className="text-sm text-gray-600 mb-1.5 block">Adresse fiscale *</Label>
                         <Textarea
-                          value={formData.identity.address}
-                          onChange={e => updateField("identity", "address", e.target.value)}
-                          placeholder="12 rue de la Paix&#10;75002 Paris"
+                          value={formData.address}
+                          onChange={e => updateField("address", e.target.value)}
+                          placeholder="Numéro, rue, code postal, ville"
                           rows={3}
-                          className="bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-gray-900 focus:border-gray-900 resize-none"
+                          className="bg-gray-50 border-gray-200 focus:bg-white focus:border-gray-900 focus:ring-gray-900 rounded-md resize-none"
                         />
                       </div>
                     </div>
                   )}
-
-                  {/* Residence Section */}
+                  
+                  {/* SECTION RÉSIDENCE */}
                   {section.id === "residence" && (
-                    <div className="space-y-6">
-                      <p className="text-[13px] text-gray-500 p-4 bg-gray-50 rounded-lg border-l-2 border-gray-900">
-                        Ces informations déterminent votre régime d'imposition.
-                      </p>
-                      <div className="space-y-2">
-                        <Label className="text-[13px] font-medium text-gray-900">
-                          Résident fiscal France sur l'année ?<span className="text-red-500 ml-0.5">*</span>
-                        </Label>
-                        <div className="flex flex-wrap gap-2">
-                          {["Oui", "Non", "Partiel"].map(option => (
+                    <div className="space-y-4 pl-10">
+                      <div>
+                        <Label className="text-sm text-gray-600 mb-3 block">Êtes-vous résident fiscal français ?</Label>
+                        <div className="flex gap-2">
+                          {[{ value: true, label: "Oui" }, { value: false, label: "Non" }].map(opt => (
                             <button
-                              key={option}
-                              onClick={() => updateField("residence", "taxResident", option.toLowerCase())}
-                              className={`px-4 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
-                                formData.residence.taxResident === option.toLowerCase()
-                                  ? "bg-gray-900 text-white border border-gray-900"
-                                  : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 hover:text-gray-900 hover:border-gray-300"
+                              key={String(opt.value)}
+                              onClick={() => updateField("taxResident", opt.value)}
+                              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors border ${
+                                formData.taxResident === opt.value
+                                  ? "bg-gray-900 text-white border-gray-900"
+                                  : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
                               }`}
                             >
-                              {option}
+                              {opt.label}
                             </button>
                           ))}
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-[13px] font-medium text-gray-900">
-                          Avez-vous vécu à l'étranger pendant l'année ?
-                        </Label>
-                        <div className="flex flex-wrap gap-2">
-                          {["Oui", "Non"].map(option => (
-                            <button
-                              key={option}
-                              onClick={() => updateField("residence", "livedAbroad", option.toLowerCase())}
-                              className={`px-4 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
-                                formData.residence.livedAbroad === option.toLowerCase()
-                                  ? "bg-gray-900 text-white border border-gray-900"
-                                  : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 hover:text-gray-900 hover:border-gray-300"
-                              }`}
-                            >
-                              {option}
-                            </button>
-                          ))}
-                        </div>
-                        {formData.residence.livedAbroad === "oui" && (
-                          <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                            <Label className="text-[13px] font-medium text-gray-900">Pays et Période</Label>
-                            <Input
-                              value={formData.residence.abroadCountry}
-                              onChange={e => updateField("residence", "abroadCountry", e.target.value)}
-                              placeholder="Ex: Suisse (Jan - Juin)"
-                              className="mt-2 bg-white border border-gray-200 focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
-                            />
+                      
+                      {formData.taxResident === false && (
+                        <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 animate-in slide-in-from-top-2 duration-200">
+                          <Label className="text-sm text-gray-600 mb-3 block">Avez-vous vécu à l'étranger en 2024 ?</Label>
+                          <div className="flex gap-2 mb-4">
+                            {[{ value: true, label: "Oui" }, { value: false, label: "Non" }].map(opt => (
+                              <button
+                                key={String(opt.value)}
+                                onClick={() => updateField("livedAbroad", opt.value)}
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors border ${
+                                  formData.livedAbroad === opt.value
+                                    ? "bg-gray-900 text-white border-gray-900"
+                                    : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                                }`}
+                              >
+                                {opt.label}
+                              </button>
+                            ))}
                           </div>
-                        )}
-                      </div>
+                          
+                          {formData.livedAbroad && (
+                            <div className="space-y-3 animate-in slide-in-from-top-2 duration-200">
+                              <div>
+                                <Label className="text-sm text-gray-600 mb-1.5 block">Pays de résidence</Label>
+                                <Select value={formData.abroadCountry} onValueChange={v => updateField("abroadCountry", v)}>
+                                  <SelectTrigger className="bg-white border-gray-200 focus:ring-gray-900 rounded-md">
+                                    <SelectValue placeholder="Sélectionner un pays" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {COUNTRIES.map(c => (
+                                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label className="text-sm text-gray-600 mb-1.5 block">Nombre de jours</Label>
+                                <Input
+                                  type="number"
+                                  value={formData.abroadDays}
+                                  onChange={e => updateField("abroadDays", e.target.value)}
+                                  placeholder="0"
+                                  className="bg-white border-gray-200 focus:border-gray-900 focus:ring-gray-900 rounded-md"
+                                />
+                                <p className="text-xs text-gray-400 mt-1">Indiquez le nombre de jours passés dans ce pays</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
-
-                  {/* Family Section */}
+                  
+                  {/* SECTION FAMILLE */}
                   {section.id === "family" && (
-                    <div className="space-y-6">
-                      <div className="space-y-2">
-                        <Label className="text-[13px] font-medium text-gray-900">
-                          Situation au 31/12<span className="text-red-500 ml-0.5">*</span>
-                        </Label>
-                        <Select
-                          value={formData.family.status}
-                          onValueChange={value => updateField("family", "status", value)}
-                        >
-                          <SelectTrigger className="bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-gray-900 focus:border-gray-900">
-                            <SelectValue placeholder="Sélectionnez..." />
+                    <div className="space-y-4 pl-10">
+                      <div>
+                        <Label className="text-sm text-gray-600 mb-1.5 block">Statut matrimonial</Label>
+                        <Select value={formData.familyStatus} onValueChange={v => updateField("familyStatus", v)}>
+                          <SelectTrigger className="bg-gray-50 border-gray-200 focus:ring-gray-900 rounded-md">
+                            <SelectValue placeholder="Sélectionner votre statut" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="single">Célibataire</SelectItem>
-                            <SelectItem value="married">Marié(e)</SelectItem>
-                            <SelectItem value="pacs">Pacsé(e)</SelectItem>
-                            <SelectItem value="cohabiting">Concubinage</SelectItem>
-                            <SelectItem value="separated">Séparé(e)</SelectItem>
-                            <SelectItem value="divorced">Divorcé(e)</SelectItem>
-                            <SelectItem value="widowed">Veuf/Veuve</SelectItem>
+                            {FAMILY_STATUSES.map(s => (
+                              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-[13px] font-medium text-gray-900">
-                          Changement de situation dans l'année ?
-                        </Label>
-                        <div className="flex flex-wrap gap-2">
-                          {["Oui", "Non"].map(option => (
-                            <button
-                              key={option}
-                              onClick={() => updateField("family", "hasChange", option.toLowerCase())}
-                              className={`px-4 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
-                                formData.family.hasChange === option.toLowerCase()
-                                  ? "bg-gray-900 text-white border border-gray-900"
-                                  : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 hover:text-gray-900 hover:border-gray-300"
-                              }`}
-                            >
-                              {option}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Relations Section */}
-                  {section.id === "relations" && (
-                    <div className="space-y-6">
-                      {["married", "pacs"].includes(formData.family.status) ? (
-                        <>
-                          <div className="flex items-center justify-between">
-                            <Label className="text-[13px] font-medium text-gray-900">Conjoint actuel</Label>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSpouseModalOpen(true)}
-                              className="text-[13px] border-gray-200"
-                            >
-                              <Plus className="w-4 h-4 mr-1" />
-                              {formData.spouse ? "Modifier" : "Ajouter"}
-                            </Button>
+                      
+                      {showSpouseInfo && (
+                        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-3 animate-in slide-in-from-top-2 duration-200">
+                          <h4 className="font-medium text-gray-900">Informations Conjoint</h4>
+                          <div>
+                            <Label className="text-sm text-gray-600 mb-1.5 block">Nom du conjoint</Label>
+                            <Input
+                              value={formData.spouseName}
+                              onChange={e => updateField("spouseName", e.target.value)}
+                              className="bg-white border-gray-200 focus:border-gray-900 focus:ring-gray-900 rounded-md"
+                            />
                           </div>
-                          {formData.spouse && (
-                            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <div className="font-medium text-gray-900">
-                                    {formData.spouse.firstName} {formData.spouse.lastName}
-                                  </div>
-                                  <div className="text-[13px] text-gray-500 mt-1">
-                                    {formData.spouse.birthDate && `Né(e) le ${formData.spouse.birthDate}`}
-                                  </div>
-                                </div>
+                          <div>
+                            <Label className="text-sm text-gray-600 mb-1.5 block">Régime matrimonial</Label>
+                            <Select value={formData.matrimonialRegime} onValueChange={v => updateField("matrimonialRegime", v)}>
+                              <SelectTrigger className="bg-white border-gray-200 focus:ring-gray-900 rounded-md">
+                                <SelectValue placeholder="Sélectionner" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {MATRIMONIAL_REGIMES.map(r => (
+                                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-sm text-gray-600 mb-3 block">Déclaration commune</Label>
+                            <div className="flex gap-2">
+                              {[{ value: true, label: "Oui" }, { value: false, label: "Non" }].map(opt => (
                                 <button
-                                  onClick={() => setFormData(prev => ({ ...prev, spouse: null }))}
-                                  className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-gray-600"
+                                  key={String(opt.value)}
+                                  onClick={() => updateField("jointDeclaration", opt.value)}
+                                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors border ${
+                                    formData.jointDeclaration === opt.value
+                                      ? "bg-gray-900 text-white border-gray-900"
+                                      : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                                  }`}
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  {opt.label}
                                 </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {showExSpouseInfo && (
+                        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-3 animate-in slide-in-from-top-2 duration-200">
+                          <h4 className="font-medium text-gray-900">Informations Ex-Conjoint</h4>
+                          <div>
+                            <Label className="text-sm text-gray-600 mb-1.5 block">Nom de l'ex-conjoint</Label>
+                            <Input
+                              value={formData.exSpouseName}
+                              onChange={e => updateField("exSpouseName", e.target.value)}
+                              className="bg-white border-gray-200 focus:border-gray-900 focus:ring-gray-900 rounded-md"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-sm text-gray-600 mb-3 block">Pension alimentaire versée</Label>
+                            <div className="flex gap-2">
+                              {[{ value: true, label: "Oui" }, { value: false, label: "Non" }].map(opt => (
+                                <button
+                                  key={String(opt.value)}
+                                  onClick={() => updateField("alimonyPaid", opt.value)}
+                                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors border ${
+                                    formData.alimonyPaid === opt.value
+                                      ? "bg-gray-900 text-white border-gray-900"
+                                      : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                                  }`}
+                                >
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          {formData.alimonyPaid && (
+                            <div className="animate-in slide-in-from-top-2 duration-200">
+                              <Label className="text-sm text-gray-600 mb-1.5 block">Montant annuel</Label>
+                              <div className="relative">
+                                <Input
+                                  type="number"
+                                  value={formData.alimonyAmount}
+                                  onChange={e => updateField("alimonyAmount", e.target.value)}
+                                  className="bg-white border-gray-200 focus:border-gray-900 focus:ring-gray-900 rounded-md pr-8"
+                                />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">€</span>
                               </div>
                             </div>
                           )}
-                        </>
-                      ) : ["divorced", "separated", "widowed"].includes(formData.family.status) ? (
-                        <>
-                          <div className="flex items-center justify-between">
-                            <Label className="text-[13px] font-medium text-gray-900">Ex-conjoint</Label>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setExSpouseModalOpen(true)}
-                              className="text-[13px] border-gray-200"
-                            >
-                              <Plus className="w-4 h-4 mr-1" />
-                              {formData.exSpouse ? "Modifier" : "Ajouter"}
-                            </Button>
-                          </div>
-                          {formData.exSpouse && (
-                            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <div className="font-medium text-gray-900">
-                                    {formData.exSpouse.firstName} {formData.exSpouse.lastName}
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={() => setFormData(prev => ({ ...prev, exSpouse: null }))}
-                                  className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-gray-600"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <p className="text-[13px] text-gray-400 text-center py-8">
-                          Renseignez d'abord votre situation familiale pour voir les options disponibles.
-                        </p>
+                        </div>
                       )}
-                    </div>
-                  )}
-
-                  {/* Children Section */}
-                  {section.id === "children" && (
-                    <div className="space-y-6">
-                      <div className="space-y-2">
-                        <Label className="text-[13px] font-medium text-gray-900">
-                          Avez-vous des enfants ou personnes à charge ?
-                        </Label>
-                        <div className="flex flex-wrap gap-2">
-                          {["Oui", "Non"].map(option => (
-                            <button
-                              key={option}
-                              onClick={() => setFormData(prev => ({
-                                ...prev,
-                                children: { ...prev.children, hasChildren: option.toLowerCase() }
-                              }))}
-                              className={`px-4 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
-                                formData.children.hasChildren === option.toLowerCase()
-                                  ? "bg-gray-900 text-white border border-gray-900"
-                                  : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 hover:text-gray-900 hover:border-gray-300"
-                              }`}
-                            >
-                              {option}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      {formData.children.hasChildren === "oui" && (
-                        <>
-                          <div className="flex justify-end">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setChildModalOpen(true)}
-                              className="text-[13px] border-gray-200"
-                            >
-                              <Plus className="w-4 h-4 mr-1" />
-                              Ajouter un enfant
-                            </Button>
-                          </div>
-                          <div className="space-y-3">
-                            {formData.children.list.length === 0 ? (
-                              <p className="text-[13px] text-gray-400 text-center py-6">
-                                Aucun enfant ajouté.
-                              </p>
-                            ) : (
-                              formData.children.list.map(child => (
-                                <div key={child.id} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-                                  <div className="flex items-start justify-between">
-                                    <div>
-                                      <div className="font-medium text-gray-900">
-                                        {child.firstName} {child.lastName}
-                                      </div>
-                                      <div className="text-[13px] text-gray-500 mt-1">
-                                        {child.birthDate && `Né(e) le ${child.birthDate}`}
-                                      </div>
-                                    </div>
-                                    <button
-                                      onClick={() => deleteChild(child.id)}
-                                      className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-gray-600"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Pensions Section */}
-                  {section.id === "pensions" && (
-                    <div className="space-y-6">
-                      <div className="space-y-2">
-                        <Label className="text-[13px] font-medium text-gray-900">
-                          Versez-vous ou recevez-vous une pension ?
-                        </Label>
-                        <div className="flex flex-wrap gap-2">
-                          {["Oui", "Non"].map(option => (
-                            <button
-                              key={option}
-                              onClick={() => setFormData(prev => ({
-                                ...prev,
-                                pensions: { ...prev.pensions, hasPension: option.toLowerCase() }
-                              }))}
-                              className={`px-4 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
-                                formData.pensions.hasPension === option.toLowerCase()
-                                  ? "bg-gray-900 text-white border border-gray-900"
-                                  : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 hover:text-gray-900 hover:border-gray-300"
-                              }`}
-                            >
-                              {option}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      {formData.pensions.hasPension === "oui" && (
-                        <>
-                          <div className="flex justify-end">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setPensionModalOpen(true)}
-                              className="text-[13px] border-gray-200"
-                            >
-                              <Plus className="w-4 h-4 mr-1" />
-                              Ajouter une pension
-                            </Button>
-                          </div>
-                          <div className="space-y-3">
-                            {formData.pensions.list.length === 0 ? (
-                              <p className="text-[13px] text-gray-400 text-center py-6">
-                                Aucune pension ajoutée.
-                              </p>
-                            ) : (
-                              formData.pensions.list.map(pension => (
-                                <div key={pension.id} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-                                  <div className="flex items-start justify-between">
-                                    <div>
-                                      <div className="font-medium text-gray-900">{pension.type}</div>
-                                      <div className="text-[13px] text-gray-500 mt-1">
-                                        {pension.beneficiary && `Bénéficiaire: ${pension.beneficiary} • `}
-                                        {pension.amount}€/an
-                                      </div>
-                                    </div>
-                                    <button
-                                      onClick={() => deletePension(pension.id)}
-                                      className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-gray-600"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Events Section */}
-                  {section.id === "events" && (
-                    <div className="space-y-6">
-                      <div className="flex justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEventModalOpen(true)}
-                          className="text-[13px] border-gray-200"
-                        >
-                          <Plus className="w-4 h-4 mr-1" />
-                          Ajouter un événement
-                        </Button>
-                      </div>
-                      <div className="space-y-3">
-                        {formData.events.length === 0 ? (
-                          <p className="text-[13px] text-gray-400 text-center py-6">
-                            Aucun événement déclaré.
-                          </p>
-                        ) : (
-                          formData.events.map(event => (
-                            <div key={event.id} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <div className="font-medium text-gray-900">{event.type}</div>
-                                  <div className="text-[13px] text-gray-500 mt-1">
-                                    {event.date}{event.details && ` • ${event.details}`}
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={() => deleteEvent(event.id)}
-                                  className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-gray-600"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Income Section */}
-                  {section.id === "income" && (
-                    <div className="space-y-6">
-                      <p className="text-[13px] text-gray-500 p-4 bg-gray-50 rounded-lg border-l-2 border-gray-900">
-                        Indiquez les types de revenus et obligations déclaratives pour cette année.
-                      </p>
-                      <div className="divide-y divide-gray-100">
-                        {incomeToggles.map(toggle => (
-                          <div key={toggle.id} className="flex items-center justify-between py-5">
-                            <span className="text-[14px] font-medium text-gray-900">{toggle.label}</span>
-                            <div className="flex gap-1 bg-gray-50 p-1 rounded-lg">
-                              <button
-                                onClick={() => setFormData(prev => ({
-                                  ...prev,
-                                  income: { ...prev.income, [toggle.id]: true }
-                                }))}
-                                className={`px-3.5 py-2 text-[12px] font-medium rounded-md transition-all ${
-                                  formData.income[toggle.id] === true
-                                    ? "bg-white text-gray-900 shadow-sm"
-                                    : "text-gray-500 hover:text-gray-900"
-                                }`}
-                              >
-                                Oui
-                              </button>
-                              <button
-                                onClick={() => setFormData(prev => ({
-                                  ...prev,
-                                  income: { ...prev.income, [toggle.id]: false }
-                                }))}
-                                className={`px-3.5 py-2 text-[12px] font-medium rounded-md transition-all ${
-                                  formData.income[toggle.id] === false
-                                    ? "bg-white text-gray-900 shadow-sm"
-                                    : "text-gray-500 hover:text-gray-900"
-                                }`}
-                              >
-                                Non
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Deductions Section */}
-                  {section.id === "deductions" && (
-                    <div className="space-y-6">
-                      <div className="divide-y divide-gray-100">
-                        {deductionToggles.map(toggle => (
-                          <div key={toggle.id} className="flex items-center justify-between py-5">
-                            <span className="text-[14px] font-medium text-gray-900">{toggle.label}</span>
-                            <div className="flex gap-1 bg-gray-50 p-1 rounded-lg">
-                              <button
-                                onClick={() => setFormData(prev => ({
-                                  ...prev,
-                                  deductions: { ...prev.deductions, [toggle.id]: true }
-                                }))}
-                                className={`px-3.5 py-2 text-[12px] font-medium rounded-md transition-all ${
-                                  formData.deductions[toggle.id] === true
-                                    ? "bg-white text-gray-900 shadow-sm"
-                                    : "text-gray-500 hover:text-gray-900"
-                                }`}
-                              >
-                                Oui
-                              </button>
-                              <button
-                                onClick={() => setFormData(prev => ({
-                                  ...prev,
-                                  deductions: { ...prev.deductions, [toggle.id]: false }
-                                }))}
-                                className={`px-3.5 py-2 text-[12px] font-medium rounded-md transition-all ${
-                                  formData.deductions[toggle.id] === false
-                                    ? "bg-white text-gray-900 shadow-sm"
-                                    : "text-gray-500 hover:text-gray-900"
-                                }`}
-                              >
-                                Non
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Documents Section */}
-                  {section.id === "documents" && (
-                    <div className="space-y-6">
-                      {/* Dropzone */}
-                      <label className="block border-2 border-dashed border-gray-200 rounded-xl p-12 text-center cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-all">
-                        <input
-                          type="file"
-                          multiple
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={handleFileUpload}
-                          className="hidden"
-                        />
-                        <Upload className="w-12 h-12 mx-auto text-gray-300 mb-4" strokeWidth={1.5} />
-                        <div className="text-[14px] font-medium text-gray-900 mb-1">
-                          Glissez vos fichiers ici ou cliquez pour sélectionner
-                        </div>
-                        <div className="text-[13px] text-gray-400">
-                          PDF, JPEG, PNG • Max 25 Mo
-                        </div>
-                      </label>
-
-                      {/* Uploaded Files */}
-                      {formData.documents.length > 0 && (
+                      
+                      <div className="flex items-center justify-between py-2">
                         <div>
-                          <h4 className="text-[13px] font-semibold text-gray-900 mb-3">Documents déposés</h4>
+                          <Label className="text-sm text-gray-900">Changement de situation familiale en 2024</Label>
+                          <p className="text-xs text-gray-500">Mariage, divorce, naissance...</p>
+                        </div>
+                        <Switch
+                          checked={formData.familyChange}
+                          onCheckedChange={v => updateField("familyChange", v)}
+                        />
+                      </div>
+                      
+                      <div className="pt-4 border-t border-gray-200">
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="font-medium text-gray-900">Enfants à charge</h4>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setShowChildDialog(true)}
+                            className="text-sm border-gray-200"
+                          >
+                            + Ajouter un enfant
+                          </Button>
+                        </div>
+                        
+                        {formData.children.length > 0 && (
                           <div className="space-y-2">
-                            {formData.documents.map(doc => (
-                              <div key={doc.id} className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center">
-                                    <FileText className="w-4 h-4 text-gray-400" />
-                                  </div>
-                                  <div>
-                                    <div className="text-[13px] font-medium text-gray-900 truncate max-w-[200px]">
-                                      {doc.name}
-                                    </div>
-                                    <div className="text-[12px] text-gray-400">
-                                      {(doc.size / 1024).toFixed(1)} Ko
-                                    </div>
-                                  </div>
+                            {formData.children.map(child => (
+                              <div key={child.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
+                                <div>
+                                  <p className="font-medium text-gray-900">{child.name}</p>
+                                  <p className="text-sm text-gray-500">
+                                    {new Date(child.birthDate).toLocaleDateString("fr-FR")} • Garde {child.custody === "principale" ? "principale" : "alternée"}
+                                  </p>
                                 </div>
-                                <button
-                                  onClick={() => deleteFile(doc.id)}
-                                  className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-gray-600"
-                                >
-                                  <X className="w-4 h-4" />
+                                <button onClick={() => removeChild(child.id)} className="text-gray-400 hover:text-red-500">
+                                  <Trash2 className="h-4 w-4" />
                                 </button>
                               </div>
                             ))}
                           </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* SECTION REVENUS */}
+                  {section.id === "income" && (
+                    <div className="space-y-1 pl-10">
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider pt-2 pb-3">Revenus du travail</p>
+                      
+                      {/* Salaires */}
+                      <div className="py-3 border-b border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm text-gray-900">Salaires et traitements</Label>
+                          <Switch checked={formData.salary} onCheckedChange={v => updateField("salary", v)} />
                         </div>
-                      )}
-
-                      {/* Suggested Documents */}
-                      <div>
-                        <h4 className="text-[13px] font-semibold text-gray-900 mb-3">Documents suggérés</h4>
-                        <div className="space-y-2">
-                          {suggestedDocs.map((doc, i) => {
-                            const isReceived = formData.documents.some(d => 
-                              d.name.toLowerCase().includes(doc.name.toLowerCase().split(" ")[0])
-                            )
-                            return (
-                              <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center">
-                                    <FileText className="w-4 h-4 text-gray-400" />
-                                  </div>
-                                  <span className="text-[13px] font-medium text-gray-900">{doc.name}</span>
-                                </div>
-                                <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wide ${
-                                  isReceived 
-                                    ? "bg-emerald-50 text-emerald-600" 
-                                    : "bg-amber-50 text-amber-600"
-                                }`}>
-                                  {isReceived ? "Reçu" : "Manquant"}
-                                </span>
+                        {formData.salary && (
+                          <div className="mt-3 pl-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
+                            <div>
+                              <Label className="text-sm text-gray-600 mb-2 block">Frais réels ou abattement 10% ?</Label>
+                              <div className="flex gap-2">
+                                {[{ value: "standard", label: "Abattement 10%" }, { value: "real", label: "Frais réels" }].map(opt => (
+                                  <button
+                                    key={opt.value}
+                                    onClick={() => updateField("salaryExpenses", opt.value as "standard" | "real")}
+                                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
+                                      formData.salaryExpenses === opt.value
+                                        ? "bg-gray-900 text-white border-gray-900"
+                                        : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                                    }`}
+                                  >
+                                    {opt.label}
+                                  </button>
+                                ))}
                               </div>
-                            )
-                          })}
+                            </div>
+                            {formData.salaryExpenses === "real" && (
+                              <div className="animate-in slide-in-from-top-2 duration-200">
+                                <Label className="text-sm text-gray-600 mb-1.5 block">Montant des frais réels</Label>
+                                <div className="relative">
+                                  <Input
+                                    type="number"
+                                    value={formData.salaryExpensesAmount}
+                                    onChange={e => updateField("salaryExpensesAmount", e.target.value)}
+                                    className="bg-gray-50 border-gray-200 focus:border-gray-900 focus:ring-gray-900 rounded-md pr-8"
+                                  />
+                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">€</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Pensions */}
+                      <div className="py-3 border-b border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-sm text-gray-900">Pensions / retraites</Label>
+                            <p className="text-xs text-gray-500">Retraite, invalidité, etc.</p>
+                          </div>
+                          <Switch checked={formData.pension} onCheckedChange={v => updateField("pension", v)} />
+                        </div>
+                        {formData.pension && (
+                          <div className="mt-3 pl-4 animate-in slide-in-from-top-2 duration-200">
+                            <Label className="text-sm text-gray-600 mb-1.5 block">Nombre de pensions</Label>
+                            <Input
+                              type="number"
+                              value={formData.pensionCount}
+                              onChange={e => updateField("pensionCount", e.target.value)}
+                              className="bg-gray-50 border-gray-200 focus:border-gray-900 focus:ring-gray-900 rounded-md w-24"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Chômage */}
+                      <div className="py-3 border-b border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-sm text-gray-900">Allocations chômage</Label>
+                            <p className="text-xs text-gray-500">Indemnités Pôle emploi</p>
+                          </div>
+                          <Switch checked={formData.unemployment} onCheckedChange={v => updateField("unemployment", v)} />
+                        </div>
+                      </div>
+                      
+                      {/* Indépendants */}
+                      <div className="py-3 border-b border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm text-gray-900">Revenus indépendants (BIC/BNC/BA)</Label>
+                          <Switch checked={formData.independent} onCheckedChange={v => updateField("independent", v)} />
+                        </div>
+                        {formData.independent && (
+                          <div className="mt-3 pl-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
+                            <div>
+                              <Label className="text-sm text-gray-600 mb-1.5 block">Type d'activité</Label>
+                              <Input
+                                value={formData.independentType}
+                                onChange={e => updateField("independentType", e.target.value)}
+                                placeholder="Ex: Consultant, Artisan..."
+                                className="bg-gray-50 border-gray-200 focus:border-gray-900 focus:ring-gray-900 rounded-md"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-sm text-gray-600 mb-2 block">Régime fiscal</Label>
+                              <div className="flex gap-2">
+                                {[{ value: "micro", label: "Micro-entreprise" }, { value: "real", label: "Réel" }].map(opt => (
+                                  <button
+                                    key={opt.value}
+                                    onClick={() => updateField("independentRegime", opt.value as "micro" | "real")}
+                                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
+                                      formData.independentRegime === opt.value
+                                        ? "bg-gray-900 text-white border-gray-900"
+                                        : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                                    }`}
+                                  >
+                                    {opt.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider pt-6 pb-3">Immobilier</p>
+                      
+                      {/* Foncier */}
+                      <div className="py-3 border-b border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-sm text-gray-900">Revenus fonciers (location nue)</Label>
+                            <p className="text-xs text-gray-500">Locations vides uniquement</p>
+                          </div>
+                          <Switch checked={formData.foncier} onCheckedChange={v => updateField("foncier", v)} />
+                        </div>
+                      </div>
+                      
+                      {/* LMNP */}
+                      <div className="py-3 border-b border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-sm text-gray-900">Location meublée (LMNP)</Label>
+                            <p className="text-xs text-gray-500">Locations meublées non professionnelles</p>
+                          </div>
+                          <Switch checked={formData.lmnp} onCheckedChange={v => updateField("lmnp", v)} />
+                        </div>
+                      </div>
+                      
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider pt-6 pb-3">International</p>
+                      
+                      {/* Revenus étrangers */}
+                      <div className="py-3 border-b border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm text-gray-900">Revenus étrangers</Label>
+                          <Switch checked={formData.foreign} onCheckedChange={v => updateField("foreign", v)} />
+                        </div>
+                      </div>
+                      
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider pt-6 pb-3">Épargne & Placements</p>
+                      
+                      {/* Intérêts */}
+                      <div className="py-3 border-b border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-sm text-gray-900">Intérêts et placements</Label>
+                            <p className="text-xs text-gray-500">Livrets, comptes à terme, obligations</p>
+                          </div>
+                          <Switch checked={formData.interest} onCheckedChange={v => updateField("interest", v)} />
+                        </div>
+                      </div>
+                      
+                      {/* Dividendes */}
+                      <div className="py-3 border-b border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-sm text-gray-900">Dividendes</Label>
+                            <p className="text-xs text-gray-500">Actions, parts sociales</p>
+                          </div>
+                          <Switch checked={formData.dividends} onCheckedChange={v => updateField("dividends", v)} />
+                        </div>
+                      </div>
+                      
+                      {/* Crypto */}
+                      <div className="py-3 border-b border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-sm text-gray-900">Cryptomonnaies</Label>
+                            <p className="text-xs text-gray-500">Cessions d'actifs numériques</p>
+                          </div>
+                          <Switch checked={formData.crypto} onCheckedChange={v => updateField("crypto", v)} />
                         </div>
                       </div>
                     </div>
                   )}
-
-                  {/* Review Section */}
-                  {section.id === "review" && (
-                    <div className="space-y-6">
-                      {/* Summary */}
-                      <div className="divide-y divide-gray-100">
-                        <div className="flex justify-between py-3.5">
-                          <span className="text-[13px] text-gray-500">Identité</span>
-                          <span className="text-[13px] font-semibold text-gray-900">{clientName}</span>
+                  
+                  {/* SECTION CHARGES & DÉDUCTIONS */}
+                  {section.id === "deductions" && (
+                    <div className="space-y-1 pl-10">
+                      <div className="py-3 border-b border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-sm text-gray-900">Dons aux associations</Label>
+                            <p className="text-xs text-gray-500">Dons à des organismes d'intérêt général</p>
+                          </div>
+                          <Switch checked={formData.donations} onCheckedChange={v => updateField("donations", v)} />
                         </div>
-                        <div className="flex justify-between py-3.5">
-                          <span className="text-[13px] text-gray-500">Situation familiale</span>
-                          <span className="text-[13px] font-semibold text-gray-900">
-                            {formData.family.status || "Non renseigné"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between py-3.5">
-                          <span className="text-[13px] text-gray-500">Documents déposés</span>
-                          <span className="text-[13px] font-semibold text-gray-900">
-                            {formData.documents.length} fichier(s)
-                          </span>
+                        {formData.donations && (
+                          <div className="mt-3 pl-4 animate-in slide-in-from-top-2 duration-200">
+                            <Label className="text-sm text-gray-600 mb-1.5 block">Montant total des dons</Label>
+                            <div className="relative">
+                              <Input
+                                type="number"
+                                value={formData.donationsAmount}
+                                onChange={e => updateField("donationsAmount", e.target.value)}
+                                className="bg-gray-50 border-gray-200 focus:border-gray-900 focus:ring-gray-900 rounded-md pr-8"
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">€</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="py-3 border-b border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-sm text-gray-900">Frais de garde d'enfants</Label>
+                            <p className="text-xs text-gray-500">Crèche, assistante maternelle agréée</p>
+                          </div>
+                          <Switch checked={formData.childcare} onCheckedChange={v => updateField("childcare", v)} />
                         </div>
                       </div>
-
-                      {/* Confirmations */}
-                      <div className="space-y-4 pt-4 border-t border-gray-100">
+                      
+                      <div className="py-3 border-b border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-sm text-gray-900">Services à la personne</Label>
+                            <p className="text-xs text-gray-500">50% de crédit d'impôt plafonné</p>
+                          </div>
+                          <Switch checked={formData.homeServices} onCheckedChange={v => updateField("homeServices", v)} />
+                        </div>
+                      </div>
+                      
+                      <div className="py-3 border-b border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-sm text-gray-900">Pension alimentaire versée</Label>
+                            <p className="text-xs text-gray-500">Déduction plafonnée</p>
+                          </div>
+                          <Switch checked={formData.alimonyDeduction} onCheckedChange={v => updateField("alimonyDeduction", v)} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* SECTION DOCUMENTS */}
+                  {section.id === "documents" && (
+                    <div className="space-y-6 pl-10">
+                      <label className="block">
+                        <div className="h-40 border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-colors">
+                          <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                          <p className="text-sm font-medium text-gray-700">Glissez vos documents ici ou cliquez pour parcourir</p>
+                          <p className="text-xs text-gray-500 mt-1">PDF, JPEG, PNG • Max 10 Mo par fichier</p>
+                        </div>
+                        <input
+                          type="file"
+                          multiple
+                          accept=".pdf,.jpeg,.jpg,.png"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+                      </label>
+                      
+                      {uploadedFiles.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium text-gray-700">Documents uploadés</h4>
+                          {uploadedFiles.map(file => (
+                            <div key={file.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
+                              <div className="flex items-center gap-3">
+                                <FileText className="h-5 w-5 text-gray-400" />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                                  <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                                </div>
+                              </div>
+                              <button onClick={() => removeFile(file.id)} className="text-gray-400 hover:text-red-500">
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-900 mb-1">Documents à fournir</h4>
+                        <p className="text-xs text-gray-500 mb-4">Selon votre situation</p>
+                        
+                        <div className="space-y-2">
+                          {suggestedDocuments.map(doc => (
+                            <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 transition-all duration-200">
+                              <div className="flex items-center gap-3">
+                                <Folder className="h-5 w-5 text-gray-400" />
+                                <div>
+                                  <p className="text-sm text-gray-900">{doc.name}</p>
+                                  {doc.note && <p className="text-xs text-gray-500">{doc.note}</p>}
+                                </div>
+                              </div>
+                              <Badge 
+                                variant="secondary"
+                                className={`text-xs ${
+                                  doc.status === "received" 
+                                    ? "bg-emerald-50 text-emerald-700" 
+                                    : doc.status === "missing"
+                                    ? "bg-amber-50 text-amber-700"
+                                    : "bg-gray-100 text-gray-600"
+                                }`}
+                              >
+                                {doc.status === "received" ? "Reçu" : doc.status === "missing" ? "Manquant" : "Optionnel"}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* SECTION RÉCAPITULATIF */}
+                  {section.id === "summary" && (
+                    <div className="space-y-6 pl-10">
+                      <div className="grid grid-cols-2 gap-4 p-5 bg-gray-50 rounded-lg border border-gray-200">
+                        <div>
+                          <p className="text-xs text-gray-500">Nom complet</p>
+                          <p className="text-sm font-medium text-gray-900">{displayName}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Statut familial</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {FAMILY_STATUSES.find(s => s.value === formData.familyStatus)?.label || "Non renseigné"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Nombre d'enfants</p>
+                          <p className="text-sm font-medium text-gray-900">{formData.children.length}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Revenus déclarés</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {[formData.salary, formData.pension, formData.unemployment, formData.independent, 
+                              formData.foncier, formData.lmnp, formData.foreign, formData.interest, 
+                              formData.dividends, formData.crypto].filter(Boolean).length} type(s)
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Charges déductibles</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {[formData.donations, formData.childcare, formData.homeServices, formData.alimonyDeduction].filter(Boolean).length} type(s)
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Documents uploadés</p>
+                          <p className="text-sm font-medium text-gray-900">{uploadedFiles.length}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-xs text-gray-500">Documents obligatoires manquants</p>
+                          <p className={`text-sm font-medium ${mandatoryMissing > 0 ? "text-red-600" : "text-emerald-600"}`}>
+                            {mandatoryMissing > 0 && <AlertCircle className="inline h-4 w-4 mr-1" />}
+                            {mandatoryMissing}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
                         <label className="flex items-start gap-3 cursor-pointer">
                           <Checkbox
-                            checked={formData.confirmAccuracy}
-                            onCheckedChange={checked => setFormData(prev => ({
-                              ...prev,
-                              confirmAccuracy: checked as boolean
-                            }))}
+                            checked={formData.accuracy}
+                            onCheckedChange={v => updateField("accuracy", v as boolean)}
                             className="mt-0.5"
                           />
-                          <span className="text-[13px] text-gray-700">
-                            Je certifie que les informations fournies sont exactes.
-                          </span>
+                          <span className="text-sm text-gray-700">Je certifie l'exactitude des informations fournies</span>
                         </label>
                         <label className="flex items-start gap-3 cursor-pointer">
                           <Checkbox
-                            checked={formData.confirmProcessing}
-                            onCheckedChange={checked => setFormData(prev => ({
-                              ...prev,
-                              confirmProcessing: checked as boolean
-                            }))}
+                            checked={formData.processing}
+                            onCheckedChange={v => updateField("processing", v as boolean)}
                             className="mt-0.5"
                           />
-                          <span className="text-[13px] text-gray-700">
-                            J'autorise le cabinet à traiter ces données.
-                          </span>
+                          <span className="text-sm text-gray-700">J'autorise le traitement de mes données fiscales conformément au RGPD</span>
                         </label>
                       </div>
-
-                      {/* Submit Button */}
-                      <div className="pt-4 text-center">
-                        <Button
-                          onClick={handleSubmit}
-                          disabled={!canSubmit}
-                          className="bg-gray-900 hover:bg-gray-800 text-white px-6"
-                        >
-                          Soumettre au cabinet
-                        </Button>
-                      </div>
+                      
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <Button
+                                onClick={() => setShowConfirmDialog(true)}
+                                disabled={!canSubmit}
+                                className="w-full bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <CheckCircle2 className="h-4 w-4 mr-2" />
+                                Soumettre mon dossier
+                              </Button>
+                            </div>
+                          </TooltipTrigger>
+                          {!canSubmit && (
+                            <TooltipContent>
+                              <p>Complétez toutes les sections et fournissez les documents obligatoires</p>
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   )}
                 </div>
@@ -1266,287 +1410,73 @@ export default function OnboardingPage() {
           ))}
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-gray-100 z-50">
-        <div className="max-w-[720px] mx-auto flex items-center justify-between py-4 px-8">
-          <span className="text-[13px] text-gray-400">Sauvegarde automatique activée</span>
-          <Button
-            onClick={() => {
-              setOpenSections(["review"])
-              window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" })
-            }}
-            disabled={progress < 30}
-            className="bg-gray-900 hover:bg-gray-800 text-white"
-          >
-            Vérifier & Soumettre
-          </Button>
-        </div>
-      </footer>
-
-      {/* Child Modal */}
-      <Dialog open={childModalOpen} onOpenChange={setChildModalOpen}>
-        <DialogContent className="sm:max-w-[480px]">
+      
+      {/* DIALOG AJOUTER ENFANT */}
+      <Dialog open={showChildDialog} onOpenChange={setShowChildDialog}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Ajouter un enfant</DialogTitle>
+            <DialogDescription>Renseignez les informations de l'enfant à charge</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-[13px]">Prénom</Label>
-                <Input
-                  value={tempChild.firstName || ""}
-                  onChange={e => setTempChild(prev => ({ ...prev, firstName: e.target.value }))}
-                  className="bg-gray-50 border-0"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[13px]">Nom</Label>
-                <Input
-                  value={tempChild.lastName || ""}
-                  onChange={e => setTempChild(prev => ({ ...prev, lastName: e.target.value }))}
-                  className="bg-gray-50 border-0"
-                />
-              </div>
+            <div>
+              <Label className="text-sm text-gray-600 mb-1.5 block">Prénom</Label>
+              <Input
+                value={newChild.name}
+                onChange={e => setNewChild(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Prénom de l'enfant"
+                className="bg-gray-50 border-gray-200 focus:border-gray-900 focus:ring-gray-900 rounded-md"
+              />
             </div>
-            <div className="space-y-2">
-              <Label className="text-[13px]">Date de naissance</Label>
+            <div>
+              <Label className="text-sm text-gray-600 mb-1.5 block">Date de naissance</Label>
               <Input
                 type="date"
-                value={tempChild.birthDate || ""}
-                onChange={e => setTempChild(prev => ({ ...prev, birthDate: e.target.value }))}
-                className="bg-gray-50 border-0"
+                value={newChild.birthDate}
+                onChange={e => setNewChild(prev => ({ ...prev, birthDate: e.target.value }))}
+                className="bg-gray-50 border-gray-200 focus:border-gray-900 focus:ring-gray-900 rounded-md"
               />
             </div>
-            <div className="space-y-2">
-              <Label className="text-[13px]">Rattachement</Label>
-              <Select
-                value={tempChild.attachment || "exclusive"}
-                onValueChange={value => setTempChild(prev => ({ ...prev, attachment: value }))}
-              >
-                <SelectTrigger className="bg-gray-50 border-0">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="exclusive">Rattachement exclusif</SelectItem>
-                  <SelectItem value="shared">Garde alternée</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={saveChild} className="bg-gray-900 hover:bg-gray-800">
-              Enregistrer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Pension Modal */}
-      <Dialog open={pensionModalOpen} onOpenChange={setPensionModalOpen}>
-        <DialogContent className="sm:max-w-[480px]">
-          <DialogHeader>
-            <DialogTitle>Ajouter une pension</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label className="text-[13px]">Type de pension</Label>
-              <Select
-                value={tempPension.type || ""}
-                onValueChange={value => setTempPension(prev => ({ ...prev, type: value }))}
-              >
-                <SelectTrigger className="bg-gray-50 border-0">
-                  <SelectValue placeholder="Sélectionnez..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="versee">Pension alimentaire versée</SelectItem>
-                  <SelectItem value="recue">Pension alimentaire reçue</SelectItem>
-                  <SelectItem value="prestation">Prestation compensatoire</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[13px]">Bénéficiaire / Payeur</Label>
-              <Input
-                value={tempPension.beneficiary || ""}
-                onChange={e => setTempPension(prev => ({ ...prev, beneficiary: e.target.value }))}
-                placeholder="Nom du bénéficiaire ou payeur"
-                className="bg-gray-50 border-0"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[13px]">Montant annuel (€)</Label>
-              <Input
-                type="number"
-                value={tempPension.amount || ""}
-                onChange={e => setTempPension(prev => ({ ...prev, amount: e.target.value }))}
-                placeholder="0"
-                className="bg-gray-50 border-0"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={savePension} className="bg-gray-900 hover:bg-gray-800">
-              Enregistrer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Event Modal */}
-      <Dialog open={eventModalOpen} onOpenChange={setEventModalOpen}>
-        <DialogContent className="sm:max-w-[480px]">
-          <DialogHeader>
-            <DialogTitle>Ajouter un événement</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label className="text-[13px]">Type d'événement</Label>
-              <Select
-                value={tempEvent.type || ""}
-                onValueChange={value => setTempEvent(prev => ({ ...prev, type: value }))}
-              >
-                <SelectTrigger className="bg-gray-50 border-0">
-                  <SelectValue placeholder="Sélectionnez..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="mariage">Mariage</SelectItem>
-                  <SelectItem value="pacs">PACS</SelectItem>
-                  <SelectItem value="divorce">Divorce</SelectItem>
-                  <SelectItem value="separation">Séparation</SelectItem>
-                  <SelectItem value="deces">Décès du conjoint</SelectItem>
-                  <SelectItem value="naissance">Naissance</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[13px]">Date de l'événement</Label>
-              <Input
-                type="date"
-                value={tempEvent.date || ""}
-                onChange={e => setTempEvent(prev => ({ ...prev, date: e.target.value }))}
-                className="bg-gray-50 border-0"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[13px]">Détails (optionnel)</Label>
-              <Textarea
-                value={tempEvent.details || ""}
-                onChange={e => setTempEvent(prev => ({ ...prev, details: e.target.value }))}
-                placeholder="Précisions éventuelles..."
-                className="bg-gray-50 border-0 resize-none"
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={saveEvent} className="bg-gray-900 hover:bg-gray-800">
-              Enregistrer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Spouse Modal */}
-      <Dialog open={spouseModalOpen} onOpenChange={setSpouseModalOpen}>
-        <DialogContent className="sm:max-w-[480px]">
-          <DialogHeader>
-            <DialogTitle>Conjoint</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-[13px]">Prénom</Label>
-                <Input
-                  value={tempSpouse.firstName || ""}
-                  onChange={e => setTempSpouse(prev => ({ ...prev, firstName: e.target.value }))}
-                  className="bg-gray-50 border-0"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[13px]">Nom</Label>
-                <Input
-                  value={tempSpouse.lastName || ""}
-                  onChange={e => setTempSpouse(prev => ({ ...prev, lastName: e.target.value }))}
-                  className="bg-gray-50 border-0"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[13px]">Date de naissance</Label>
-              <Input
-                type="date"
-                value={tempSpouse.birthDate || ""}
-                onChange={e => setTempSpouse(prev => ({ ...prev, birthDate: e.target.value }))}
-                className="bg-gray-50 border-0"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[13px]">Cohabitation au 31/12 ?</Label>
+            <div>
+              <Label className="text-sm text-gray-600 mb-2 block">Type de garde</Label>
               <div className="flex gap-2">
-                {["Oui", "Non"].map(option => (
+                {[{ value: "principale", label: "Principale" }, { value: "alternee", label: "Alternée" }].map(opt => (
                   <button
-                    key={option}
-                    onClick={() => setTempSpouse(prev => ({ ...prev, cohabiting: option === "Oui" }))}
-                    className={`px-4 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
-                      (tempSpouse.cohabiting ?? true) === (option === "Oui")
-                        ? "bg-gray-900 text-white"
-                        : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+                    key={opt.value}
+                    onClick={() => setNewChild(prev => ({ ...prev, custody: opt.value as "principale" | "alternee" }))}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors border ${
+                      newChild.custody === opt.value
+                        ? "bg-gray-900 text-white border-gray-900"
+                        : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
                     }`}
                   >
-                    {option}
+                    {opt.label}
                   </button>
                 ))}
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={() => saveSpouse(false)} className="bg-gray-900 hover:bg-gray-800">
-              Enregistrer
-            </Button>
+            <Button variant="outline" onClick={() => setShowChildDialog(false)}>Annuler</Button>
+            <Button onClick={addChild} className="bg-gray-900 hover:bg-gray-800 text-white">Ajouter</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Ex-Spouse Modal */}
-      <Dialog open={exSpouseModalOpen} onOpenChange={setExSpouseModalOpen}>
-        <DialogContent className="sm:max-w-[480px]">
+      
+      {/* DIALOG CONFIRMATION */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Ex-conjoint</DialogTitle>
+            <DialogTitle>Confirmer la soumission</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir soumettre votre dossier ?
+              <br />
+              <span className="text-gray-500">Vous pourrez encore modifier certaines informations après validation.</span>
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-[13px]">Prénom</Label>
-                <Input
-                  value={tempSpouse.firstName || ""}
-                  onChange={e => setTempSpouse(prev => ({ ...prev, firstName: e.target.value }))}
-                  className="bg-gray-50 border-0"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[13px]">Nom</Label>
-                <Input
-                  value={tempSpouse.lastName || ""}
-                  onChange={e => setTempSpouse(prev => ({ ...prev, lastName: e.target.value }))}
-                  className="bg-gray-50 border-0"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[13px]">Date de naissance</Label>
-              <Input
-                type="date"
-                value={tempSpouse.birthDate || ""}
-                onChange={e => setTempSpouse(prev => ({ ...prev, birthDate: e.target.value }))}
-                className="bg-gray-50 border-0"
-              />
-            </div>
-          </div>
           <DialogFooter>
-            <Button onClick={() => saveSpouse(true)} className="bg-gray-900 hover:bg-gray-800">
-              Enregistrer
-            </Button>
+            <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>Annuler</Button>
+            <Button onClick={handleSubmit} className="bg-gray-900 hover:bg-gray-800 text-white">Confirmer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
