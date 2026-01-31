@@ -29,13 +29,15 @@ import {
   ExternalLink,
   Loader2,
   CheckCircle2,
-  Edit3
+  Edit3,
+  ArrowLeft
 } from "lucide-react"
 import { confirmOnboarding, requestRevision, updateOnboardingNotes } from "@/app/actions/save-onboarding"
 import type { Client } from "@/lib/types"
 
 interface OnboardingViewProps {
   clientId: string
+  onBack?: () => void
 }
 
 type OnboardingStatus = "en_attente" | "soumis" | "en_revision" | "confirme"
@@ -47,7 +49,7 @@ const statusLabels: Record<OnboardingStatus, { label: string; color: string; ico
   confirme: { label: "Confirmé", color: "bg-emerald-100 text-emerald-700", icon: <CheckCircle2 className="h-4 w-4" /> },
 }
 
-export function OnboardingView({ clientId }: OnboardingViewProps) {
+export function OnboardingView({ clientId, onBack }: OnboardingViewProps) {
   const [client, setClient] = useState<Client | null>(null)
   const [loading, setLoading] = useState(true)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
@@ -161,15 +163,27 @@ export function OnboardingView({ clientId }: OnboardingViewProps) {
     <div className="p-6 space-y-8">
       {/* Header */}
       <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold mb-2">
-            Onboarding {client.first_name} {client.last_name}
-          </h2>
-          <p className="text-muted-foreground">
-            {isFormCompleted 
-              ? "Le client a complété son formulaire d'onboarding" 
-              : "Le client n'a pas encore complété son formulaire"}
-          </p>
+        <div className="flex items-start gap-4">
+          {onBack && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onBack}
+              className="mt-1 flex-shrink-0"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          )}
+          <div>
+            <h2 className="text-2xl font-semibold mb-2">
+              Onboarding {client.first_name} {client.last_name}
+            </h2>
+            <p className="text-muted-foreground">
+              {isFormCompleted 
+                ? "Le client a complété son formulaire d'onboarding" 
+                : "Le client n'a pas encore complété son formulaire"}
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <Badge className={`${statusInfo.color} flex items-center gap-1.5 px-3 py-1`}>
