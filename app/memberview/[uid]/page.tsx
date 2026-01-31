@@ -127,88 +127,87 @@ export default function MemberViewPage({ params }: { params: { uid: string } }) 
       {/* Header */}
       <header 
         className="sticky top-0 z-50 bg-white border-b"
-        style={{ height: "80px", borderColor: "#e4e4e7" }}
+        style={{ height: "80px", borderColor: "#e5e5e5" }}
       >
-        <div className="h-full px-6 flex items-center justify-between">
+        <div className="h-full px-8 flex items-center justify-between max-w-[1600px] mx-auto">
           {/* Left side */}
-          <div className="flex flex-col justify-center">
-            <div className="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-widest mb-1">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+          <div className="flex flex-col justify-center gap-1">
+            <div className="flex items-center gap-2 text-zinc-400 text-[10px] uppercase tracking-[0.1em] font-medium">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
                 <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
               </svg>
-              <span>Fiscalia</span>
+              <span>FISCALIA</span>
             </div>
-            <h1 className="text-2xl font-bold text-zinc-950">Jean Dupont</h1>
+            <h1 className="text-[28px] font-bold text-black leading-none">Jean Dupont</h1>
           </div>
 
           {/* Right side */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div className="text-right">
-              <div className="text-sm font-medium text-zinc-900">Cabinet Delmas</div>
-              <div className="text-xs text-zinc-500 flex items-center gap-1 justify-end">
-                <Clock className="w-3 h-3" />
+              <div className="text-[15px] font-semibold text-black">Cabinet Delmas</div>
+              <div className="text-[13px] text-zinc-500 mt-0.5">
                 Activité : il y a 2h
               </div>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-sm font-medium">
-              <Shield className="w-4 h-4" />
-              Sécurisé
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-50 border border-emerald-200">
+              <Shield className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="text-[13px] font-semibold text-emerald-700">Sécurisé</span>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Layout */}
-      <div className="flex">
+      <div className="flex max-w-[1600px] mx-auto">
         {/* Sidebar */}
         <aside 
-          className="sticky top-[80px] h-[calc(100vh-80px)] bg-white border-r p-4"
-          style={{ width: "240px", borderColor: "#e4e4e7" }}
+          className="sticky top-[80px] h-[calc(100vh-80px)] bg-transparent pt-12 pr-8"
+          style={{ width: "280px" }}
         >
-          <nav className="space-y-1">
+          <nav className="space-y-2">
             <button
               onClick={() => setActiveTab("requests")}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`w-full flex items-center gap-3 px-0 py-2 text-[15px] transition-colors ${
                 activeTab === "requests"
-                  ? "bg-zinc-100 text-zinc-900"
-                  : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
+                  ? "text-black font-medium"
+                  : "text-zinc-500 hover:text-black"
               }`}
             >
-              <FileText className="w-4 h-4" />
-              Demandes en cours
+              <FileText className="w-[18px] h-[18px]" />
+              <span>Demandes en cours</span>
             </button>
             <button
               onClick={() => setActiveTab("shared")}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`w-full flex items-center gap-3 px-0 py-2 text-[15px] transition-colors ${
                 activeTab === "shared"
-                  ? "bg-zinc-100 text-zinc-900"
-                  : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
+                  ? "text-black font-medium"
+                  : "text-zinc-500 hover:text-black"
               }`}
             >
-              <Upload className="w-4 h-4" />
-              Fichiers partagés
+              <Upload className="w-[18px] h-[18px]" />
+              <span>Fichiers partagés</span>
             </button>
           </nav>
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-8">
+        <main className="flex-1 py-12 pr-8">
           {activeTab === "requests" && (
             <div 
-              className="bg-white rounded-xl shadow-sm"
-              style={{ borderColor: "#e4e4e7", border: "1px solid #e4e4e7" }}
+              className="bg-white rounded-lg border"
+              style={{ borderColor: "#e5e5e5" }}
             >
               {/* Card Header */}
-              <div className="px-6 py-5 border-b flex items-center justify-between" style={{ borderColor: "#e4e4e7" }}>
+              <div className="px-8 py-6 border-b flex items-start justify-between" style={{ borderColor: "#e5e5e5" }}>
                 <div>
-                  <h2 className="text-lg font-semibold text-zinc-950">Demandes en cours</h2>
-                  <p className="text-sm text-zinc-500 mt-0.5">Liste des justificatifs requis par votre avocat.</p>
+                  <h2 className="text-[22px] font-bold text-black mb-1">Demandes en cours</h2>
+                  <p className="text-[14px] text-zinc-500">Liste des justificatifs requis par votre avocat.</p>
                 </div>
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={() => setShowHistory(true)}
-                  className="text-zinc-700 border-zinc-300 hover:bg-zinc-50"
+                  className="text-[13px] font-medium text-black border-zinc-300 hover:bg-zinc-50 px-4 h-9"
                 >
                   Historique
                 </Button>
@@ -218,48 +217,48 @@ export default function MemberViewPage({ params }: { params: { uid: string } }) 
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b" style={{ borderColor: "#e4e4e7" }}>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                        Document
+                    <tr className="border-b bg-zinc-50/50" style={{ borderColor: "#e5e5e5" }}>
+                      <th className="px-8 py-4 text-left text-[11px] font-bold text-zinc-500 uppercase tracking-[0.08em]">
+                        DOCUMENT
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                        Statut
+                      <th className="px-8 py-4 text-left text-[11px] font-bold text-zinc-500 uppercase tracking-[0.08em]">
+                        STATUT
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                        Action
+                      <th className="px-8 py-4 text-right text-[11px] font-bold text-zinc-500 uppercase tracking-[0.08em]">
+                        ACTION
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y" style={{ borderColor: "#e4e4e7" }}>
+                  <tbody className="divide-y" style={{ borderColor: "#e5e5e5" }}>
                     {mockDocuments.map((doc) => (
-                      <tr key={doc.id} className="hover:bg-zinc-50/50 transition-colors">
-                        <td className="px-6 py-4">
+                      <tr key={doc.id} className="hover:bg-zinc-50/30 transition-colors">
+                        <td className="px-8 py-5">
                           <div className="flex items-start gap-3">
-                            <div className="mt-0.5">
+                            <div className="mt-1">
                               <FileText className="w-5 h-5 text-zinc-400" />
                             </div>
                             <div>
-                              <div className="font-medium text-zinc-900">{doc.name}</div>
-                              <div className="text-sm text-zinc-500">{doc.description}</div>
+                              <div className="font-semibold text-[15px] text-black mb-0.5">{doc.name}</div>
+                              <div className="text-[13px] text-zinc-500">{doc.description}</div>
                               {doc.fileName && (
-                                <div className="text-sm text-zinc-400">Reçu : {doc.fileName}</div>
+                                <div className="text-[13px] text-zinc-400 mt-0.5">Reçu : {doc.fileName}</div>
                               )}
                               {doc.refusedReason && (
-                                <div className="text-sm text-red-500">{doc.refusedReason}</div>
+                                <div className="text-[13px] text-red-500 mt-0.5">{doc.refusedReason}</div>
                               )}
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-8 py-5">
                           {getStatusBadge(doc.status, doc.statusLabel)}
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-8 py-5 text-right">
                           {doc.status === "validated" || doc.status === "in_review" ? (
                             <Button 
                               variant="outline" 
                               size="sm"
                               onClick={handleUpload}
-                              className="text-zinc-700 border-zinc-300 hover:bg-zinc-50"
+                              className="text-[13px] font-medium text-black border-zinc-300 hover:bg-zinc-50 px-5 h-9"
                             >
                               Remplacer
                             </Button>
@@ -267,7 +266,7 @@ export default function MemberViewPage({ params }: { params: { uid: string } }) 
                             <Button 
                               size="sm"
                               onClick={handleUpload}
-                              className="bg-zinc-900 hover:bg-zinc-800 text-white"
+                              className="bg-black hover:bg-zinc-800 text-white text-[13px] font-medium px-5 h-9"
                             >
                               Déposer
                             </Button>
@@ -280,12 +279,12 @@ export default function MemberViewPage({ params }: { params: { uid: string } }) 
               </div>
 
               {/* Card Footer */}
-              <div className="px-6 py-4 border-t" style={{ borderColor: "#e4e4e7" }}>
-                <p className="text-sm text-zinc-500 mb-4">
+              <div className="px-8 py-6 border-t" style={{ borderColor: "#e5e5e5" }}>
+                <p className="text-[13px] text-zinc-500 mb-4">
                   Formats acceptés : PDF, JPEG, PNG, ZIP. Max 25Mo.
                 </p>
                 <Button 
-                  className="w-full bg-zinc-900 hover:bg-zinc-800 text-white h-11"
+                  className="w-full bg-black hover:bg-zinc-800 text-white h-12 text-[15px] font-semibold"
                   onClick={handleSubmitDocuments}
                 >
                   Soumettre les documents
@@ -296,50 +295,50 @@ export default function MemberViewPage({ params }: { params: { uid: string } }) 
 
           {activeTab === "shared" && (
             <div 
-              className="bg-white rounded-xl shadow-sm"
-              style={{ borderColor: "#e4e4e7", border: "1px solid #e4e4e7" }}
+              className="bg-white rounded-lg border"
+              style={{ borderColor: "#e5e5e5" }}
             >
               {/* Card Header */}
-              <div className="px-6 py-5 border-b" style={{ borderColor: "#e4e4e7" }}>
-                <h2 className="text-lg font-semibold text-zinc-950">Fichiers partagés</h2>
-                <p className="text-sm text-zinc-500 mt-0.5">Documents envoyés par votre avocat.</p>
+              <div className="px-8 py-6 border-b" style={{ borderColor: "#e5e5e5" }}>
+                <h2 className="text-[22px] font-bold text-black mb-1">Fichiers partagés</h2>
+                <p className="text-[14px] text-zinc-500">Documents mis à disposition par le cabinet.</p>
               </div>
 
               {/* Table */}
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b" style={{ borderColor: "#e4e4e7" }}>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                        Document
+                    <tr className="border-b bg-zinc-50/50" style={{ borderColor: "#e5e5e5" }}>
+                      <th className="px-8 py-4 text-left text-[11px] font-bold text-zinc-500 uppercase tracking-[0.08em]">
+                        DOCUMENT
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                        Date
+                      <th className="px-8 py-4 text-left text-[11px] font-bold text-zinc-500 uppercase tracking-[0.08em]">
+                        DATE
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                        Action
+                      <th className="px-8 py-4 text-right text-[11px] font-bold text-zinc-500 uppercase tracking-[0.08em]">
+                        ACTION
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y" style={{ borderColor: "#e4e4e7" }}>
+                  <tbody className="divide-y" style={{ borderColor: "#e5e5e5" }}>
                     {mockSharedFiles.map((file) => (
-                      <tr key={file.id} className="hover:bg-zinc-50/50 transition-colors">
-                        <td className="px-6 py-4">
+                      <tr key={file.id} className="hover:bg-zinc-50/30 transition-colors">
+                        <td className="px-8 py-5">
                           <div className="flex items-center gap-3">
                             <FileText className="w-5 h-5 text-zinc-400" />
-                            <span className="font-medium text-zinc-900">{file.name}</span>
+                            <span className="font-semibold text-[15px] text-black">{file.name}</span>
+                            <span className="text-[12px] text-zinc-400 uppercase">PDF</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-zinc-500">
+                        <td className="px-8 py-5 text-[14px] text-zinc-500">
                           {file.date}
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-8 py-5 text-right">
                           <Button 
                             variant="outline" 
                             size="sm"
-                            className="text-zinc-700 border-zinc-300 hover:bg-zinc-50"
+                            className="text-[13px] font-medium text-black border-zinc-300 hover:bg-zinc-50 px-5 h-9"
                           >
-                            <Download className="w-4 h-4 mr-1.5" />
                             Télécharger
                           </Button>
                         </td>
@@ -352,6 +351,24 @@ export default function MemberViewPage({ params }: { params: { uid: string } }) 
           )}
         </main>
       </div>
+
+      {/* Footer */}
+      <footer className="border-t py-6 mt-12" style={{ borderColor: "#e5e5e5" }}>
+        <div className="max-w-[1600px] mx-auto px-8 flex items-center justify-between">
+          <p className="text-[13px] text-zinc-500">
+            © 2026 Fiscalia. Tous droits réservés.
+          </p>
+          <div className="flex items-center gap-4">
+            <a href="#" className="text-[13px] text-black underline hover:no-underline">
+              Support technique
+            </a>
+            <span className="text-zinc-300">—</span>
+            <a href="#" className="text-[13px] text-black underline hover:no-underline">
+              Mentions légales
+            </a>
+          </div>
+        </div>
+      </footer>
 
       {/* History Modal */}
       <Dialog open={showHistory} onOpenChange={setShowHistory}>
