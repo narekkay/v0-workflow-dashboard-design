@@ -34,6 +34,7 @@ import {
 } from "lucide-react"
 import { confirmOnboarding, requestRevision, updateOnboardingNotes } from "@/app/actions/save-onboarding"
 import type { Client } from "@/lib/types"
+import { ClientTabs } from "./client-tabs"
 
 interface OnboardingViewProps {
   clientId: string
@@ -147,6 +148,12 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
   const status = (client.onboarding_status as OnboardingStatus) || "en_attente"
   const statusInfo = statusLabels[status]
   const isFormCompleted = client.onboarding_form_completed
+  const isOnboardingConfirmed = status === "confirme" || status === "confirmed"
+
+  // If onboarding is confirmed, show the regular client tabs instead
+  if (isOnboardingConfirmed) {
+    return <ClientTabs clientId={clientId} />
+  }
 
   // Helper function to display yes/no
   const yesNo = (value: boolean | null | undefined) => {
