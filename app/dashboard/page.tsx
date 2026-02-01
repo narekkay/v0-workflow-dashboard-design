@@ -10,6 +10,7 @@ import { ClientsTable } from "@/components/clients-table"
 import { ClientTabs } from "@/components/client-tabs"
 import { RevenueFullPage } from "@/components/revenue-full-page"
 import { Form2042View } from "@/components/form-2042-view"
+import { PDF2042CViewer } from "@/components/pdf-2042c-viewer"
 import { ChatWidget } from "@/components/chat-widget"
 import { DashboardView } from "@/components/dashboard-view"
 import { RevenueAmountEntry } from "@/components/revenue-amount-entry"
@@ -34,11 +35,11 @@ const clientBaseTabs: ClientTab[] = [
 
 interface Tab {
   id: string
-  type: "view" | "client" | "form2042" | "add-client" | "onboarding"
+  type: "view" | "client" | "form2042" | "form2042c" | "add-client" | "onboarding"
   label: string
   view?: View
   clientId?: string
-}
+  }
 
 export default function HomePage() {
   const [clients, setClients] = useState<Client[]>([])
@@ -263,6 +264,17 @@ export default function HomePage() {
     setActiveTabId(newTab.id)
   }
 
+  function handleOpen2042CView(clientId: string, clientName: string) {
+    const newTab: Tab = {
+      id: `form2042c-${clientId}`,
+      type: "form2042c",
+      label: `2042 C - ${clientName}`,
+      clientId,
+    }
+    setTabs((prev) => [...prev, newTab])
+    setActiveTabId(newTab.id)
+  }
+
   const activeTab = tabs.find((t) => t.id === activeTabId)
 
   const isClientView = activeTab?.type === "client"
@@ -468,6 +480,7 @@ export default function HomePage() {
                     shouldOpenRevenueModal={shouldOpenRevenueModal}
                     onRevenueModalClose={() => setShouldOpenRevenueModal(false)}
                     onOpen2042View={handleOpen2042View}
+                    onOpen2042CView={handleOpen2042CView}
                     onOpenAmountEntry={handleOpenAmountEntry}
                     activeTab={activeClientTab}
                     onTabChange={setActiveClientTab}
@@ -485,6 +498,18 @@ export default function HomePage() {
 
                 return (
                   <Form2042View
+                    clientId={activeTab.clientId}
+                    clientName={`${data.client.first_name} ${data.client.last_name}`}
+                  />
+                )
+              })()
+            ) : activeTab?.type === "form2042c" && activeTab.clientId ? (
+              (() => {
+                const data = clientsData.get(activeTab.clientId)
+                if (!data) return <div className="p-6">Chargement...</div>
+
+                return (
+                  <PDF2042CViewer
                     clientId={activeTab.clientId}
                     clientName={`${data.client.first_name} ${data.client.last_name}`}
                   />

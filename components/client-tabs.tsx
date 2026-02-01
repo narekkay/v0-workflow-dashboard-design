@@ -155,6 +155,7 @@ interface ClientTabsProps {
   shouldOpenRevenueModal?: boolean
   onRevenueModalClose?: () => void
   onOpen2042View?: (clientId: string, clientName: string) => void
+  onOpen2042CView?: (clientId: string, clientName: string) => void
   onOpenAmountEntry?: (clientId: string, clientName: string, categoryId: number, categoryName: string) => void
   activeTab?: string
   onTabChange?: (tabId: string) => void
@@ -182,6 +183,7 @@ export function ClientTabs({
   shouldOpenRevenueModal = false,
   onRevenueModalClose,
   onOpen2042View,
+  onOpen2042CView,
   onOpenAmountEntry,
   activeTab = "overview",
   onTabChange,
@@ -1905,7 +1907,7 @@ export function ClientTabs({
                         <Badge 
                           variant="secondary" 
                           className="bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
-                          onClick={() => handleOpenYearTab(2025)}
+                          onClick={() => onOpen2042CView?.(client.id, `${client.first_name} ${client.last_name}`)}
                         >
                           2042 C
                         </Badge>
@@ -1965,7 +1967,7 @@ export function ClientTabs({
                         <Badge 
                           variant="secondary" 
                           className="bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
-                          onClick={() => handleOpenYearTab(2024)}
+                          onClick={() => onOpen2042CView?.(client.id, `${client.first_name} ${client.last_name}`)}
                         >
                           2042 C
                         </Badge>

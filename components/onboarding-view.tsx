@@ -195,6 +195,7 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
         shouldOpenRevenueModal={false}
         onRevenueModalClose={() => {}}
         onOpen2042View={() => {}}
+        onOpen2042CView={() => {}}
         onOpenAmountEntry={() => {}}
         activeTab="overview"
         onTabChange={() => {}}
