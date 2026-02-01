@@ -136,12 +136,13 @@ interface SidebarYearTab {
 }
 
 interface ClientTabsProps {
-  client: Client
-  taxProfiles: TaxProfile[]
-  documents: Document[]
-  onClose: () => void
-  onRefresh: (clientId: string) => void
-  onOpenRevenuePage: (
+  client?: Client
+  clientId?: string
+  taxProfiles?: TaxProfile[]
+  documents?: Document[]
+  onClose?: () => void
+  onRefresh?: (clientId: string) => void
+  onOpenRevenuePage?: (
     clientId: string,
     clientName: string,
     categoryName: string,
@@ -149,17 +150,17 @@ interface ClientTabsProps {
     subCategoryIds?: number[],
     revenueId?: string,
   ) => void
-  onOpenRevenueDetail: (revenueId: string, categoryName: string) => void
-  shouldOpenRevenueModal: boolean
-  onRevenueModalClose: () => void
-  onOpen2042View: (clientId: string, clientName: string) => void
-  onOpenAmountEntry: (clientId: string, clientName: string, categoryId: number, categoryName: string) => void
-  activeTab: string
-  onTabChange: (tabId: string) => void
-  revenueTabs: SidebarRevenueTab[]
-  onRevenueTabsChange: React.Dispatch<React.SetStateAction<SidebarRevenueTab[]>>
-  yearTabs: SidebarYearTab[]
-  onYearTabsChange: React.Dispatch<React.SetStateAction<SidebarYearTab[]>>
+  onOpenRevenueDetail?: (revenueId: string, categoryName: string) => void
+  shouldOpenRevenueModal?: boolean
+  onRevenueModalClose?: () => void
+  onOpen2042View?: (clientId: string, clientName: string) => void
+  onOpenAmountEntry?: (clientId: string, clientName: string, categoryId: number, categoryName: string) => void
+  activeTab?: string
+  onTabChange?: (tabId: string) => void
+  revenueTabs?: SidebarRevenueTab[]
+  onRevenueTabsChange?: React.Dispatch<React.SetStateAction<SidebarRevenueTab[]>>
+  yearTabs?: SidebarYearTab[]
+  onYearTabsChange?: React.Dispatch<React.SetStateAction<SidebarYearTab[]>>
 }
 
 interface Child {
@@ -169,24 +170,27 @@ interface Child {
 }
 
 export function ClientTabs({
-  client,
-  taxProfiles,
-  documents,
+  client: initialClient,
+  clientId,
+  taxProfiles = [],
+  documents = [],
   onClose,
   onRefresh,
   onOpenRevenuePage,
   onOpenRevenueDetail,
-  shouldOpenRevenueModal,
+  shouldOpenRevenueModal = false,
   onRevenueModalClose,
   onOpen2042View,
   onOpenAmountEntry,
-  activeTab,
+  activeTab = "overview",
   onTabChange,
-  revenueTabs,
+  revenueTabs = [],
   onRevenueTabsChange,
-  yearTabs,
+  yearTabs = [],
   onYearTabsChange,
 }: ClientTabsProps) {
+  const [client, setClient] = useState<Client | null>(initialClient || null)
+  const [loadingClient, setLoadingClient] = useState(!initialClient && !!clientId)
   const [revenues, setRevenues] = useState<ClientRevenue[]>([])
   const [categoryNames, setCategoryNames] = useState<Map<number, string>>(new Map())
   const [loadingRevenues, setLoadingRevenues] = useState(true)
@@ -214,19 +218,19 @@ export function ClientTabs({
 
   const [isEditMode, setIsEditMode] = useState(false)
   const [isEditingCustomFields, setIsEditingCustomFields] = useState(false)
-  const [children, setChildren] = useState<Child[]>((client.children as Child[]) || [])
+  const [children, setChildren] = useState<Child[]>((client?.children as Child[]) || [])
   const [isEditingChildren, setIsEditingChildren] = useState(false)
   const [spouseChildren, setSpouseChildren] = useState<Child[]>([])
   const [isEditingSpouseChildren, setIsEditingSpouseChildren] = useState(false)
   const [customFields, setCustomFields] = useState<Array<{ name: string; value: string }>>(
-    (client.custom_fields as Array<{ name: string; value: string }>) || [],
+    (client?.custom_fields as Array<{ name: string; value: string }>) || [],
   )
   const [editedClient, setEditedClient] = useState({
-    first_name: client.first_name,
-    last_name: client.last_name,
-    email: client.email,
-    phone: client.phone || "",
-    address: client.address || "",
+    first_name: client?.first_name || "",
+    last_name: client?.last_name || "",
+    email: client?.email || "",
+    phone: client?.phone || "",
+    address: client?.address || "",
     accountant: "",
   })
   const [editedSpouse, setEditedSpouse] = useState({
@@ -406,11 +410,38 @@ export function ClientTabs({
   }
 
   useEffect(() => {
-    loadRevenues()
-    loadOutboxFiles()
-    loadClientFiles()
-    loadAnnexes()
-  }, [client.id])
+    if (clientId && !initialClient) {
+      loadClient()
+    }
+  }, [clientId])
+
+  useEffect(() => {
+    if (client?.id) {
+      loadRevenues()
+      loadOutboxFiles()
+      loadClientFiles()
+      loadAnnexes()
+    }
+  }, [client?.id])
+
+  async function loadClient() {
+    if (!clientId) return
+    
+    setLoadingClient(true)
+    const supabase = createBrowserClient()
+    
+    const { data, error } = await supabase
+      .from("clients")
+      .select("*")
+      .eq("id", clientId)
+      .single()
+    
+    if (!error && data) {
+      setClient(data as Client)
+    }
+    
+    setLoadingClient(false)
+  }
 
   async function loadRevenues() {
     const supabase = createBrowserClient()
