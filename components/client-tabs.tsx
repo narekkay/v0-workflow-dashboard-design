@@ -385,6 +385,58 @@ export function ClientTabs({
         { date: "2024-01-25", action: "OCR terminé (EN détecté)", user: "Système" },
       ],
     },
+    {
+      id: "6",
+      name: "PV Assemblée Générale - Distribution 2025",
+      lastRequestAt: "30/01/2026",
+      status: "validated",
+      isBlocking: false,
+      criticality: "important",
+      origin: "manual",
+      revenueSubcategoryLabel: "Dividendes",
+      impactedCases: ["2AB", "2CK"],
+      ocr: {
+        state: "done",
+        extracted: { "Société": "Holding NP INVEST (SAS)", "Distribution brute": "16 500,00 €" },
+        confidenceScore: 0.95,
+      },
+      history: [
+        { date: "30/01/2026", action: "Document reçu", user: "Client" },
+        { date: "30/01/2026", action: "OCR terminé", user: "Système" },
+        { date: "30/01/2026", action: "Validé", user: "Système" },
+      ],
+    },
+    {
+      id: "7",
+      name: "US RSU Vesting Statement - Alphabet Inc.",
+      lastRequestAt: "30/01/2026",
+      status: "validated",
+      isBlocking: false,
+      criticality: "important",
+      origin: "manual",
+      revenueSubcategoryLabel: "Traitements et Salaires",
+      impactedCases: ["1AJ", "1BJ"],
+      ocr: {
+        state: "done",
+        extracted: { "Émetteur": "Alphabet Inc.", "Actions acquises": "150" },
+        confidenceScore: 0.93,
+        detectedLanguage: "en",
+        languageConfidence: 0.98,
+        textRaw: "RSU Vesting Statement\nAlphabet Inc.\nShares vested: 150\nValue: $21,750.00\nUS Withholding: $8,265.00",
+      },
+      translation: {
+        state: "done",
+        translatedText: "[Traduction FR]\nAttestation d'Acquisition d'Actions Gratuites\nAlphabet Inc.\nActions acquises : 150\nValeur : 21 750,00 $\nRetenue US : 8 265,00 $",
+        targetLang: "fr",
+        provider: "stub",
+      },
+      history: [
+        { date: "30/01/2026", action: "Document reçu", user: "Client" },
+        { date: "30/01/2026", action: "OCR terminé", user: "Système" },
+        { date: "30/01/2026", action: "Traduction terminée", user: "Système" },
+        { date: "30/01/2026", action: "Validé", user: "Système" },
+      ],
+    },
   ]
 
   const dossierStats: DossierStats = {
@@ -1387,7 +1439,7 @@ export function ClientTabs({
                     <div className="flex items-center gap-2">
                       {outboxFiles.length > 0 && (
                         <Button variant="outline" size="sm" onClick={() => setShowBulkActions(!showBulkActions)}>
-                          {showBulkActions ? "Annuler sélection" : "Sélection multiple"}
+                          {showBulkActions ? "Annuler sélection" : "S��lection multiple"}
                         </Button>
                       )}
                       <SendEmailDialog

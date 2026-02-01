@@ -307,10 +307,42 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
       return null
     }
 
-    const documentName = document.name.toLowerCase()
+    const documentName = document.name
+    
+    // PV Assemblée Générale - Distribution 2025
+    if (documentName === "PV Assemblée Générale - Distribution 2025") {
+      return {
+        title: "RÉSUMÉ DE L'EXTRACTION",
+        items: [
+          { label: "Société", value: "Holding NP INVEST (SAS)" },
+          { label: "Distribution brute", value: "16 500,00 €" },
+          { label: "Qualification fiscale", value: "Dividendes (2AB: 12 000 €) / Remb. Apports (4 500 €)" },
+          { label: "Acompte d'impôt (2CK)", value: "1 536,00 € (via CERFA 2777)" },
+        ],
+        aiNote: "Analyse : Le document confirme le caractère non imposable du remboursement de primes d'émission conformément à l'Art. 112, 1° du CGI."
+      }
+    }
+    
+    // US RSU Vesting Statement - Alphabet Inc.
+    if (documentName === "US RSU Vesting Statement - Alphabet Inc.") {
+      return {
+        title: "RÉSUMÉ DE L'EXTRACTION",
+        items: [
+          { label: "Émetteur", value: "Alphabet Inc. (Plan d'Attribution d'Actions Gratuites)" },
+          { label: "Événement", value: 'Acquisition définitive ("Vesting") de 150 actions' },
+          { label: "Qualification fiscale FR", value: "Traitements & Salaires (Gain d'acquisition)" },
+          { label: "Assiette imposable", value: "21 750,00 $ (~20 140,00 €)" },
+          { label: "Retenue source US", value: "8 265,00 $ (Crédit d'impôt potentiel)" },
+        ],
+        aiNote: "Analyse : Revenu à déclarer en Traitements et Salaires (Cases 1AJ/1BJ). Attention : vérifier l'éligibilité au régime de faveur de l'Art. 80 quaterdecies du CGI pour l'abattement de 50%.",
+        hasTranslation: true
+      }
+    }
+    
+    const docNameLower = documentName.toLowerCase()
     
     // IFU distributions
-    if (documentName.includes("ifu") && documentName.includes("distribution")) {
+    if (docNameLower.includes("ifu") && docNameLower.includes("distribution")) {
       return {
         title: "RÉSUMÉ DE L'EXTRACTION",
         items: [
@@ -323,7 +355,7 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
     }
     
     // IFU retenue libératoire
-    if (documentName.includes("ifu") && (documentName.includes("retenue") || documentName.includes("libératoire"))) {
+    if (docNameLower.includes("ifu") && (docNameLower.includes("retenue") || docNameLower.includes("libératoire"))) {
       return {
         title: "RÉSUMÉ DE L'EXTRACTION",
         items: [
@@ -336,7 +368,7 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
     }
     
     // Justificatifs frais
-    if (documentName.includes("frais") || documentName.includes("déplacement")) {
+    if (docNameLower.includes("frais") || docNameLower.includes("déplacement")) {
       return {
         title: "RÉSUMÉ DE L'EXTRACTION",
         items: [
@@ -349,7 +381,7 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
     }
     
     // Relevés crédits impôt
-    if (documentName.includes("crédit") || documentName.includes("impôt")) {
+    if (docNameLower.includes("crédit") || docNameLower.includes("impôt")) {
       return {
         title: "RÉSUMÉ DE L'EXTRACTION",
         items: [
@@ -362,7 +394,7 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
     }
     
     // Avis d'opéré et relevé gains
-    if (documentName.includes("avis") || documentName.includes("opéré") || documentName.includes("gains")) {
+    if (docNameLower.includes("avis") || docNameLower.includes("opéré") || docNameLower.includes("gains")) {
       return {
         title: "RÉSUMÉ DE L'EXTRACTION",
         items: [
@@ -375,7 +407,7 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
     }
     
     // Relevés PER capital
-    if (documentName.includes("per") || documentName.includes("capital")) {
+    if (docNameLower.includes("per") || docNameLower.includes("capital")) {
       return {
         title: "RÉSUMÉ DE L'EXTRACTION",
         items: [
@@ -491,6 +523,13 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
                   </div>
                 </div>
               )}
+              
+              {extractionSummary?.hasTranslation && document.translation?.state === "done" && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Traduction</span>
+                  <Badge className="bg-green-100 text-green-700 border-green-200">Complète</Badge>
+                </div>
+              )}
 
               {document.ocr.state === "done" && document.ocr.extracted && (
                 <>
@@ -570,6 +609,12 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
                   <Eye className="h-4 w-4" />
                   Voir le document
                 </Button>
+                {extractionSummary?.hasTranslation && document.translation?.state === "done" && (
+                  <Button variant="outline" size="sm" className="gap-1" onClick={openTranslationDialog}>
+                    <Languages className="h-4 w-4" />
+                    Afficher la version traduite
+                  </Button>
+                )}
                 {document.ocr.state === "done" && (
                   <Button variant="outline" size="sm" className="gap-1 bg-transparent">
                     <Wand2 className="h-4 w-4" />
@@ -608,6 +653,12 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
                     </div>
                   ))}
                 </div>
+                
+                {extractionSummary.aiNote && (
+                  <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-sm text-blue-900">{extractionSummary.aiNote}</p>
+                  </div>
+                )}
               </section>
             </>
           )}
