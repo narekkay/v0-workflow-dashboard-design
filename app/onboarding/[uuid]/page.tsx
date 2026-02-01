@@ -462,7 +462,7 @@ export default function OnboardingPage() {
   const suggestedDocuments = useDocumentSuggestions(formData, uploadedFiles)
   
   const mandatoryMissing = suggestedDocuments.filter(d => d.mandatory && d.status === "missing").length
-  const canSubmit = progress === 100 && formData.accuracy && formData.processing && mandatoryMissing === 0
+  const canSubmit = formData.accuracy && formData.processing
   
   // Charger les données du client et localStorage
   useEffect(() => {
