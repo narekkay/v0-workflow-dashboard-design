@@ -230,8 +230,8 @@ function RevenueFullPageMulti({
       // Get documents associated with these subcategories
       const { data: documents, error: docError } = await supabase
         .from("documents_necessaires")
-        .select("id, nom")
-        .or(allSelectedIds.map(id => `sub_category_ids.cs.{${id}}`).join(","))
+        .select("id, description, sub_category_id")
+        .in("sub_category_id", allSelectedIds)
       
       if (docError) {
         console.error("[v0] Error fetching documents:", docError)
@@ -241,7 +241,7 @@ function RevenueFullPageMulti({
         // Insert documents into boite_envoi_files
         const boiteInserts = documents.map(doc => ({
           client_id: clientId,
-          file_name: doc.nom,
+          file_name: doc.description,
           document_id: doc.id,
           status: "en_attente"
         }))
