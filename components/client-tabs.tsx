@@ -429,6 +429,11 @@ export function ClientTabs({
 
   useEffect(() => {
     if (client?.id) {
+      console.log(`[v0] STEP 10: ClientTabs useEffect triggered - starting 4 parallel loads`)
+      console.log(`[v0] - loadRevenues()`)
+      console.log(`[v0] - loadOutboxFiles()`)
+      console.log(`[v0] - loadClientFiles()`)
+      console.log(`[v0] - loadAnnexes()`)
       loadRevenues()
       loadOutboxFiles()
       loadClientFiles()
@@ -456,11 +461,13 @@ export function ClientTabs({
   }
 
   async function loadRevenues() {
+    console.log(`[v0]   → loadRevenues START`)
     const t0 = performance.now()
     setLoadingRevenues(true)
     const supabase = createBrowserClient()
 
     const { data: revenuesData } = await supabase.from("client_revenues").select("*").eq("client_id", client.id)
+    console.log(`[v0]   → loadRevenues: Found ${revenuesData?.length || 0} revenues`)
 
     if (!revenuesData) {
       setLoadingRevenues(false)
@@ -489,11 +496,12 @@ export function ClientTabs({
     }
 
     const t1 = performance.now()
-    console.log(`[v0] loadRevenues: ${(t1-t0).toFixed(0)}ms | count: ${revenuesData.length}, categories: ${categoryIds?.length || 0}`)
+    console.log(`[v0]   ✓ loadRevenues DONE: ${(t1-t0).toFixed(0)}ms | count: ${revenuesData?.length || 0}, categories: ${categoryIds?.length || 0}`)
     setLoadingRevenues(false)
   }
 
   async function loadAnnexes() {
+    console.log(`[v0]   → loadAnnexes START`)
     const t0 = performance.now()
     setLoadingAnnexes(true)
     const supabase = createBrowserClient()
@@ -588,7 +596,7 @@ export function ClientTabs({
     }
 
     const t1 = performance.now()
-    console.log(`[v0] loadAnnexes: ${(t1-t0).toFixed(0)}ms | subCats: ${allSubCategoryIds.length}, annexes: ${annexesData?.length || 0}`)
+    console.log(`[v0]   ✓ loadAnnexes DONE: ${(t1-t0).toFixed(0)}ms | subCats: ${allSubCategoryIds?.length || 0}, annexes: ${annexesData?.length || 0}`)
     setLoadingAnnexes(false)
   }
 
@@ -777,6 +785,7 @@ export function ClientTabs({
   }
 
   async function loadOutboxFiles() {
+    console.log(`[v0]   → loadOutboxFiles START`)
     const t0 = performance.now()
     const supabase = createBrowserClient()
     const { data, error } = await supabase
@@ -792,10 +801,11 @@ export function ClientTabs({
 
     setOutboxFiles(data || [])
     const t1 = performance.now()
-    console.log(`[v0] loadOutboxFiles: ${(t1-t0).toFixed(0)}ms | count: ${data?.length || 0}`)
+    console.log(`[v0]   ✓ loadOutboxFiles DONE: ${(t1-t0).toFixed(0)}ms | count: ${data?.length || 0}`)
   }
 
   async function loadClientFiles() {
+    console.log(`[v0]   → loadClientFiles START`)
     const t0 = performance.now()
     const supabase = createBrowserClient()
     
@@ -850,7 +860,7 @@ export function ClientTabs({
 
     setClientFiles(allFiles)
     const t1 = performance.now()
-    console.log(`[v0] loadClientFiles: ${(t1-t0).toFixed(0)}ms | total files: ${allFiles.length}`)
+    console.log(`[v0]   ✓ loadClientFiles DONE: ${(t1-t0).toFixed(0)}ms | total files: ${allFiles.length}`)
   }
 
   async function handleDeleteOutboxFile(fileId: string) {

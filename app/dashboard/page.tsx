@@ -87,6 +87,7 @@ export default function HomePage() {
   }
 
   async function loadClientData(clientId: string) {
+    console.log(`[v0] STEP 8: loadClientData START - fetching 3 queries (client, tax_profiles, documents)`)
     const t0 = performance.now()
     const supabase = createClient()
     const [{ data: clientData }, { data: profiles }, { data: docs }] = await Promise.all([
@@ -95,7 +96,7 @@ export default function HomePage() {
       supabase.from("documents").select("*").eq("client_id", clientId),
     ])
     const t1 = performance.now()
-    console.log(`[v0] loadClientData: ${(t1-t0).toFixed(0)}ms | profiles: ${profiles?.length || 0}, docs: ${docs?.length || 0}`)
+    console.log(`[v0] STEP 9: loadClientData DONE in ${(t1-t0).toFixed(0)}ms | profiles: ${profiles?.length || 0}, docs: ${docs?.length || 0}`)
 
     if (clientData) {
       setClientsData((prev) => {
@@ -112,13 +113,15 @@ export default function HomePage() {
 
   function handleClientSelect(client: Client) {
     const clientName = `${client.first_name} ${client.last_name}`
-    console.log(`[v0] ========== CLIENT: ${clientName} ==========`)
-    performance.mark(`client-${client.id}-start`)
+    console.log(`[v0] ========== CLICK: ${clientName} ==========`)
+    console.log(`[v0] STEP 1: handleClientSelect called`)
+    console.log(`[v0] STEP 2: Checking onboarding_status:`, client.onboarding_status)
     
     // If onboarding status is not "confirme", open onboarding tab for validation
     // This includes: en_attente, soumis, en_revision
     const onboardingStatus = client.onboarding_status || "en_attente"
     if (onboardingStatus !== "confirme") {
+      console.log(`[v0] STEP 3: Opening onboarding tab (status: ${onboardingStatus})`)
       const onboardingTabId = `onboarding-${client.id}`
       const existingOnboardingTab = tabs.find(t => t.id === onboardingTabId)
       
@@ -132,14 +135,18 @@ export default function HomePage() {
       }
       
       setActiveTabId(onboardingTabId)
+      console.log(`[v0] STEP 4: Onboarding tab opened - DONE`)
       return
     }
     
+    console.log(`[v0] STEP 3: Status confirmed, opening client tab`)
     const existingTab = tabs.find((tab) => tab.type === "client" && tab.clientId === client.id)
 
     if (existingTab) {
+      console.log(`[v0] STEP 4: Existing tab found, switching to it`)
       setActiveTabId(existingTab.id)
     } else {
+      console.log(`[v0] STEP 4: Creating new client tab`)
       const newTab: Tab = {
         id: `client-${client.id}`,
         type: "client",
@@ -148,12 +155,15 @@ export default function HomePage() {
       }
       setTabs((prev) => [...prev, newTab])
       setActiveTabId(newTab.id)
+      console.log(`[v0] STEP 5: Calling loadClientData for client:`, client.id)
       loadClientData(client.id)
     }
+    console.log(`[v0] STEP 6: Setting current client name and resetting tabs`)
     setCurrentClientName(`${client.first_name} ${client.last_name}`)
     setActiveClientTab("overview")
     setClientRevenueTabs([])
     setClientYearTabs([])
+    console.log(`[v0] STEP 7: handleClientSelect DONE - waiting for data to load...`)
   }
 
   function handleCloseTab(tabId: string) {
