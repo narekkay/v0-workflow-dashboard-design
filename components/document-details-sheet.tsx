@@ -492,15 +492,15 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
                 </div>
               )}
 
-              {document.ocr.state === "done" && document.ocr.extracted && (
+              {document.ocr.state === "done" && extractionSummary && (
                 <>
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
                     <p className="text-sm font-semibold mb-3 text-blue-900">Résumé de l'extraction (OCR)</p>
                     <div className="space-y-2">
-                      {Object.entries(document.ocr.extracted).map(([key, value]) => (
-                        <div key={key} className="flex justify-between text-sm">
-                          <span className="text-blue-700">{key} :</span>
-                          <span className="font-medium text-blue-900">{String(value)}</span>
+                      {extractionSummary.items.map((item, index) => (
+                        <div key={index} className="flex justify-between text-sm">
+                          <span className="text-blue-700">{item.label} :</span>
+                          <span className="font-medium text-blue-900">{item.value}</span>
                         </div>
                       ))}
                     </div>
@@ -517,10 +517,10 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
                   <div className="bg-muted/50 rounded-lg p-3">
                     <p className="text-xs font-medium mb-2">Données brutes extraites</p>
                     <div className="space-y-1">
-                      {Object.entries(document.ocr.extracted).map(([key, value]) => (
-                        <div key={key} className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{key}</span>
-                          <span className="font-mono">{String(value)}</span>
+                      {extractionSummary.items.map((item, index) => (
+                        <div key={index} className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">{item.label}</span>
+                          <span className="font-mono">{item.value}</span>
                         </div>
                       ))}
                     </div>
