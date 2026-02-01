@@ -122,6 +122,7 @@ interface FormData {
   cryptoPlatforms: string
   
   // Charges & Déductions
+  noDeductions: boolean
   donations: boolean
   donationsAmount: string
   childcare: boolean
@@ -222,6 +223,7 @@ const initialFormData: FormData = {
   crypto: false,
   cryptoTransactions: "",
   cryptoPlatforms: "",
+  noDeductions: false,
   donations: false,
   donationsAmount: "",
   childcare: false,
@@ -1402,13 +1404,42 @@ export default function OnboardingPage() {
                   {/* SECTION CHARGES & DÉDUCTIONS */}
                   {section.id === "deductions" && (
                     <div className="space-y-1 pl-10">
+                      <div className="py-3 border-b-2 border-gray-200 mb-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-sm font-semibold text-gray-900">Aucune de ces options</Label>
+                            <p className="text-xs text-gray-500">Je n'ai aucune charge ou déduction à déclarer</p>
+                          </div>
+                          <Switch 
+                            checked={formData.noDeductions} 
+                            onCheckedChange={v => {
+                              updateField("noDeductions", v)
+                              if (v) {
+                                // Reset all deduction fields when "none" is checked
+                                updateField("donations", false)
+                                updateField("childcare", false)
+                                updateField("homeServices", false)
+                                updateField("alimonyDeduction", false)
+                              }
+                            }} 
+                          />
+                        </div>
+                      </div>
+                      
                       <div className="py-3 border-b border-gray-100">
                         <div className="flex items-center justify-between">
                           <div>
                             <Label className="text-sm text-gray-900">Dons aux associations</Label>
                             <p className="text-xs text-gray-500">Dons à des organismes d'intérêt général</p>
                           </div>
-                          <Switch checked={formData.donations} onCheckedChange={v => updateField("donations", v)} />
+                          <Switch 
+                            checked={formData.donations} 
+                            onCheckedChange={v => {
+                              updateField("donations", v)
+                              if (v) updateField("noDeductions", false)
+                            }} 
+                            disabled={formData.noDeductions}
+                          />
                         </div>
                         {formData.donations && (
                           <div className="mt-3 pl-4 animate-in slide-in-from-top-2 duration-200">
@@ -1432,7 +1463,14 @@ export default function OnboardingPage() {
                             <Label className="text-sm text-gray-900">Frais de garde d'enfants</Label>
                             <p className="text-xs text-gray-500">Crèche, assistante maternelle agréée</p>
                           </div>
-                          <Switch checked={formData.childcare} onCheckedChange={v => updateField("childcare", v)} />
+                          <Switch 
+                            checked={formData.childcare} 
+                            onCheckedChange={v => {
+                              updateField("childcare", v)
+                              if (v) updateField("noDeductions", false)
+                            }} 
+                            disabled={formData.noDeductions}
+                          />
                         </div>
                       </div>
                       
@@ -1442,7 +1480,14 @@ export default function OnboardingPage() {
                             <Label className="text-sm text-gray-900">Services à la personne</Label>
                             <p className="text-xs text-gray-500">50% de crédit d'impôt plafonné</p>
                           </div>
-                          <Switch checked={formData.homeServices} onCheckedChange={v => updateField("homeServices", v)} />
+                          <Switch 
+                            checked={formData.homeServices} 
+                            onCheckedChange={v => {
+                              updateField("homeServices", v)
+                              if (v) updateField("noDeductions", false)
+                            }} 
+                            disabled={formData.noDeductions}
+                          />
                         </div>
                       </div>
                       
@@ -1452,7 +1497,14 @@ export default function OnboardingPage() {
                             <Label className="text-sm text-gray-900">Pension alimentaire versée</Label>
                             <p className="text-xs text-gray-500">Déduction plafonnée</p>
                           </div>
-                          <Switch checked={formData.alimonyDeduction} onCheckedChange={v => updateField("alimonyDeduction", v)} />
+                          <Switch 
+                            checked={formData.alimonyDeduction} 
+                            onCheckedChange={v => {
+                              updateField("alimonyDeduction", v)
+                              if (v) updateField("noDeductions", false)
+                            }} 
+                            disabled={formData.noDeductions}
+                          />
                         </div>
                       </div>
                     </div>
