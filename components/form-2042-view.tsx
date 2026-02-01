@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { createBrowserClient } from "@/lib/supabase/client"
 import { Save, Check } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { PDF2042Viewer } from "@/components/pdf-2042-viewer"
 
 interface Form2042ViewProps {
   clientId: string
@@ -21,6 +22,8 @@ interface SubCategory {
 }
 
 export function Form2042View({ clientId, clientName }: Form2042ViewProps) {
+  // Show PDF viewer by default
+  const [showPDFViewer, setShowPDFViewer] = useState(true)
   const [subCategories, setSubCategories] = useState<SubCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [formValues, setFormValues] = useState<Record<string, string | boolean>>({})
@@ -260,6 +263,11 @@ export function Form2042View({ clientId, clientName }: Form2042ViewProps) {
     { label: "Autres revenus imposables", codes: ["1AP", "1BP", "1CP", "1DP"] },
     { label: "Salaires perçus par les non-résidents", codes: ["1AF1", "1BF1", "1CF1", "1DF1"] },
   ]
+
+  // Display PDF viewer
+  if (showPDFViewer) {
+    return <PDF2042Viewer clientId={clientId} clientName={clientName} />
+  }
 
   if (loading) {
     return (

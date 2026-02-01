@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { ChevronRight } from "lucide-react"
 import { useState } from "react"
+import { Form2042Settings } from "./form-2042-settings"
 
 interface Integration {
   id: string
@@ -41,80 +42,91 @@ export function IntegrationsView() {
       <div className="max-w-7xl mx-auto p-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">Intégrations</h1>
+          <h1 className="text-3xl font-bold tracking-tight mb-2">Paramètres</h1>
           <p className="text-muted-foreground">
-            Connectez vos outils juridiques et fiscaux préférés
+            Configuration des formulaires et intégrations
           </p>
         </div>
 
-        {/* Category Tabs */}
-        <div className="flex gap-2 mb-8 overflow-x-auto">
-          {categories.map((category) => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                selectedCategory === category
-                  ? "bg-gray-900 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              {category}
-            </button>
-          ))}
+        {/* 2042 Settings Section */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold mb-4">Formulaires fiscaux</h2>
+          <Form2042Settings />
         </div>
 
-        {/* Integrations Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {filteredApps.map((app) => (
-            <div
-              key={app.id}
-              className="bg-white rounded-xl p-4 flex items-center gap-3 hover:shadow-md transition-shadow"
-            >
-              {/* Icon */}
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
-                {app.icon.startsWith("http") ? (
-                  <img 
-                    src={app.icon} 
-                    alt={`${app.name} logo`}
-                    className="w-7 h-7 object-contain"
-                  />
-                ) : (
-                  <span className="text-lg">{app.icon}</span>
-                )}
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-gray-900 mb-0.5">
-                  {app.name}
-                </h3>
-                <p className="text-xs text-gray-500 line-clamp-1">
-                  {app.description}
-                </p>
-              </div>
-
-              {/* Connect Button */}
-              <Button
-                onClick={() => {
-                  console.log("[v0] Connecting to:", app.name)
-                }}
-                size="sm"
-                variant="outline"
-                className="flex-shrink-0 text-xs bg-gray-100 hover:bg-gray-200 border-gray-200 text-gray-700"
+        {/* Integrations Section */}
+        <div>
+          <h2 className="text-2xl font-bold mb-4">Intégrations externes</h2>
+          
+          {/* Category Tabs */}
+          <div className="flex gap-2 mb-8 overflow-x-auto">
+            {categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  selectedCategory === category
+                    ? "bg-gray-900 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-100"
+                }`}
               >
-                Connecter
-              </Button>
-            </div>
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {filteredApps.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500">Aucune intégration trouvée dans cette catégorie</p>
+                {category}
+              </button>
+            ))}
           </div>
-        )}
+
+          {/* Integrations Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {filteredApps.map((app) => (
+              <div
+                key={app.id}
+                className="bg-white rounded-xl p-4 flex items-center gap-3 hover:shadow-md transition-shadow"
+              >
+                {/* Icon */}
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                  {app.icon.startsWith("http") ? (
+                    <img 
+                      src={app.icon} 
+                      alt={`${app.name} logo`}
+                      className="w-7 h-7 object-contain"
+                    />
+                  ) : (
+                    <span className="text-lg">{app.icon}</span>
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-0.5">
+                    {app.name}
+                  </h3>
+                  <p className="text-xs text-gray-500 line-clamp-1">
+                    {app.description}
+                  </p>
+                </div>
+
+                {/* Connect Button */}
+                <Button
+                  onClick={() => {
+                    console.log("[v0] Connecting to:", app.name)
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="flex-shrink-0 text-xs bg-gray-100 hover:bg-gray-200 border-gray-200 text-gray-700"
+                >
+                  Connecter
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          {/* Empty State */}
+          {filteredApps.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-gray-500">Aucune intégration trouvée dans cette catégorie</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
