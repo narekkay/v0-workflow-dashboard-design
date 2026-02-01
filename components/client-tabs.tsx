@@ -469,12 +469,15 @@ export function ClientTabs({
     const { data: revenuesData } = await supabase.from("client_revenues").select("*").eq("client_id", client.id)
     console.log(`[v0]   → loadRevenues: Found ${revenuesData?.length || 0} revenues`)
 
-    if (!revenuesData) {
+    if (!revenuesData || revenuesData.length === 0) {
+      const t1 = performance.now()
+      console.log(`[v0]   ✓ loadRevenues DONE: ${(t1-t0).toFixed(0)}ms | No revenues - skipping`)
+      setRevenues([])
       setLoadingRevenues(false)
       return
     }
 
-    if (revenuesData && revenuesData.length > 0) {
+    if (revenuesData.length > 0) {
       const categoryIds = [...new Set(revenuesData.map((r) => r.category_id))]
 
       const { data: categories } = await supabase.from("categories_revenus").select("id, nom").in("id", categoryIds)
