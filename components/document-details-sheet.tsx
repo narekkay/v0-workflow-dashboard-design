@@ -619,7 +619,28 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
                 <h4 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
                   RÉSUMÉ DE L'EXTRACTION
                 </h4>
-                <p className="text-sm text-muted-foreground italic">Extraction en cours...</p>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm pl-2">
+                    <span className="text-muted-foreground">Émetteur</span>
+                    <span className="font-medium">Boursorama Banque</span>
+                  </div>
+                  <div className="flex justify-between text-sm pl-2">
+                    <span className="text-muted-foreground">Montant brut global</span>
+                    <span className="font-medium">1 250,00 €</span>
+                  </div>
+                  <div className="flex justify-between text-sm pl-2">
+                    <span className="text-muted-foreground">Dividendes éligibles (2AB)</span>
+                    <span className="font-medium">1 100,00 €</span>
+                  </div>
+                  <div className="flex justify-between text-sm pl-2">
+                    <span className="text-muted-foreground">Prélèvements sociaux déjà payés</span>
+                    <span className="font-medium">215,00 €</span>
+                  </div>
+                  <div className="flex justify-between text-sm pl-2">
+                    <span className="text-muted-foreground">Crédit d'impôt</span>
+                    <span className="font-medium">18,50 €</span>
+                  </div>
+                </div>
               </section>
             </>
           )}
