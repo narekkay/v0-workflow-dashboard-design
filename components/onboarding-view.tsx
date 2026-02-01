@@ -758,12 +758,7 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between pt-2 border-t">
-                  <span className="text-sm text-muted-foreground">Statut</span>
-                  <Badge variant={selectedDocument.status === "uploaded" ? "default" : "secondary"}>
-                    {selectedDocument.status === "uploaded" ? "Uploadé" : selectedDocument.status}
-                  </Badge>
-                </div>
+                
               </div>
               
               {selectedDocument.url && selectedDocument.type ? (
