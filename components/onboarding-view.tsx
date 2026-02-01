@@ -66,7 +66,7 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
   const [confirmNotes, setConfirmNotes] = useState("")
   const [editNotes, setEditNotes] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [documents, setDocuments] = useState<Array<{ id: string; name: string; created_at: string; url?: string }>>([])
+  const [documents, setDocuments] = useState<Array<{ id: string; name: string; created_at: string; status: string }>>([])
   const [loadingDocuments, setLoadingDocuments] = useState(true)
 
   const loadClient = async () => {
@@ -90,7 +90,7 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
     const supabase = createBrowserClient()
     const { data, error } = await supabase
       .from("client_files")
-      .select("id, file_name, created_at, file_url")
+      .select("id, file_name, created_at, status")
       .eq("client_id", clientId)
       .order("created_at", { ascending: false })
 
@@ -101,7 +101,7 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
         id: d.id, 
         name: d.file_name, 
         created_at: d.created_at,
-        url: d.file_url 
+        status: d.status 
       })))
     }
     setLoadingDocuments(false)
@@ -489,15 +489,9 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
                             </p>
                           </div>
                         </div>
-                        {doc.url && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => window.open(doc.url, "_blank")}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        )}
+                        <Badge variant={doc.status === "pending" ? "secondary" : "default"} className="text-xs">
+                          {doc.status === "pending" ? "En attente" : doc.status === "received" ? "Reçu" : doc.status}
+                        </Badge>
                       </div>
                     ))}
                   </div>
