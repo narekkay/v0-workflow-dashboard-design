@@ -348,8 +348,8 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
       }
     }
     
-    // Relevés crédits impôt
-    if (documentName.includes("crédit") || documentName.includes("impôt")) {
+    // Relevés crédits impôt / CESU
+    if (documentName.includes("crédit") || documentName.includes("cesu") || documentName.includes("impôt")) {
       return {
         title: "RÉSUMÉ DE L'EXTRACTION",
         items: [
@@ -361,8 +361,8 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
       }
     }
     
-    // Avis d'opéré et relevé gains
-    if (documentName.includes("avis") || documentName.includes("opéré") || documentName.includes("gains")) {
+    // Avis d'opéré et relevé gains / Trade Republic
+    if (documentName.includes("avis") || documentName.includes("opéré") || documentName.includes("gains") || documentName.includes("trade republic")) {
       return {
         title: "RÉSUMÉ DE L'EXTRACTION",
         items: [
@@ -374,8 +374,8 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
       }
     }
     
-    // Relevés PER capital
-    if (documentName.includes("per") || documentName.includes("capital")) {
+    // Relevés PER capital / SwissLife
+    if (documentName.includes("per") || documentName.includes("swisslife")) {
       return {
         title: "RÉSUMÉ DE L'EXTRACTION",
         items: [
@@ -612,35 +612,14 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
             </>
           )}
 
-          {(document.status === "pending" || !document.ocr.extracted) && (
+          {(document.status === "pending" || document.status === "error" || !document.ocr?.extracted) && !extractionSummary && (
             <>
               <Separator />
               <section>
                 <h4 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
                   RÉSUMÉ DE L'EXTRACTION
                 </h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm pl-2">
-                    <span className="text-muted-foreground">Émetteur</span>
-                    <span className="font-medium">Boursorama Banque</span>
-                  </div>
-                  <div className="flex justify-between text-sm pl-2">
-                    <span className="text-muted-foreground">Montant brut global</span>
-                    <span className="font-medium">1 250,00 €</span>
-                  </div>
-                  <div className="flex justify-between text-sm pl-2">
-                    <span className="text-muted-foreground">Dividendes éligibles (2AB)</span>
-                    <span className="font-medium">1 100,00 €</span>
-                  </div>
-                  <div className="flex justify-between text-sm pl-2">
-                    <span className="text-muted-foreground">Prélèvements sociaux déjà payés</span>
-                    <span className="font-medium">215,00 €</span>
-                  </div>
-                  <div className="flex justify-between text-sm pl-2">
-                    <span className="text-muted-foreground">Crédit d'impôt</span>
-                    <span className="font-medium">18,50 €</span>
-                  </div>
-                </div>
+                <p className="text-sm text-muted-foreground italic pl-2">Extraction en cours...</p>
               </section>
             </>
           )}
