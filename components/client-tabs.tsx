@@ -40,6 +40,7 @@ import {
   ChevronUp,
   ChevronLeft,
   ChevronRight,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -136,12 +137,13 @@ interface SidebarYearTab {
 }
 
 interface ClientTabsProps {
-  client: Client
-  taxProfiles: TaxProfile[]
-  documents: Document[]
-  onClose: () => void
-  onRefresh: (clientId: string) => void
-  onOpenRevenuePage: (
+  client?: Client
+  clientId?: string
+  taxProfiles?: TaxProfile[]
+  documents?: Document[]
+  onClose?: () => void
+  onRefresh?: (clientId: string) => void
+  onOpenRevenuePage?: (
     clientId: string,
     clientName: string,
     categoryName: string,
@@ -149,17 +151,17 @@ interface ClientTabsProps {
     subCategoryIds?: number[],
     revenueId?: string,
   ) => void
-  onOpenRevenueDetail: (revenueId: string, categoryName: string) => void
-  shouldOpenRevenueModal: boolean
-  onRevenueModalClose: () => void
-  onOpen2042View: (clientId: string, clientName: string) => void
-  onOpenAmountEntry: (clientId: string, clientName: string, categoryId: number, categoryName: string) => void
-  activeTab: string
-  onTabChange: (tabId: string) => void
-  revenueTabs: SidebarRevenueTab[]
-  onRevenueTabsChange: React.Dispatch<React.SetStateAction<SidebarRevenueTab[]>>
-  yearTabs: SidebarYearTab[]
-  onYearTabsChange: React.Dispatch<React.SetStateAction<SidebarYearTab[]>>
+  onOpenRevenueDetail?: (revenueId: string, categoryName: string) => void
+  shouldOpenRevenueModal?: boolean
+  onRevenueModalClose?: () => void
+  onOpen2042View?: (clientId: string, clientName: string) => void
+  onOpenAmountEntry?: (clientId: string, clientName: string, categoryId: number, categoryName: string) => void
+  activeTab?: string
+  onTabChange?: (tabId: string) => void
+  revenueTabs?: SidebarRevenueTab[]
+  onRevenueTabsChange?: React.Dispatch<React.SetStateAction<SidebarRevenueTab[]>>
+  yearTabs?: SidebarYearTab[]
+  onYearTabsChange?: React.Dispatch<React.SetStateAction<SidebarYearTab[]>>
 }
 
 interface Child {
@@ -169,24 +171,27 @@ interface Child {
 }
 
 export function ClientTabs({
-  client,
-  taxProfiles,
-  documents,
+  client: initialClient,
+  clientId,
+  taxProfiles = [],
+  documents = [],
   onClose,
   onRefresh,
   onOpenRevenuePage,
   onOpenRevenueDetail,
-  shouldOpenRevenueModal,
+  shouldOpenRevenueModal = false,
   onRevenueModalClose,
   onOpen2042View,
   onOpenAmountEntry,
-  activeTab,
+  activeTab = "overview",
   onTabChange,
-  revenueTabs,
+  revenueTabs = [],
   onRevenueTabsChange,
-  yearTabs,
+  yearTabs = [],
   onYearTabsChange,
 }: ClientTabsProps) {
+  const [client, setClient] = useState<Client | null>(initialClient || null)
+  const [loadingClient, setLoadingClient] = useState(!initialClient && !!clientId)
   const [revenues, setRevenues] = useState<ClientRevenue[]>([])
   const [categoryNames, setCategoryNames] = useState<Map<number, string>>(new Map())
   const [loadingRevenues, setLoadingRevenues] = useState(true)
@@ -214,21 +219,30 @@ export function ClientTabs({
 
   const [isEditMode, setIsEditMode] = useState(false)
   const [isEditingCustomFields, setIsEditingCustomFields] = useState(false)
-  const [children, setChildren] = useState<Child[]>((client.children as Child[]) || [])
+  const [children, setChildren] = useState<Child[]>((client?.children as Child[]) || [])
   const [isEditingChildren, setIsEditingChildren] = useState(false)
   const [spouseChildren, setSpouseChildren] = useState<Child[]>([])
   const [isEditingSpouseChildren, setIsEditingSpouseChildren] = useState(false)
   const [customFields, setCustomFields] = useState<Array<{ name: string; value: string }>>(
-    (client.custom_fields as Array<{ name: string; value: string }>) || [],
+    (client?.custom_fields as Array<{ name: string; value: string }>) || [],
   )
   const [editedClient, setEditedClient] = useState({
-    first_name: client.first_name,
-    last_name: client.last_name,
-    email: client.email,
-    phone: client.phone || "",
-    address: client.address || "",
+    first_name: client?.first_name || "",
+    last_name: client?.last_name || "",
+    email: client?.email || "",
+    phone: client?.phone || "",
+    address: client?.address || "",
     accountant: "",
   })
+
+  // Early return if client is still loading or null
+  if (loadingClient || !client) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    )
+  }
   const [editedSpouse, setEditedSpouse] = useState({
     first_name: "",
     last_name: "",
@@ -406,11 +420,38 @@ export function ClientTabs({
   }
 
   useEffect(() => {
-    loadRevenues()
-    loadOutboxFiles()
-    loadClientFiles()
-    loadAnnexes()
-  }, [client.id])
+    if (clientId && !initialClient) {
+      loadClient()
+    }
+  }, [clientId])
+
+  useEffect(() => {
+    if (client?.id) {
+      loadRevenues()
+      loadOutboxFiles()
+      loadClientFiles()
+      loadAnnexes()
+    }
+  }, [client?.id])
+
+  async function loadClient() {
+    if (!clientId) return
+    
+    setLoadingClient(true)
+    const supabase = createBrowserClient()
+    
+    const { data, error } = await supabase
+      .from("clients")
+      .select("*")
+      .eq("id", clientId)
+      .single()
+    
+    if (!error && data) {
+      setClient(data as Client)
+    }
+    
+    setLoadingClient(false)
+  }
 
   async function loadRevenues() {
     const supabase = createBrowserClient()
@@ -527,41 +568,51 @@ export function ClientTabs({
 
     setAnnexes(annexesData || [])
 
-    // Load completion stats for each annexe
+    // Load completion stats for all annexes in batch
     if (annexesData && annexesData.length > 0) {
       const statsMap = new Map<number, { completed: number; total: number }>()
       
-      for (const annexe of annexesData) {
-        // Get sub-categories for this annexe's case_code
-        const { data: caseLabelsData } = await supabase
-          .from("case_labels")
-          .select("sub_category_id")
-          .eq("case_code", annexe.case_code)
+      // Get ALL case labels for all case codes in one query
+      const { data: allCaseLabels } = await supabase
+        .from("case_labels")
+        .select("sub_category_id, case_code")
+        .in("case_code", codes)
+      
+      if (allCaseLabels && allCaseLabels.length > 0) {
+        const allSubCatIds = [...new Set(allCaseLabels.map((cl) => cl.sub_category_id))]
         
-        if (caseLabelsData && caseLabelsData.length > 0) {
-          const subCatIds = caseLabelsData.map((cl) => cl.sub_category_id)
+        // Get ALL documents for these sub-categories in one query
+        const { data: allDocs } = await supabase
+          .from("documents_necessaires")
+          .select("id, sub_category_id")
+          .in("sub_category_id", allSubCatIds)
+        
+        if (allDocs && allDocs.length > 0) {
+          const allDocIds = allDocs.map((d) => d.id)
           
-          // Get total documents for these sub-categories
-          const { data: docsData } = await supabase
-            .from("documents_necessaires")
-            .select("id")
-            .in("sub_category_id", subCatIds)
+          // Get ALL completed documents in one query
+          const { data: completedDocs } = await supabase
+            .from("boite_envoi_files")
+            .select("document_id")
+            .eq("client_id", client.id)
+            .in("document_id", allDocIds)
+            .eq("status", "uploaded")
           
-          const totalDocs = docsData?.length || 0
+          const completedDocIds = new Set(completedDocs?.map((d) => d.document_id) || [])
           
-          if (totalDocs > 0) {
-            const docIds = docsData.map((d) => d.id)
+          // Now calculate stats for each annexe from the batch data
+          for (const annexe of annexesData) {
+            const annexeSubCats = allCaseLabels
+              .filter((cl) => cl.case_code === annexe.case_code)
+              .map((cl) => cl.sub_category_id)
             
-            // Get completed documents from boite_envoi_files where status is "uploaded"
-            const { data: completedData } = await supabase
-              .from("boite_envoi_files")
-              .select("id")
-              .eq("client_id", client.id)
-              .in("document_id", docIds)
-              .eq("status", "uploaded")
+            const annexeDocs = allDocs.filter((d) => annexeSubCats.includes(d.sub_category_id))
+            const totalDocs = annexeDocs.length
+            const completed = annexeDocs.filter((d) => completedDocIds.has(d.id)).length
             
-            const completedDocs = completedData?.length || 0
-            statsMap.set(annexe.id, { completed: completedDocs, total: totalDocs })
+            if (totalDocs > 0) {
+              statsMap.set(annexe.id, { completed, total: totalDocs })
+            }
           }
         }
       }
@@ -1209,6 +1260,8 @@ export function ClientTabs({
                         onSuccess={() => {
                           loadClientRevenues()
                           loadOutboxFiles()
+                          // Force refresh of all data to show in overview tab
+                          loadRevenues()
                         }}
                         shouldOpen={shouldOpenRevenueModal}
                         onOpenChange={onRevenueModalClose}

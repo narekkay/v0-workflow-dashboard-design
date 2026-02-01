@@ -30,10 +30,13 @@ import {
   Loader2,
   CheckCircle2,
   Edit3,
-  ArrowLeft
+  ArrowLeft,
+  File,
+  Download
 } from "lucide-react"
 import { confirmOnboarding, requestRevision, updateOnboardingNotes } from "@/app/actions/save-onboarding"
 import type { Client } from "@/lib/types"
+import { ClientTabs } from "./client-tabs"
 
 interface OnboardingViewProps {
   clientId: string
@@ -41,9 +44,12 @@ interface OnboardingViewProps {
   onStatusChange?: () => void
 }
 
-type OnboardingStatus = "en_attente" | "soumis" | "en_revision" | "confirme"
+type OnboardingStatus = "pending" | "submitted" | "confirmed" | "en_attente" | "soumis" | "en_revision" | "confirme"
 
 const statusLabels: Record<OnboardingStatus, { label: string; color: string; icon: React.ReactNode }> = {
+  pending: { label: "En attente", color: "bg-gray-100 text-gray-700", icon: <Clock className="h-4 w-4" /> },
+  submitted: { label: "Soumis", color: "bg-blue-100 text-blue-700", icon: <FileText className="h-4 w-4" /> },
+  confirmed: { label: "Confirmé", color: "bg-emerald-100 text-emerald-700", icon: <CheckCircle2 className="h-4 w-4" /> },
   en_attente: { label: "En attente", color: "bg-gray-100 text-gray-700", icon: <Clock className="h-4 w-4" /> },
   soumis: { label: "Soumis", color: "bg-blue-100 text-blue-700", icon: <FileText className="h-4 w-4" /> },
   en_revision: { label: "En révision", color: "bg-amber-100 text-amber-700", icon: <Edit3 className="h-4 w-4" /> },
@@ -60,6 +66,10 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
   const [confirmNotes, setConfirmNotes] = useState("")
   const [editNotes, setEditNotes] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [documents, setDocuments] = useState<Array<{ id: string; name: string; uploaded_at: string; status: string; url?: string; type?: string }>>([])
+  const [loadingDocuments, setLoadingDocuments] = useState(true)
+  const [selectedDocument, setSelectedDocument] = useState<{ id: string; name: string; uploaded_at: string; status: string; url?: string; type?: string } | null>(null)
+  const [showDocumentViewer, setShowDocumentViewer] = useState(false)
 
   const loadClient = async () => {
     const supabase = createBrowserClient()
@@ -77,8 +87,33 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
     setLoading(false)
   }
 
+  const loadDocuments = async () => {
+    setLoadingDocuments(true)
+    const supabase = createBrowserClient()
+    const { data, error } = await supabase
+      .from("fichiers_onboarding")
+      .select("id, nom_fichier, uploaded_at, statut, url_stockage, type_mime")
+      .eq("client_id", clientId)
+      .order("uploaded_at", { ascending: false })
+
+    if (error) {
+      console.error("Error loading documents:", error)
+    } else if (data) {
+      setDocuments(data.map(d => ({ 
+        id: d.id, 
+        name: d.nom_fichier, 
+        uploaded_at: d.uploaded_at,
+        status: d.statut,
+        url: d.url_stockage,
+        type: d.type_mime
+      })))
+    }
+    setLoadingDocuments(false)
+  }
+
   useEffect(() => {
     loadClient()
+    loadDocuments()
   }, [clientId])
 
   const handleConfirm = async () => {
@@ -144,6 +179,32 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
   const status = (client.onboarding_status as OnboardingStatus) || "en_attente"
   const statusInfo = statusLabels[status]
   const isFormCompleted = client.onboarding_form_completed
+  const isOnboardingConfirmed = status === "confirme" || status === "confirmed"
+
+  // If onboarding is confirmed, show the regular client tabs instead
+  if (isOnboardingConfirmed) {
+    return (
+      <ClientTabs 
+        clientId={clientId}
+        taxProfiles={[]}
+        documents={[]}
+        onClose={() => {}}
+        onRefresh={() => {}}
+        onOpenRevenuePage={() => {}}
+        onOpenRevenueDetail={() => {}}
+        shouldOpenRevenueModal={false}
+        onRevenueModalClose={() => {}}
+        onOpen2042View={() => {}}
+        onOpenAmountEntry={() => {}}
+        activeTab="overview"
+        onTabChange={() => {}}
+        revenueTabs={[]}
+        onRevenueTabsChange={() => {}}
+        yearTabs={[]}
+        onYearTabsChange={() => {}}
+      />
+    )
+  }
 
   // Helper function to display yes/no
   const yesNo = (value: boolean | null | undefined) => {
@@ -417,6 +478,57 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
                 </div>
               </CardContent>
             </Card>
+
+            {/* Documents */}
+            <Card className="md:col-span-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <File className="h-4 w-4 text-gray-500" />
+                  Documents soumis ({documents.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingDocuments ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                  </div>
+                ) : documents.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">Aucun document soumis</p>
+                ) : (
+                  <div className="space-y-2">
+                    {documents.map(doc => (
+                      <div 
+                        key={doc.id} 
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 hover:bg-gray-100 cursor-pointer transition-colors"
+                        onClick={() => {
+                          setSelectedDocument(doc)
+                          setShowDocumentViewer(true)
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <File className="h-4 w-4 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium">{doc.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(doc.uploaded_at).toLocaleDateString("fr-FR", { 
+                                day: "numeric", 
+                                month: "short", 
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit"
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge variant={doc.status === "pending" ? "secondary" : "default"} className="text-xs">
+                          {doc.status === "pending" ? "En attente" : doc.status === "received" ? "Reçu" : doc.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           {/* Notes avocat */}
@@ -536,7 +648,7 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
               <Button 
                 variant="outline"
                 className="w-full justify-start"
-                onClick={() => window.open(`/onboarding/${clientId}`, "_blank")}
+                onClick={() => window.open(`/onboarding/${client?.id}`, "_blank")}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Ouvrir le formulaire client
@@ -634,6 +746,90 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
                 <Check className="h-4 w-4 mr-2" />
               )}
               Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Document Viewer Dialog */}
+      <Dialog open={showDocumentViewer} onOpenChange={setShowDocumentViewer}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Détails du document</DialogTitle>
+            <DialogDescription>
+              Informations sur le document soumis lors de l'onboarding
+            </DialogDescription>
+          </DialogHeader>
+          {selectedDocument && (
+            <div className="space-y-4">
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div className="flex items-start gap-3">
+                  <File className="h-5 w-5 text-gray-500 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm break-words">{selectedDocument.name}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Uploadé le {new Date(selectedDocument.uploaded_at).toLocaleDateString("fr-FR", { 
+                        day: "numeric", 
+                        month: "long", 
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                      })}
+                    </p>
+                  </div>
+                </div>
+                
+              </div>
+              
+              {selectedDocument.url && selectedDocument.type ? (
+                <div className="border rounded-lg overflow-hidden bg-white">
+                  {selectedDocument.type === "application/pdf" ? (
+                    <iframe
+                      src={selectedDocument.url}
+                      className="w-full h-[500px]"
+                      title={selectedDocument.name}
+                    />
+                  ) : selectedDocument.type.startsWith("image/") ? (
+                    <img
+                      src={selectedDocument.url}
+                      alt={selectedDocument.name}
+                      className="w-full h-auto max-h-[500px] object-contain"
+                    />
+                  ) : (
+                    <div className="p-8 text-center">
+                      <File className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground">
+                        Aperçu non disponible pour ce type de fichier ({selectedDocument.type})
+                      </p>
+                      <Button
+                        variant="outline"
+                        className="mt-4"
+                        onClick={() => {
+                          const link = document.createElement('a')
+                          link.href = selectedDocument.url!
+                          link.download = selectedDocument.name
+                          link.click()
+                        }}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Télécharger
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <p className="text-sm text-amber-900">
+                    <AlertCircle className="h-4 w-4 inline mr-2" />
+                    Aucun contenu disponible pour ce document.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDocumentViewer(false)}>
+              Fermer
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -42,8 +42,8 @@ interface Tab {
 
 export default function HomePage() {
   const [clients, setClients] = useState<Client[]>([])
-  const [tabs, setTabs] = useState<Tab[]>([{ id: "view-clients", type: "view", label: "Clients", view: "clients" }])
-  const [activeTabId, setActiveTabId] = useState("view-clients")
+  const [tabs, setTabs] = useState<Tab[]>([{ id: "view-dashboard", type: "view", label: "Tableau de bord", view: "clients" }])
+  const [activeTabId, setActiveTabId] = useState("view-dashboard")
   const [clientsData, setClientsData] = useState<
     Map<string, { client: Client; taxProfiles: TaxProfile[]; documents: Document[] }>
   >(new Map())
@@ -157,7 +157,7 @@ export default function HomePage() {
       if (tabIndex > 0) {
         setActiveTabId(newTabs[tabIndex - 1].id)
       } else {
-        setActiveTabId(newTabs[0]?.id || "view-clients")
+        setActiveTabId(newTabs[0]?.id || "view-dashboard")
       }
     }
   }
@@ -391,7 +391,16 @@ export default function HomePage() {
           </div>
 
           <main className={`flex-1 overflow-y-auto ${activeTab?.type === "client" ? "bg-slate-50" : "bg-muted/20"}`}>
-            {activeTab?.type === "view" && activeTab.view === "clients" ? (
+            {loading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status">
+                    <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Chargement...</span>
+                  </div>
+                  <p className="mt-4 text-sm text-muted-foreground">Chargement des données...</p>
+                </div>
+              </div>
+            ) : activeTab?.type === "view" && activeTab.view === "clients" ? (
               <div className="p-6">
                 <ClientsTable 
                   clients={clients} 

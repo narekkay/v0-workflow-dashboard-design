@@ -65,36 +65,35 @@ export function RevenueDetailTab({ revenueId, categoryName, allRevenues, onSwitc
       .select("id, nom")
       .in("id", revenue.sub_category_ids)
 
-    // Check if each subcategory has an annexe
-    const subCatsWithAnnexe = await Promise.all(
-      (subCats || []).map(async (subCat) => {
-        // Get case codes for this sub-category
-        const { data: caseCodes } = await supabase
-          .from("case_labels")
-          .select("case_code")
-          .eq("sub_category_id", subCat.id)
-
-        if (caseCodes && caseCodes.length > 0) {
-          const codes = caseCodes.map((c) => c.case_code)
-          
-          // Check if any of these case codes have annexes
-          const { data: annexes } = await supabase
-            .from("case_annexes")
-            .select("id")
-            .in("case_code", codes)
-            .limit(1)
-
-          return {
-            ...subCat,
-            hasAnnexe: !!annexes && annexes.length > 0
-          }
-        }
-
-        return { ...subCat, hasAnnexe: false }
+    // Batch load annexes for all subcategories at once
+    if (subCats && subCats.length > 0) {
+      // Get all case codes for all subcategories in one query
+      const { data: allCaseLabels } = await supabase
+        .from("case_labels")
+        .select("sub_category_id, case_code")
+        .in("sub_category_id", subCats.map(s => s.id))
+      
+      // Get all annexes for all case codes in one query
+      const allCodes = [...new Set(allCaseLabels?.map(cl => cl.case_code) || [])]
+      const { data: allAnnexes } = await supabase
+        .from("case_annexes")
+        .select("case_code")
+        .in("case_code", allCodes)
+      
+      const annexeCodeSet = new Set(allAnnexes?.map(a => a.case_code) || [])
+      
+      // Map annexe info to subcategories
+      const subCatsWithAnnexe = subCats.map(subCat => {
+        const hasAnnexe = allCaseLabels?.some(cl => 
+          cl.sub_category_id === subCat.id && annexeCodeSet.has(cl.case_code)
+        ) || false
+        return { ...subCat, hasAnnexe }
       })
-    )
 
-    setSubCategories(subCatsWithAnnexe)
+      setSubCategories(subCatsWithAnnexe)
+    } else {
+      setSubCategories(subCats || [])
+    }
 
     // Load document names
     const { data: docs } = await supabase
@@ -158,7 +157,7 @@ export function RevenueDetailTab({ revenueId, categoryName, allRevenues, onSwitc
               <Badge key={subCat.id} variant="secondary" className="flex items-center gap-1.5">
                 {subCat.nom}
                 {subCat.hasAnnexe && (
-                  <span className="inline-flex items-center justify-center h-4 w-4 rounded border border-red-600 bg-red-50 text-[10px] font-bold text-red-600">
+                  <span className="inline-flex items-center justify-center h-4 w-4 rounded border border-purple-600 bg-purple-50 text-[10px] font-bold text-purple-600">
                     A
                   </span>
                 )}
@@ -187,17 +186,17 @@ export function RevenueDetailTab({ revenueId, categoryName, allRevenues, onSwitc
                   <TableCell className="font-medium">{doc.shortname}</TableCell>
                   <TableCell>
                     {doc.status === "available" ? (
-                      <Badge variant="outline" className="gap-1 bg-green-50 text-green-700 border-green-200">
+                      <Badge variant="outline" className="gap-1 bg-green-50 text-green-700 border border-green-200">
                         <CheckCircle className="h-3 w-3" />
                         Disponible
                       </Badge>
                     ) : doc.status === "pending" ? (
-                      <Badge variant="outline" className="gap-1 bg-yellow-50 text-yellow-700 border-yellow-200">
+                      <Badge variant="outline" className="gap-1 bg-yellow-50 text-yellow-700 border border-yellow-200">
                         <Clock className="h-3 w-3" />
                         En attente
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="gap-1 bg-red-50 text-red-700 border-red-200">
+                      <Badge variant="outline" className="gap-1 bg-red-50 text-red-700 border border-red-200">
                         <XCircle className="h-3 w-3" />
                         Manquant
                       </Badge>

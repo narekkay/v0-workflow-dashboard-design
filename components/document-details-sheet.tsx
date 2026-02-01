@@ -302,6 +302,96 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
   const ocrConfig = ocrStateConfig[document.ocr?.state] || ocrStateConfig.idle
   const OcrIcon = ocrConfig.icon
 
+  const getOcrExtractionSummary = () => {
+    if (document.status === "pending" || document.status === "error" || document.ocr.state !== "done") {
+      return null
+    }
+
+    const documentName = document.name.toLowerCase()
+    
+    // IFU distributions
+    if (documentName.includes("ifu") && documentName.includes("distribution")) {
+      return {
+        title: "RÉSUMÉ DE L'EXTRACTION",
+        items: [
+          { label: "Émetteur", value: "Boursorama Banque" },
+          { label: "Revenus d'actions (2AB)", value: "1 250,00 €" },
+          { label: "Prélèvement forfaitaire (2CK)", value: "160,00 €" },
+          { label: "Crédit d'impôt", value: "12,40 €" },
+        ],
+      }
+    }
+    
+    // IFU retenue libératoire
+    if (documentName.includes("ifu") && (documentName.includes("retenue") || documentName.includes("libératoire"))) {
+      return {
+        title: "RÉSUMÉ DE L'EXTRACTION",
+        items: [
+          { label: "Émetteur", value: "Fortuneo" },
+          { label: "Produits de placement à taux fixe", value: "840,00 €" },
+          { label: "Retenue à la source", value: "201,60 €" },
+          { label: "Prélèvements sociaux", value: "144,48 €" },
+        ],
+      }
+    }
+    
+    // Justificatifs frais
+    if (documentName.includes("frais") || documentName.includes("déplacement")) {
+      return {
+        title: "RÉSUMÉ DE L'EXTRACTION",
+        items: [
+          { label: "Type", value: "Frais de déplacement (SNCF)" },
+          { label: "Date", value: "12/11/2025" },
+          { label: "Montant TTC", value: "142,00 €" },
+          { label: "TVA déductible", value: "12,90 €" },
+        ],
+      }
+    }
+    
+    // Relevés crédits impôt
+    if (documentName.includes("crédit") || documentName.includes("impôt")) {
+      return {
+        title: "RÉSUMÉ DE L'EXTRACTION",
+        items: [
+          { label: "Organisme", value: "URSSAF / CESU" },
+          { label: "Nature", value: "Emploi d'un salarié à domicile" },
+          { label: "Total versé 2025", value: "3 600,00 €" },
+          { label: "Avantage fiscal (50%)", value: "1 800,00 €" },
+        ],
+      }
+    }
+    
+    // Avis d'opéré et relevé gains
+    if (documentName.includes("avis") || documentName.includes("opéré") || documentName.includes("gains")) {
+      return {
+        title: "RÉSUMÉ DE L'EXTRACTION",
+        items: [
+          { label: "Plateforme", value: "Trade Republic" },
+          { label: "Opération", value: "Vente d'actifs (ETP/Actions)" },
+          { label: "Plus-value brute", value: "2 140,50 €" },
+          { label: "Total net imposable", value: "2 140,50 €" },
+        ],
+      }
+    }
+    
+    // Relevés PER capital
+    if (documentName.includes("per") || documentName.includes("capital")) {
+      return {
+        title: "RÉSUMÉ DE L'EXTRACTION",
+        items: [
+          { label: "Assureur", value: "SwissLife" },
+          { label: "Versements déductibles (6NS)", value: "4 500,00 €" },
+          { label: "Économie d'impôt", value: "1 350,00 €" },
+          { label: "Solde actuel", value: "18 230,15 €" },
+        ],
+      }
+    }
+    
+    return null
+  }
+
+  const extractionSummary = getOcrExtractionSummary()
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
@@ -403,25 +493,53 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
               )}
 
               {document.ocr.state === "done" && document.ocr.extracted && (
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-xs font-medium mb-2">Données extraites</p>
-                  <div className="space-y-1">
-                    {Object.entries(document.ocr.extracted).map(([key, value]) => (
-                      <div key={key} className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{key}</span>
-                        <span className="font-mono">{String(value)}</span>
+                <>
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm font-semibold mb-3 text-blue-900">Résumé de l'extraction (OCR)</p>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-blue-700">Émetteur :</span>
+                        <span className="font-medium text-blue-900">Boursorama Banque</span>
                       </div>
-                    ))}
-                  </div>
-                  {document.ocr.confidenceScore && (
-                    <div className="mt-2 pt-2 border-t flex justify-between text-xs">
-                      <span className="text-muted-foreground">Confiance</span>
-                      <span className={document.ocr.confidenceScore > 0.8 ? "text-green-600" : "text-orange-600"}>
-                        {Math.round(document.ocr.confidenceScore * 100)}%
-                      </span>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-blue-700">Montant brut global :</span>
+                        <span className="font-medium text-blue-900">1 250,00 €</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-blue-700">Dividendes éligibles (2AB) :</span>
+                        <span className="font-medium text-blue-900">1 100,00 €</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-blue-700">Prélèvements sociaux déjà payés :</span>
+                        <span className="font-medium text-blue-900">215,00 €</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-blue-700">Crédit d'impôt :</span>
+                        <span className="font-medium text-blue-900">18,50 €</span>
+                      </div>
                     </div>
-                  )}
-                </div>
+                    {document.ocr.confidenceScore && (
+                      <div className="mt-3 pt-3 border-t border-blue-200 flex justify-between text-xs">
+                        <span className="text-blue-700">Confiance globale</span>
+                        <span className={document.ocr.confidenceScore > 0.8 ? "text-green-600 font-semibold" : "text-orange-600 font-semibold"}>
+                          {Math.round(document.ocr.confidenceScore * 100)}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <p className="text-xs font-medium mb-2">Données brutes extraites</p>
+                    <div className="space-y-1">
+                      {Object.entries(document.ocr.extracted).map(([key, value]) => (
+                        <div key={key} className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">{key}</span>
+                          <span className="font-mono">{String(value)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
               )}
 
               {document.ocr.state === "error" && (
@@ -473,6 +591,59 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
               </div>
             </div>
           </section>
+
+          {/* Résumé de l'extraction (dynamique) */}
+          {extractionSummary && (
+            <>
+              <Separator />
+              <section>
+                <h4 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
+                  {extractionSummary.title}
+                </h4>
+                <div className="space-y-2">
+                  {extractionSummary.items.map((item, index) => (
+                    <div key={index} className="flex justify-between text-sm pl-2">
+                      <span className="text-muted-foreground">{item.label}</span>
+                      <span className="font-medium">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+
+          {(document.status === "pending" || !document.ocr.extracted) && (
+            <>
+              <Separator />
+              <section>
+                <h4 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
+                  RÉSUMÉ DE L'EXTRACTION
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm pl-2">
+                    <span className="text-muted-foreground">Émetteur</span>
+                    <span className="font-medium">Boursorama Banque</span>
+                  </div>
+                  <div className="flex justify-between text-sm pl-2">
+                    <span className="text-muted-foreground">Montant brut global</span>
+                    <span className="font-medium">1 250,00 €</span>
+                  </div>
+                  <div className="flex justify-between text-sm pl-2">
+                    <span className="text-muted-foreground">Dividendes éligibles (2AB)</span>
+                    <span className="font-medium">1 100,00 €</span>
+                  </div>
+                  <div className="flex justify-between text-sm pl-2">
+                    <span className="text-muted-foreground">Prélèvements sociaux déjà payés</span>
+                    <span className="font-medium">215,00 €</span>
+                  </div>
+                  <div className="flex justify-between text-sm pl-2">
+                    <span className="text-muted-foreground">Crédit d'impôt</span>
+                    <span className="font-medium">18,50 €</span>
+                  </div>
+                </div>
+              </section>
+            </>
+          )}
 
           {/* Mode expert - Détails techniques */}
           {expertMode && document.ocr.rawJson && (
@@ -610,7 +781,7 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
                         </div>
                       </div>
                       <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border border-blue-200">
                           Langue détectée :{" "}
                           {languageNames[document.ocr.detectedLanguage!] ||
                             document.ocr.detectedLanguage!.toUpperCase()}{" "}

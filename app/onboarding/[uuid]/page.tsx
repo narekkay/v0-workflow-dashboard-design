@@ -122,6 +122,7 @@ interface FormData {
   cryptoPlatforms: string
   
   // Charges & Déductions
+  noDeductions: boolean
   donations: boolean
   donationsAmount: string
   childcare: boolean
@@ -222,6 +223,7 @@ const initialFormData: FormData = {
   crypto: false,
   cryptoTransactions: "",
   cryptoPlatforms: "",
+  noDeductions: false,
   donations: false,
   donationsAmount: "",
   childcare: false,
@@ -443,6 +445,7 @@ export default function OnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submissionStep, setSubmissionStep] = useState(0)
   const [submissionError, setSubmissionError] = useState<string | null>(null)
+  const [clientName, setClientName] = useState<{ firstName: string; lastName: string } | null>(null)
   
   const submissionSteps = [
     { id: 1, label: "Sauvegarde de l'identité", icon: "user" },
@@ -459,7 +462,7 @@ export default function OnboardingPage() {
   const suggestedDocuments = useDocumentSuggestions(formData, uploadedFiles)
   
   const mandatoryMissing = suggestedDocuments.filter(d => d.mandatory && d.status === "missing").length
-  const canSubmit = progress === 100 && formData.accuracy && formData.processing && mandatoryMissing === 0
+  const canSubmit = formData.accuracy && formData.processing
   
   // Charger les données du client et localStorage
   useEffect(() => {
@@ -480,6 +483,13 @@ export default function OnboardingPage() {
         .single()
       
       if (data) {
+        // Store client name from database separately for header display
+        setClientName({
+          firstName: data.first_name || "",
+          lastName: data.last_name || ""
+        })
+        
+        // Update form data only if fields are empty
         setFormData(prev => ({
           ...prev,
           firstName: prev.firstName || data.first_name || "",
@@ -495,13 +505,23 @@ export default function OnboardingPage() {
   
   // Nom du client dans le header (mise à jour instantanée)
   const displayName = useMemo(() => {
+    // Prioritize database client name for header display
+    if (clientName) {
+      if (clientName.firstName && clientName.lastName) {
+        return `${clientName.firstName} ${clientName.lastName}`
+      }
+      if (clientName.firstName) return clientName.firstName
+      if (clientName.lastName) return clientName.lastName
+    }
+    
+    // Fallback to form data if no client name from database yet
     if (formData.firstName && formData.lastName) {
       return `${formData.firstName} ${formData.lastName}`
     }
     if (formData.firstName) return formData.firstName
     if (formData.lastName) return formData.lastName
     return "Nouveau Dossier"
-  }, [formData.firstName, formData.lastName])
+  }, [clientName, formData.firstName, formData.lastName])
   
   const updateField = useCallback(<K extends keyof FormData>(field: K, value: FormData[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -526,11 +546,11 @@ export default function OnboardingPage() {
                formData.independent || formData.foncier || formData.lmnp ||
                formData.foreign || formData.interest || formData.dividends || formData.crypto
       case "deductions":
-        return formData.donations || formData.childcare || formData.homeServices || formData.alimonyDeduction
+        return formData.noDeductions || formData.donations || formData.childcare || formData.homeServices || formData.alimonyDeduction
       case "documents":
         return uploadedFiles.length > 0
       case "summary":
-        return canSubmit
+        return formData.accuracy && formData.processing
       default:
         return false
     }
@@ -873,7 +893,7 @@ export default function OnboardingPage() {
       {/* CONTENU PRINCIPAL */}
       <main className="max-w-[720px] mx-auto px-6 py-8">
         {/* BARRE DE PROGRESSION */}
-        <div className="bg-gray-50 rounded-lg p-5 mb-8 border border-gray-200">
+        <div className="sticky top-0 z-10 bg-gray-50 rounded-lg p-5 mb-8 border border-gray-200">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium text-gray-700">Complétion du profil</span>
             <span className="text-sm font-semibold text-gray-900">{progress}%</span>
@@ -1384,13 +1404,42 @@ export default function OnboardingPage() {
                   {/* SECTION CHARGES & DÉDUCTIONS */}
                   {section.id === "deductions" && (
                     <div className="space-y-1 pl-10">
+                      <div className="py-3 border-b-2 border-gray-200 mb-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-sm font-semibold text-gray-900">Aucune de ces options</Label>
+                            <p className="text-xs text-gray-500">Je n'ai aucune charge ou déduction à déclarer</p>
+                          </div>
+                          <Switch 
+                            checked={formData.noDeductions} 
+                            onCheckedChange={v => {
+                              updateField("noDeductions", v)
+                              if (v) {
+                                // Reset all deduction fields when "none" is checked
+                                updateField("donations", false)
+                                updateField("childcare", false)
+                                updateField("homeServices", false)
+                                updateField("alimonyDeduction", false)
+                              }
+                            }} 
+                          />
+                        </div>
+                      </div>
+                      
                       <div className="py-3 border-b border-gray-100">
                         <div className="flex items-center justify-between">
                           <div>
                             <Label className="text-sm text-gray-900">Dons aux associations</Label>
                             <p className="text-xs text-gray-500">Dons à des organismes d'intérêt général</p>
                           </div>
-                          <Switch checked={formData.donations} onCheckedChange={v => updateField("donations", v)} />
+                          <Switch 
+                            checked={formData.donations} 
+                            onCheckedChange={v => {
+                              updateField("donations", v)
+                              if (v) updateField("noDeductions", false)
+                            }} 
+                            disabled={formData.noDeductions}
+                          />
                         </div>
                         {formData.donations && (
                           <div className="mt-3 pl-4 animate-in slide-in-from-top-2 duration-200">
@@ -1414,7 +1463,14 @@ export default function OnboardingPage() {
                             <Label className="text-sm text-gray-900">Frais de garde d'enfants</Label>
                             <p className="text-xs text-gray-500">Crèche, assistante maternelle agréée</p>
                           </div>
-                          <Switch checked={formData.childcare} onCheckedChange={v => updateField("childcare", v)} />
+                          <Switch 
+                            checked={formData.childcare} 
+                            onCheckedChange={v => {
+                              updateField("childcare", v)
+                              if (v) updateField("noDeductions", false)
+                            }} 
+                            disabled={formData.noDeductions}
+                          />
                         </div>
                       </div>
                       
@@ -1424,7 +1480,14 @@ export default function OnboardingPage() {
                             <Label className="text-sm text-gray-900">Services à la personne</Label>
                             <p className="text-xs text-gray-500">50% de crédit d'impôt plafonné</p>
                           </div>
-                          <Switch checked={formData.homeServices} onCheckedChange={v => updateField("homeServices", v)} />
+                          <Switch 
+                            checked={formData.homeServices} 
+                            onCheckedChange={v => {
+                              updateField("homeServices", v)
+                              if (v) updateField("noDeductions", false)
+                            }} 
+                            disabled={formData.noDeductions}
+                          />
                         </div>
                       </div>
                       
@@ -1434,7 +1497,14 @@ export default function OnboardingPage() {
                             <Label className="text-sm text-gray-900">Pension alimentaire versée</Label>
                             <p className="text-xs text-gray-500">Déduction plafonnée</p>
                           </div>
-                          <Switch checked={formData.alimonyDeduction} onCheckedChange={v => updateField("alimonyDeduction", v)} />
+                          <Switch 
+                            checked={formData.alimonyDeduction} 
+                            onCheckedChange={v => {
+                              updateField("alimonyDeduction", v)
+                              if (v) updateField("noDeductions", false)
+                            }} 
+                            disabled={formData.noDeductions}
+                          />
                         </div>
                       </div>
                     </div>
@@ -1492,18 +1562,35 @@ export default function OnboardingPage() {
                                   {doc.note && <p className="text-xs text-gray-500">{doc.note}</p>}
                                 </div>
                               </div>
-                              <Badge 
-                                variant="secondary"
-                                className={`text-xs ${
-                                  doc.status === "received" 
-                                    ? "bg-emerald-50 text-emerald-700" 
-                                    : doc.status === "missing"
-                                    ? "bg-amber-50 text-amber-700"
-                                    : "bg-gray-100 text-gray-600"
-                                }`}
-                              >
-                                {doc.status === "received" ? "Reçu" : doc.status === "missing" ? "Manquant" : "Optionnel"}
-                              </Badge>
+                              <div className="flex items-center gap-2">
+                                <Badge
+                                  variant="secondary"
+                                  className={`text-xs ${
+                                    doc.status === "received"
+                                      ? "bg-emerald-50 text-emerald-700"
+                                      : doc.status === "missing"
+                                      ? "bg-amber-50 text-amber-700"
+                                      : "bg-gray-50 text-gray-600"
+                                  }`}
+                                >
+                                  {doc.status === "received" ? "Reçu" : doc.status === "missing" ? "Manquant" : "Optionnel"}
+                                </Badge>
+                                {doc.status === "received" && (
+                                  <button
+                                    onClick={() => {
+                                      const fileToRemove = uploadedFiles.find(f => 
+                                        doc.keywords.some(kw => 
+                                          f.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(kw.toLowerCase())
+                                        )
+                                      )
+                                      if (fileToRemove) removeFile(fileToRemove.id)
+                                    }}
+                                    className="text-gray-400 hover:text-red-500 transition-colors"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>

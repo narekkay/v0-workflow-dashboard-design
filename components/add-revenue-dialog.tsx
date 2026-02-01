@@ -55,10 +55,12 @@ function RevenueFullPageMulti({
   const [documents, setDocuments] = useState<any[]>([])
   const [isLoadingData, setIsLoadingData] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [subCategoriesWithAnnexes, setSubCategoriesWithAnnexes] = useState<Set<number>>(new Set())
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({})
 
   useEffect(() => {
     loadSubCategories()
+    loadAnnexes()
   }, [selectedCategoryIds])
 
   useEffect(() => {
@@ -68,6 +70,10 @@ function RevenueFullPageMulti({
       setSubBisCategories([])
     }
   }, [Array.from(selectedSubCategories).join(",")])
+
+  useEffect(() => {
+    loadDocuments()
+  }, [Array.from(selectedSubCategories).join(","), Array.from(selectedSubBisCategories).join(",")])
 
   const loadSubCategories = async () => {
     setIsLoadingData(true)
@@ -85,6 +91,34 @@ function RevenueFullPageMulti({
       setSubCategories(data || [])
     }
     setIsLoadingData(false)
+  }
+
+  const loadAnnexes = async () => {
+    const supabase = createBrowserClient()
+    
+    // Query case_labels joined with case_annexes to find subcategories with annexes
+    const { data, error } = await supabase
+      .from("case_labels")
+      .select("sub_category_id, case_code, case_annexes(annexe_name)")
+      .in("sub_category_id", selectedCategoryIds.length > 0 ? 
+        (await supabase
+          .from("categories_revenus_sub")
+          .select("id")
+          .in("category_id", selectedCategoryIds)
+        ).data?.map(s => s.id) || [] : [])
+    
+    if (error) {
+      console.error("Error loading annexes:", error)
+    } else if (data) {
+      // Filter subcategories that have annexes
+      const subsWithAnnexes = new Set<number>()
+      data.forEach(item => {
+        if (item.case_annexes && item.sub_category_id) {
+          subsWithAnnexes.add(item.sub_category_id)
+        }
+      })
+      setSubCategoriesWithAnnexes(subsWithAnnexes)
+    }
   }
 
   const loadSubBisCategories = async () => {
@@ -176,12 +210,90 @@ function RevenueFullPageMulti({
 
   const handleSave = async () => {
     setIsSaving(true)
-    // TODO: Implement actual save logic
-    setTimeout(() => {
-      setIsSaving(false)
+    const supabase = createBrowserClient()
+    
+    try {
+      const allSubCategoryIds = Array.from(selectedSubCategories)
+      const allSubBisCategoryIds = Array.from(selectedSubBisCategories)
+      
+      console.log("[v0] Saving subcategories:", allSubCategoryIds)
+      console.log("[v0] Saving sub-bis categories:", allSubBisCategoryIds)
+      
+      // Group subcategories by their parent category_id
+      const categoryGroups = new Map<number, number[]>()
+      
+      for (const subId of allSubCategoryIds) {
+        const sub = subCategories.find(s => s.id === subId)
+        if (sub) {
+          if (!categoryGroups.has(sub.category_id)) {
+            categoryGroups.set(sub.category_id, [])
+          }
+          categoryGroups.get(sub.category_id)!.push(subId)
+        }
+      }
+      
+      // Insert one row per category with array of subcategory IDs
+      const inserts = Array.from(categoryGroups.entries()).map(([categoryId, subIds]) => ({
+        client_id: clientId,
+        category_id: categoryId,
+        sub_category_ids: subIds,
+        document_ids: [] // Empty for now, can be populated later
+      }))
+      
+      console.log("[v0] Inserting client_revenues:", inserts)
+      
+      const { error } = await supabase
+        .from("client_revenues")
+        .insert(inserts)
+      
+      if (error) {
+        console.error("[v0] Error saving categories:", error)
+        throw error
+      }
+      
+      console.log("[v0] Categories saved successfully")
+      
+      // Now add required documents to boite d'envoi
+      const allSelectedIds = [...allSubCategoryIds, ...allSubBisCategoryIds]
+      console.log("[v0] Finding documents for categories:", allSelectedIds)
+      
+      // Get documents associated with these subcategories
+      const { data: documents, error: docError } = await supabase
+        .from("documents_necessaires")
+        .select("id, description, sub_category_id")
+        .in("sub_category_id", allSelectedIds)
+      
+      if (docError) {
+        console.error("[v0] Error fetching documents:", docError)
+      } else if (documents && documents.length > 0) {
+        console.log("[v0] Found documents to add:", documents)
+        
+        // Insert documents into boite_envoi_files
+        const boiteInserts = documents.map(doc => ({
+          client_id: clientId,
+          file_name: doc.description,
+          document_id: doc.id,
+          status: "en_attente"
+        }))
+        
+        const { error: boiteError } = await supabase
+          .from("boite_envoi_files")
+          .insert(boiteInserts)
+        
+        if (boiteError) {
+          console.error("[v0] Error adding to boite d'envoi:", boiteError)
+        } else {
+          console.log("[v0] Documents added to boite d'envoi successfully")
+        }
+      }
+      
       if (onSuccess) onSuccess()
       onClose()
-    }, 1000)
+    } catch (error) {
+      console.error("[v0] Failed to save:", error)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   // Group subcategories by category
@@ -248,15 +360,22 @@ function RevenueFullPageMulti({
                             >
                               <Checkbox checked={isSelected} />
                               <span className="flex-1 text-sm">{sub.nom}</span>
-                              {isSelected && hasSubBis && (
-                                <ChevronDown
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    toggleExpandSubCategory(sub.id)
-                                  }}
-                                  className={cn("h-4 w-4 transition-transform", isExpanded && "rotate-180")}
-                                />
-                              )}
+                              <div className="flex items-center gap-2">
+                                {subCategoriesWithAnnexes.has(sub.id) && (
+                                  <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-purple-600 rounded">
+                                    A
+                                  </span>
+                                )}
+                                {isSelected && hasSubBis && (
+                                  <ChevronDown
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      toggleExpandSubCategory(sub.id)
+                                    }}
+                                    className={cn("h-4 w-4 transition-transform", isExpanded && "rotate-180")}
+                                  />
+                                )}
+                              </div>
                             </div>
                             {/* Sub-bis categories collapsible */}
                             {isSelected && isExpanded && hasSubBis && (
@@ -617,6 +736,9 @@ export function AddRevenueDialog({
                     )}
                     <span className="flex-1 text-sm">{category.name}</span>
                     {isAlreadyUsed && <span className="text-xs text-gray-500 font-medium">Déjà utilisé</span>}
+                    {isSelected && !isAlreadyUsed && !isCreditsCategory && (
+                      <span className="text-xs text-blue-600 font-medium">Sélectionné</span>
+                    )}
                   </div>
 
                   {isCreditsCategory && isExpanded && !isAlreadyUsed && (
