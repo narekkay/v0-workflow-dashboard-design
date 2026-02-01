@@ -38,6 +38,7 @@ import type { Client } from "@/lib/types"
 interface OnboardingViewProps {
   clientId: string
   onBack?: () => void
+  onStatusChange?: () => void
 }
 
 type OnboardingStatus = "en_attente" | "soumis" | "en_revision" | "confirme"
@@ -49,7 +50,7 @@ const statusLabels: Record<OnboardingStatus, { label: string; color: string; ico
   confirme: { label: "Confirmé", color: "bg-emerald-100 text-emerald-700", icon: <CheckCircle2 className="h-4 w-4" /> },
 }
 
-export function OnboardingView({ clientId, onBack }: OnboardingViewProps) {
+export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingViewProps) {
   const [client, setClient] = useState<Client | null>(null)
   const [loading, setLoading] = useState(true)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
@@ -84,13 +85,17 @@ export function OnboardingView({ clientId, onBack }: OnboardingViewProps) {
     setIsSubmitting(true)
     try {
       await confirmOnboarding(clientId, confirmNotes)
-      await loadClient()
       setShowConfirmDialog(false)
       setConfirmNotes("")
+      
+      // Trigger tab reload with loading animation
+      if (onStatusChange) {
+        onStatusChange()
+      }
     } catch (error) {
       console.error("Erreur confirmation:", error)
+      setIsSubmitting(false)
     }
-    setIsSubmitting(false)
   }
 
   const handleRequestRevision = async () => {
