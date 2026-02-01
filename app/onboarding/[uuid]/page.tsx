@@ -546,7 +546,7 @@ export default function OnboardingPage() {
                formData.independent || formData.foncier || formData.lmnp ||
                formData.foreign || formData.interest || formData.dividends || formData.crypto
       case "deductions":
-        return formData.donations || formData.childcare || formData.homeServices || formData.alimonyDeduction
+        return formData.noDeductions || formData.donations || formData.childcare || formData.homeServices || formData.alimonyDeduction
       case "documents":
         return uploadedFiles.length > 0
       case "summary":
