@@ -443,6 +443,7 @@ export default function OnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submissionStep, setSubmissionStep] = useState(0)
   const [submissionError, setSubmissionError] = useState<string | null>(null)
+  const [clientName, setClientName] = useState<{ firstName: string; lastName: string } | null>(null)
   
   const submissionSteps = [
     { id: 1, label: "Sauvegarde de l'identité", icon: "user" },
@@ -480,6 +481,13 @@ export default function OnboardingPage() {
         .single()
       
       if (data) {
+        // Store client name from database separately for header display
+        setClientName({
+          firstName: data.first_name || "",
+          lastName: data.last_name || ""
+        })
+        
+        // Update form data only if fields are empty
         setFormData(prev => ({
           ...prev,
           firstName: prev.firstName || data.first_name || "",
@@ -495,13 +503,23 @@ export default function OnboardingPage() {
   
   // Nom du client dans le header (mise à jour instantanée)
   const displayName = useMemo(() => {
+    // Prioritize database client name for header display
+    if (clientName) {
+      if (clientName.firstName && clientName.lastName) {
+        return `${clientName.firstName} ${clientName.lastName}`
+      }
+      if (clientName.firstName) return clientName.firstName
+      if (clientName.lastName) return clientName.lastName
+    }
+    
+    // Fallback to form data if no client name from database yet
     if (formData.firstName && formData.lastName) {
       return `${formData.firstName} ${formData.lastName}`
     }
     if (formData.firstName) return formData.firstName
     if (formData.lastName) return formData.lastName
     return "Nouveau Dossier"
-  }, [formData.firstName, formData.lastName])
+  }, [clientName, formData.firstName, formData.lastName])
   
   const updateField = useCallback(<K extends keyof FormData>(field: K, value: FormData[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
