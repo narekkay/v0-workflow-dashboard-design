@@ -467,8 +467,8 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Statut OCR</span>
                 <div className="flex items-center gap-2">
-                  <OcrIcon className={cn("h-4 w-4", ocrConfig.class)} />
-                  <span className="text-sm">{ocrConfig.label}</span>
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-green-600 font-medium">Extrait</span>
                 </div>
               </div>
 
