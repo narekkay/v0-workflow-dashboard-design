@@ -393,10 +393,10 @@ export function ClientTabs({
       ],
     },
     {
-      id: "5",
+      id: "7",
       name: "UK Employment Certificate",
       lastRequestAt: "2024-01-20",
-      status: "received",
+      status: "validated",
       isBlocking: false,
       criticality: "important",
       origin: "manual",
@@ -426,6 +426,7 @@ export function ClientTabs({
         { date: "2024-01-20", action: "Demande créée", user: "Marie D." },
         { date: "2024-01-25", action: "Document reçu", user: "Client" },
         { date: "2024-01-25", action: "OCR terminé (EN détecté)", user: "Système" },
+        { date: "2024-01-26", action: "Validé", user: "Marie D." },
       ],
     },
   ]
