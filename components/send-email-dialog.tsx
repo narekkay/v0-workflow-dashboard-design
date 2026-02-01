@@ -90,7 +90,8 @@ export function SendEmailDialog({
       console.log("[v0] Generating upload links for documents:", documents)
 
       const uploadLinksPromises = documents.map(async (doc) => {
-        const fileRequest = await createFileRequest(clientId, doc.file_name, doc.document_id || undefined)
+        // Don't pass document_id as sub_category_id - file_requests.sub_category_id should be null for now
+        const fileRequest = await createFileRequest(clientId, doc.file_name, undefined)
 
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
         const uploadPageUrl = `${baseUrl}/upload/${fileRequest.id}`
