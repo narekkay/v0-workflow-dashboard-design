@@ -180,12 +180,42 @@ function RevenueFullPageMulti({
 
   const handleSave = async () => {
     setIsSaving(true)
-    // TODO: Implement actual save logic
-    setTimeout(() => {
-      setIsSaving(false)
+    const supabase = createBrowserClient()
+    
+    try {
+      // Save all selected subcategories and sub-bis categories
+      const allCategoriesToSave = [
+        ...Array.from(selectedSubCategories),
+        ...Array.from(selectedSubBisCategories)
+      ]
+      
+      console.log("[v0] Saving categories:", allCategoriesToSave)
+      
+      // Insert into client_revenues table
+      const inserts = allCategoriesToSave.map(subCatId => ({
+        client_id: clientId,
+        sous_category_id: subCatId,
+        annee_fiscale: new Date().getFullYear()
+      }))
+      
+      const { error } = await supabase
+        .from("client_revenues")
+        .insert(inserts)
+      
+      if (error) {
+        console.error("[v0] Error saving categories:", error)
+        throw error
+      }
+      
+      console.log("[v0] Categories saved successfully")
+      
       if (onSuccess) onSuccess()
       onClose()
-    }, 1000)
+    } catch (error) {
+      console.error("[v0] Failed to save:", error)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   // Group subcategories by category
