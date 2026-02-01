@@ -69,6 +69,10 @@ function RevenueFullPageMulti({
     }
   }, [Array.from(selectedSubCategories).join(",")])
 
+  useEffect(() => {
+    loadDocuments()
+  }, [Array.from(selectedSubCategories).join(","), Array.from(selectedSubBisCategories).join(",")])
+
   const loadSubCategories = async () => {
     setIsLoadingData(true)
     const supabase = createBrowserClient()
