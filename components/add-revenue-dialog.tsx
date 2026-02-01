@@ -621,6 +621,9 @@ export function AddRevenueDialog({
                     )}
                     <span className="flex-1 text-sm">{category.name}</span>
                     {isAlreadyUsed && <span className="text-xs text-gray-500 font-medium">Déjà utilisé</span>}
+                    {isSelected && !isAlreadyUsed && !isCreditsCategory && (
+                      <span className="text-xs text-blue-600 font-medium">Sélectionné</span>
+                    )}
                   </div>
 
                   {isCreditsCategory && isExpanded && !isAlreadyUsed && (
