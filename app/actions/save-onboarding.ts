@@ -304,7 +304,7 @@ export async function confirmOnboarding(clientId: string, notes?: string) {
   const { error } = await supabase
     .from("clients")
     .update({
-      onboarding_status: "confirme",
+      onboarding_status: "confirmed",
       onboarding_confirme_le: new Date().toISOString(),
       onboarding_notes_avocat: notes || null,
     })

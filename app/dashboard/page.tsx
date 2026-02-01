@@ -495,6 +495,36 @@ export default function HomePage() {
               <OnboardingView 
                 clientId={activeTab.clientId} 
                 onBack={() => handleCloseTab(activeTab.id)}
+                onStatusChange={async () => {
+                  // Show loading state
+                  const currentClientId = activeTab.clientId
+                  if (!currentClientId) return
+                  
+                  // Close onboarding tab
+                  handleCloseTab(activeTab.id)
+                  
+                  // Small delay for visual feedback
+                  await new Promise(resolve => setTimeout(resolve, 300))
+                  
+                  // Reload client data
+                  await loadClientData(currentClientId)
+                  
+                  // Find the client to get their name
+                  const client = clients.find(c => c.id === currentClientId)
+                  if (!client) return
+                  
+                  // Open regular client tab with overview
+                  const newTab: Tab = {
+                    id: `client-${currentClientId}`,
+                    type: "client",
+                    label: `${client.first_name} ${client.last_name}`,
+                    clientId: currentClientId,
+                  }
+                  
+                  setTabs(prev => [...prev, newTab])
+                  setActiveTabId(newTab.id)
+                  setActiveClientTab("overview")
+                }}
               />
             ) : null}
           </main>
