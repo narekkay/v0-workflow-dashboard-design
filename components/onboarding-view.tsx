@@ -41,9 +41,12 @@ interface OnboardingViewProps {
   onStatusChange?: () => void
 }
 
-type OnboardingStatus = "en_attente" | "soumis" | "en_revision" | "confirme"
+type OnboardingStatus = "pending" | "submitted" | "confirmed" | "en_attente" | "soumis" | "en_revision" | "confirme"
 
 const statusLabels: Record<OnboardingStatus, { label: string; color: string; icon: React.ReactNode }> = {
+  pending: { label: "En attente", color: "bg-gray-100 text-gray-700", icon: <Clock className="h-4 w-4" /> },
+  submitted: { label: "Soumis", color: "bg-blue-100 text-blue-700", icon: <FileText className="h-4 w-4" /> },
+  confirmed: { label: "Confirmé", color: "bg-emerald-100 text-emerald-700", icon: <CheckCircle2 className="h-4 w-4" /> },
   en_attente: { label: "En attente", color: "bg-gray-100 text-gray-700", icon: <Clock className="h-4 w-4" /> },
   soumis: { label: "Soumis", color: "bg-blue-100 text-blue-700", icon: <FileText className="h-4 w-4" /> },
   en_revision: { label: "En révision", color: "bg-amber-100 text-amber-700", icon: <Edit3 className="h-4 w-4" /> },
