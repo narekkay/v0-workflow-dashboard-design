@@ -295,7 +295,7 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
   const ocrStateConfig: Record<string, { label: string; icon: React.ElementType; class: string }> = {
     idle: { label: "En attente", icon: Clock, class: "text-gray-500" },
     running: { label: "En cours", icon: RefreshCw, class: "text-blue-500 animate-spin" },
-    done: { label: "Terminé", icon: CheckCircle2, class: "text-green-500" },
+    done: { label: "Extrait", icon: CheckCircle2, class: "text-green-500" },
     error: { label: "Échec", icon: XCircle, class: "text-red-500" },
   }
 
@@ -303,10 +303,6 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
   const OcrIcon = ocrConfig.icon
 
   const getOcrExtractionSummary = () => {
-    if (document.status === "pending" || document.status === "error" || document.ocr.state !== "done") {
-      return null
-    }
-
     const documentName = document.name.toLowerCase()
     
     // IFU distributions
@@ -492,7 +488,7 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
                 </div>
               )}
 
-              {document.ocr.state === "done" && extractionSummary && (
+              {extractionSummary && (
                 <>
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
                     <p className="text-sm font-semibold mb-3 text-blue-900">Résumé de l'extraction (OCR)</p>
