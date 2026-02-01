@@ -183,20 +183,34 @@ function RevenueFullPageMulti({
     const supabase = createBrowserClient()
     
     try {
-      // Save all selected subcategories and sub-bis categories
-      const allCategoriesToSave = [
-        ...Array.from(selectedSubCategories),
-        ...Array.from(selectedSubBisCategories)
-      ]
+      const allSubCategoryIds = Array.from(selectedSubCategories)
+      const allSubBisCategoryIds = Array.from(selectedSubBisCategories)
       
-      console.log("[v0] Saving categories:", allCategoriesToSave)
+      console.log("[v0] Saving subcategories:", allSubCategoryIds)
+      console.log("[v0] Saving sub-bis categories:", allSubBisCategoryIds)
       
-      // Insert into client_revenues table
-      const inserts = allCategoriesToSave.map(subCatId => ({
+      // Group subcategories by their parent category_id
+      const categoryGroups = new Map<number, number[]>()
+      
+      for (const subId of allSubCategoryIds) {
+        const sub = subCategories.find(s => s.id === subId)
+        if (sub) {
+          if (!categoryGroups.has(sub.category_id)) {
+            categoryGroups.set(sub.category_id, [])
+          }
+          categoryGroups.get(sub.category_id)!.push(subId)
+        }
+      }
+      
+      // Insert one row per category with array of subcategory IDs
+      const inserts = Array.from(categoryGroups.entries()).map(([categoryId, subIds]) => ({
         client_id: clientId,
-        sous_category_id: subCatId,
-        annee_fiscale: new Date().getFullYear()
+        category_id: categoryId,
+        sub_category_ids: subIds,
+        document_ids: [] // Empty for now, can be populated later
       }))
+      
+      console.log("[v0] Inserting client_revenues:", inserts)
       
       const { error } = await supabase
         .from("client_revenues")
