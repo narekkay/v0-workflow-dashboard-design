@@ -42,6 +42,8 @@ interface Tab {
 }
 
 export default function HomePage() {
+  const isEmbeddedPreview = typeof window !== "undefined" && window.self !== window.top
+  
   const [clients, setClients] = useState<Client[]>([])
   const [tabs, setTabs] = useState<Tab[]>([{ id: "view-dashboard", type: "view", label: "Tableau de bord", view: "clients" }])
   const [activeTabId, setActiveTabId] = useState("view-dashboard")
@@ -72,6 +74,16 @@ export default function HomePage() {
   const [currentClientName, setCurrentClientName] = useState<string>("")
 
   useEffect(() => {
+    if (isEmbeddedPreview) {
+      // Skip auth in embedded preview, inject mock data
+      setClients([
+        { id: "mock-1", first_name: "Pierre", last_name: "Bernard", email: "pierre@example.com", phone: "+33 6 12 34 56 78", onboarding_status: "confirme", created_at: "2024-01-15" },
+        { id: "mock-2", first_name: "Claire", last_name: "Laurent", email: "claire@example.com", phone: "+33 6 98 76 54 32", onboarding_status: "confirme", created_at: "2024-02-20" },
+        { id: "mock-3", first_name: "Anne", last_name: "Dupont", email: "anne@example.com", phone: "+33 6 45 67 89 01", onboarding_status: "confirme", created_at: "2024-03-10" }
+      ] as Client[])
+      setLoading(false)
+      return
+    }
     loadClients()
   }, [])
 
@@ -298,8 +310,14 @@ export default function HomePage() {
   const isOnboardingView = activeTab?.type === "onboarding"
 
   return (
-    <div className="flex h-screen">
-      <Sidebar 
+    <div className="flex h-screen relative">
+      {isEmbeddedPreview && (
+        <div className="absolute top-0 left-0 right-0 z-50 bg-yellow-50 border-b border-yellow-200 px-4 py-2 text-sm text-yellow-800">
+          ⚠️ Auth disabled in embedded preview. <a href="/dashboard" target="_blank" className="underline font-medium">Open in new tab</a> to test full functionality.
+        </div>
+      )}
+      
+      <Sidebar
         onViewChange={handleViewChange}
         clientTabs={(isClientView || isOnboardingView) && clientBaseTabs.length > 0 ? clientBaseTabs : undefined}
         revenueTabs={isClientView ? clientRevenueTabs : undefined}
