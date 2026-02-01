@@ -1240,6 +1240,8 @@ export function ClientTabs({
                         onSuccess={() => {
                           loadClientRevenues()
                           loadOutboxFiles()
+                          // Force refresh of all data to show in overview tab
+                          loadRevenues()
                         }}
                         shouldOpen={shouldOpenRevenueModal}
                         onOpenChange={onRevenueModalClose}
