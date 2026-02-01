@@ -39,7 +39,7 @@ interface Tab {
   label: string
   view?: View
   clientId?: string
-  }
+}
 
 export default function HomePage() {
   const [clients, setClients] = useState<Client[]>([])
