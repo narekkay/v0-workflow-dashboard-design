@@ -1310,12 +1310,12 @@ export function ClientTabs({
                         clientId={client.id}
                         clientName={`${client.first_name} ${client.last_name}`}
                         onRevenueAdded={handleRevenueAdded}
-                        onSuccess={() => {
-                          loadClientRevenues()
-                          loadOutboxFiles()
-                          // Force refresh of all data to show in overview tab
-                          loadRevenues()
-                        }}
+onSuccess={() => {
+  loadClientRevenues()
+  loadOutboxFiles()
+  loadAnnexes()
+  loadRevenues()
+  }}
                         shouldOpen={shouldOpenRevenueModal}
                         onOpenChange={onRevenueModalClose}
                         existingCategoryIds={revenues.map((r) => r.category_id)}
