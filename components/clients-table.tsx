@@ -67,7 +67,12 @@ function computeStatus(client: Client): "complete" | "incomplete" | "action" | "
   return "action"
 }
 
-function getStatusBadgeConfig(status: string) {
+function getStatusBadgeConfig(status: string, client?: Client) {
+  // Check for confirmation required status first
+  if (client?.onboarding_status === "soumis") {
+    return { label: "Confirmation requise", className: "bg-violet-50 text-violet-700 border-violet-200" }
+  }
+  
   switch (status) {
     case "onboarding":
       return { label: "Onboarding", className: "bg-blue-50 text-blue-700 border-blue-200" }
@@ -350,7 +355,7 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
                   const status = showArchived ? "archived" : computeStatus(client)
                   const statusConfig = showArchived
                     ? { label: "Archive", className: "bg-slate-100 text-slate-600 border-slate-200" }
-                    : getStatusBadgeConfig(status)
+                    : getStatusBadgeConfig(status, client)
 
                   return (
                     <TableRow
