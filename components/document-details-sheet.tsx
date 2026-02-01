@@ -510,17 +510,7 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
                     )}
                   </div>
                   
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <p className="text-xs font-medium mb-2">Données brutes extraites</p>
-                    <div className="space-y-1">
-                      {extractionSummary.items.map((item, index) => (
-                        <div key={index} className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{item.label}</span>
-                          <span className="font-mono">{item.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  
                 </>
               )}
 
