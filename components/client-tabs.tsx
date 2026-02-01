@@ -233,6 +233,15 @@ export function ClientTabs({
     address: client?.address || "",
     accountant: "",
   })
+
+  // Early return if client is still loading or null
+  if (loadingClient || !client) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    )
+  }
   const [editedSpouse, setEditedSpouse] = useState({
     first_name: "",
     last_name: "",
