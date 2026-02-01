@@ -893,7 +893,7 @@ export default function OnboardingPage() {
       {/* CONTENU PRINCIPAL */}
       <main className="max-w-[720px] mx-auto px-6 py-8">
         {/* BARRE DE PROGRESSION */}
-        <div className="bg-gray-50 rounded-lg p-5 mb-8 border border-gray-200">
+        <div className="sticky top-0 z-10 bg-gray-50 rounded-lg p-5 mb-8 border border-gray-200">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium text-gray-700">Complétion du profil</span>
             <span className="text-sm font-semibold text-gray-900">{progress}%</span>
