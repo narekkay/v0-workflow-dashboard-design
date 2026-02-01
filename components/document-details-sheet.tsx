@@ -567,36 +567,7 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
           {/* Résumé de l'extraction (toujours affiché) */}
           <>
             <Separator />
-            <section>
-              <h4 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
-                {extractionSummary?.title || "RÉSUMÉ DE L'EXTRACTION"}
-              </h4>
-              {extractionSummary ? (
-                <div className="space-y-2">
-                  {extractionSummary.items.map((item, index) => (
-                    <div key={index} className="flex justify-between text-sm pl-2">
-                      <span className="text-muted-foreground">{item.label}</span>
-                      <span className="font-medium">{item.value}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm pl-2">
-                    <span className="text-muted-foreground">Type</span>
-                    <span className="font-medium">Document fiscal</span>
-                  </div>
-                  <div className="flex justify-between text-sm pl-2">
-                    <span className="text-muted-foreground">Année</span>
-                    <span className="font-medium">2024</span>
-                  </div>
-                  <div className="flex justify-between text-sm pl-2">
-                    <span className="text-muted-foreground">Montant principal</span>
-                    <span className="font-medium">À extraire</span>
-                  </div>
-                </div>
-              )}
-            </section>
+            
           </>
 
 
