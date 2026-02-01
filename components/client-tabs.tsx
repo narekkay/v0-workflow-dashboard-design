@@ -1104,6 +1104,7 @@ export function ClientTabs({
   async function handleAddedRevenue() {
     await loadRevenues()
     await loadOutboxFiles()
+    await loadAnnexes()
   }
 
   const handleSaveChanges = async () => {
