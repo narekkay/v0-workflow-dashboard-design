@@ -66,7 +66,7 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
   const [confirmNotes, setConfirmNotes] = useState("")
   const [editNotes, setEditNotes] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [documents, setDocuments] = useState<Array<{ id: string; name: string; created_at: string; status: string }>>([])
+  const [documents, setDocuments] = useState<Array<{ id: string; name: string; uploaded_at: string; status: string }>>([])
   const [loadingDocuments, setLoadingDocuments] = useState(true)
 
   const loadClient = async () => {
@@ -89,19 +89,19 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
     setLoadingDocuments(true)
     const supabase = createBrowserClient()
     const { data, error } = await supabase
-      .from("client_files")
-      .select("id, file_name, created_at, status")
+      .from("fichiers_onboarding")
+      .select("id, nom_fichier, uploaded_at, statut")
       .eq("client_id", clientId)
-      .order("created_at", { ascending: false })
+      .order("uploaded_at", { ascending: false })
 
     if (error) {
       console.error("Error loading documents:", error)
     } else if (data) {
       setDocuments(data.map(d => ({ 
         id: d.id, 
-        name: d.file_name, 
-        created_at: d.created_at,
-        status: d.status 
+        name: d.nom_fichier, 
+        uploaded_at: d.uploaded_at,
+        status: d.statut 
       })))
     }
     setLoadingDocuments(false)
@@ -479,7 +479,7 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
                           <div>
                             <p className="text-sm font-medium">{doc.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {new Date(doc.created_at).toLocaleDateString("fr-FR", { 
+                              {new Date(doc.uploaded_at).toLocaleDateString("fr-FR", { 
                                 day: "numeric", 
                                 month: "short", 
                                 year: "numeric",
