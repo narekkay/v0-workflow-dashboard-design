@@ -803,7 +803,7 @@ export default function OnboardingPage() {
             <Check className="h-10 w-10 text-emerald-600" />
           </div>
           
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Profil soumis avec succès !</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Onboarding soumis avec succès !</h1>
           <p className="text-gray-500 mb-4">Votre dossier est en cours de validation par notre équipe.</p>
           <p className="text-sm font-mono text-gray-400 mb-8">Référence : #{referenceNumber}</p>
           
@@ -813,7 +813,7 @@ export default function OnboardingPage() {
                 <Check className="h-3.5 w-3.5 text-emerald-600" />
               </div>
               <div>
-                <p className="font-medium text-gray-900">Profil soumis</p>
+                <p className="font-medium text-gray-900">Onboarding complété</p>
                 <p className="text-sm text-gray-500">{new Date().toLocaleString("fr-FR")}</p>
               </div>
             </div>
@@ -840,7 +840,7 @@ export default function OnboardingPage() {
           </div>
           
           <Button variant="outline" className="w-full" onClick={() => window.location.href = "/dashboard"}>
-            Retour au tableau de bord
+            Revenir au tableau de bord (Vue avocat)
           </Button>
         </div>
       </div>

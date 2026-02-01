@@ -154,7 +154,7 @@ interface ClientTabsProps {
   onOpenRevenueDetail?: (revenueId: string, categoryName: string) => void
   shouldOpenRevenueModal?: boolean
   onRevenueModalClose?: () => void
-  onOpen2042View?: (clientId: string, clientName: string) => void
+  onOpen2042View?: (clientId: string, clientName: string, formType?: "2042" | "2042C" | "IFU" | "IFI") => void
   onOpenAmountEntry?: (clientId: string, clientName: string, categoryId: number, categoryName: string) => void
   activeTab?: string
   onTabChange?: (tabId: string) => void
@@ -1104,6 +1104,7 @@ export function ClientTabs({
   async function handleAddedRevenue() {
     await loadRevenues()
     await loadOutboxFiles()
+    await loadAnnexes()
   }
 
   const handleSaveChanges = async () => {
@@ -1309,12 +1310,12 @@ export function ClientTabs({
                         clientId={client.id}
                         clientName={`${client.first_name} ${client.last_name}`}
                         onRevenueAdded={handleRevenueAdded}
-                        onSuccess={() => {
-                          loadClientRevenues()
-                          loadOutboxFiles()
-                          // Force refresh of all data to show in overview tab
-                          loadRevenues()
-                        }}
+onSuccess={() => {
+  loadClientRevenues()
+  loadOutboxFiles()
+  loadAnnexes()
+  loadRevenues()
+  }}
                         shouldOpen={shouldOpenRevenueModal}
                         onOpenChange={onRevenueModalClose}
                         existingCategoryIds={revenues.map((r) => r.category_id)}
@@ -1957,21 +1958,21 @@ export function ClientTabs({
                         <Badge 
                           variant="secondary" 
                           className="bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
-                          onClick={() => handleOpenYearTab(2025)}
+                          onClick={() => onOpen2042View?.(client.id, `${client.first_name} ${client.last_name}`, "2042C")}
                         >
                           2042 C
                         </Badge>
                         <Badge 
                           variant="secondary" 
                           className="bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
-                          onClick={() => handleOpenYearTab(2025)}
+                          onClick={() => onOpen2042View?.(client.id, `${client.first_name} ${client.last_name}`, "IFU")}
                         >
                           IFU
                         </Badge>
                         <Badge 
                           variant="secondary" 
                           className="bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
-                          onClick={() => handleOpenYearTab(2025)}
+                          onClick={() => onOpen2042View?.(client.id, `${client.first_name} ${client.last_name}`, "IFI")}
                         >
                           IFI
                         </Badge>
@@ -2017,7 +2018,7 @@ export function ClientTabs({
                         <Badge 
                           variant="secondary" 
                           className="bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
-                          onClick={() => handleOpenYearTab(2024)}
+                          onClick={() => onOpen2042View?.(client.id, `${client.first_name} ${client.last_name}`, "2042C")}
                         >
                           2042 C
                         </Badge>
@@ -2083,33 +2084,41 @@ export function ClientTabs({
                     >
                       <span className="font-semibold text-blue-700">2042</span>
                     </Button>
-                    {annexes.map((annexe) => (
-                      <Button
-                        key={annexe.id}
-                        variant="outline"
-                        size="sm"
-                        className="bg-transparent"
-                        onClick={() => loadAnnexeDocuments(annexe)}
-                      >
-                        <span className="font-semibold">{annexe.annexe_name}</span>
-                      </Button>
-                    ))}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="bg-transparent"
-                      onClick={() => {}}
-                    >
-                      <span className="font-semibold">IFU</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="bg-transparent"
-                      onClick={() => {}}
-                    >
-                      <span className="font-semibold">IFI</span>
-                    </Button>
+<Button
+  variant="outline"
+  size="sm"
+  className="bg-transparent"
+  onClick={() => onOpen2042View?.(client.id, `${client.first_name} ${client.last_name}`, "2042C")}
+  >
+  <span className="font-semibold">2042 C</span>
+  </Button>
+  <Button
+  variant="outline"
+  size="sm"
+  className="bg-transparent"
+  onClick={() => onOpen2042View?.(client.id, `${client.first_name} ${client.last_name}`, "IFU")}
+  >
+  <span className="font-semibold">IFU</span>
+  </Button>
+  <Button
+  variant="outline"
+  size="sm"
+  className="bg-transparent"
+  onClick={() => onOpen2042View?.(client.id, `${client.first_name} ${client.last_name}`, "IFI")}
+  >
+  <span className="font-semibold">IFI</span>
+  </Button>
+  {annexes.map((annexe) => (
+  <Button
+  key={annexe.id}
+  variant="outline"
+  size="sm"
+  className="bg-transparent"
+  onClick={() => loadAnnexeDocuments(annexe)}
+  >
+  <span className="font-semibold">{annexe.annexe_name}</span>
+  </Button>
+  ))}
                   </div>
                 )}
               </div>

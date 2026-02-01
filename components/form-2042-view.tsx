@@ -1,58 +1,59 @@
 "use client"
 
-import { useState } from "react"
-import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
-import { ZoomIn, ZoomOut, Download, Maximize2 } from "lucide-react"
-import { Loader2 } from "lucide-react"
+import { Download, Maximize2 } from "lucide-react"
 
-// Dynamic import for SSR safety
-const PDFViewer = dynamic(() => import("@/components/pdf-viewer").then(mod => ({ default: mod.PDFViewer })), {
-  ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center py-12">
-      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      <span className="ml-2 text-muted-foreground">Chargement...</span>
-    </div>
-  ),
-})
+export type FormType = "2042" | "2042C" | "IFU" | "IFI"
 
 interface Form2042ViewProps {
   clientId: string
   clientName: string
+  formType?: FormType
 }
 
-const PDF_URL = "/documents/2042_5122.pdf"
+// PDF URLs for each form type
+const PDF_URLS: Record<FormType, { url: string; title: string; filename: string }> = {
+  "2042": {
+    url: "https://blobs.vusercontent.net/blob/2042_5122-XBUm2kKsL1pGe15lIttvZ1M05Xs6sS.pdf",
+    title: "2042",
+    filename: "2042.pdf"
+  },
+  "2042C": {
+    url: "https://blobs.vusercontent.net/blob/formulaire%202042%20C-W2LtISHq9crX6CnFGz0MywbisJZUm3.pdf",
+    title: "2042 C",
+    filename: "2042_C.pdf"
+  },
+  "IFU": {
+    url: "https://blobs.vusercontent.net/blob/formulaire%20IFU-OyburGxBbNyt9jx6jkBjkjBiR8WozS.pdf",
+    title: "IFU",
+    filename: "IFU.pdf"
+  },
+  "IFI": {
+    url: "https://blobs.vusercontent.net/blob/formulaire%20IFI-XmYISc6D9nO5cHiZEOsZ9XLHCNiFvp.pdf",
+    title: "IFI",
+    filename: "IFI.pdf"
+  }
+}
 
-export function Form2042View({ clientId, clientName }: Form2042ViewProps) {
-  const [zoom, setZoom] = useState(100)
+export function Form2042View({ clientId, clientName, formType = "2042" }: Form2042ViewProps) {
+  const pdfConfig = PDF_URLS[formType]
   
-  const handleZoomIn = () => setZoom(prev => Math.min(prev + 25, 200))
-  const handleZoomOut = () => setZoom(prev => Math.max(prev - 25, 50))
   const handleDownload = () => {
     const link = document.createElement('a')
-    link.href = PDF_URL
-    link.download = '2042_5122.pdf'
+    link.href = pdfConfig.url
+    link.download = pdfConfig.filename
     link.click()
   }
   const handleFullscreen = () => {
-    window.open(PDF_URL, '_blank')
+    window.open(pdfConfig.url, '_blank')
   }
 
   return (
     <div className="flex flex-col h-full">
       {/* Header with controls */}
       <div className="sticky top-0 z-10 bg-background flex items-center justify-between pb-4 border-b pt-4 px-6">
-        <h1 className="text-3xl font-bold">2042</h1>
+        <h1 className="text-3xl font-bold">{pdfConfig.title}</h1>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleZoomOut} disabled={zoom <= 50}>
-            <ZoomOut className="h-4 w-4" />
-          </Button>
-          <span className="text-sm text-muted-foreground min-w-[60px] text-center">{zoom}%</span>
-          <Button variant="outline" size="sm" onClick={handleZoomIn} disabled={zoom >= 200}>
-            <ZoomIn className="h-4 w-4" />
-          </Button>
-          <div className="w-px h-6 bg-border mx-2" />
           <Button variant="outline" size="sm" onClick={handleDownload}>
             <Download className="h-4 w-4 mr-2" />
             Telecharger
@@ -64,9 +65,13 @@ export function Form2042View({ clientId, clientName }: Form2042ViewProps) {
         </div>
       </div>
       
-      {/* PDF Viewer */}
-      <div className="flex-1 overflow-auto p-6 bg-muted/30">
-        <PDFViewer pdfUrl={PDF_URL} zoom={zoom} />
+      {/* PDF Viewer - using iframe with native browser PDF viewer */}
+      <div className="flex-1 p-6 bg-muted/30">
+        <iframe
+          src={pdfConfig.url}
+          className="w-full h-full min-h-[800px] border-0 rounded-lg shadow-lg bg-white"
+          title={`Formulaire ${pdfConfig.title}`}
+        />
       </div>
     </div>
   )

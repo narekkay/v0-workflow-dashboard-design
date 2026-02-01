@@ -9,7 +9,7 @@ import { Sidebar, type ClientTab, type RevenueTab, type YearTab } from "@/compon
 import { ClientsTable } from "@/components/clients-table"
 import { ClientTabs } from "@/components/client-tabs"
 import { RevenueFullPage } from "@/components/revenue-full-page"
-import { Form2042View } from "@/components/form-2042-view"
+import { Form2042View, type FormType } from "@/components/form-2042-view"
 import { ChatWidget } from "@/components/chat-widget"
 import { DashboardView } from "@/components/dashboard-view"
 import { RevenueAmountEntry } from "@/components/revenue-amount-entry"
@@ -38,6 +38,7 @@ interface Tab {
   label: string
   view?: View
   clientId?: string
+  formType?: FormType
 }
 
 export default function HomePage() {
@@ -253,12 +254,19 @@ export default function HomePage() {
     setDragOverIndex(null)
   }
 
-  function handleOpen2042View(clientId: string, clientName: string) {
+  function handleOpen2042View(clientId: string, clientName: string, formType: FormType = "2042") {
+    const formLabels: Record<FormType, string> = {
+      "2042": "2042",
+      "2042C": "2042 C",
+      "IFU": "IFU",
+      "IFI": "IFI"
+    }
     const newTab: Tab = {
-      id: `form2042-${clientId}`,
+      id: `form2042-${formType}-${clientId}`,
       type: "form2042",
-      label: `2042 - ${clientName}`,
+      label: `${formLabels[formType]} - ${clientName}`,
       clientId,
+      formType,
     }
     setTabs((prev) => [...prev, newTab])
     setActiveTabId(newTab.id)
@@ -488,6 +496,7 @@ export default function HomePage() {
                   <Form2042View
                     clientId={activeTab.clientId}
                     clientName={`${data.client.first_name} ${data.client.last_name}`}
+                    formType={activeTab.formType}
                   />
                 )
               })()
