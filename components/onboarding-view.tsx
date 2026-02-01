@@ -30,7 +30,9 @@ import {
   Loader2,
   CheckCircle2,
   Edit3,
-  ArrowLeft
+  ArrowLeft,
+  File,
+  Download
 } from "lucide-react"
 import { confirmOnboarding, requestRevision, updateOnboardingNotes } from "@/app/actions/save-onboarding"
 import type { Client } from "@/lib/types"
@@ -64,6 +66,8 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
   const [confirmNotes, setConfirmNotes] = useState("")
   const [editNotes, setEditNotes] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [documents, setDocuments] = useState<Array<{ id: string; name: string; uploaded_at: string; url?: string }>>([])
+  const [loadingDocuments, setLoadingDocuments] = useState(true)
 
   const loadClient = async () => {
     const supabase = createBrowserClient()
@@ -81,8 +85,31 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
     setLoading(false)
   }
 
+  const loadDocuments = async () => {
+    setLoadingDocuments(true)
+    const supabase = createBrowserClient()
+    const { data, error } = await supabase
+      .from("client_files")
+      .select("id, file_name, uploaded_at, file_url")
+      .eq("client_id", clientId)
+      .order("uploaded_at", { ascending: false })
+
+    if (error) {
+      console.error("Error loading documents:", error)
+    } else if (data) {
+      setDocuments(data.map(d => ({ 
+        id: d.id, 
+        name: d.file_name, 
+        uploaded_at: d.uploaded_at,
+        url: d.file_url 
+      })))
+    }
+    setLoadingDocuments(false)
+  }
+
   useEffect(() => {
     loadClient()
+    loadDocuments()
   }, [clientId])
 
   const handleConfirm = async () => {
@@ -425,6 +452,56 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
                   <span className="text-muted-foreground">Traitement accepté</span>
                   {yesNo(client.onboarding_traitement_accepte)}
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Documents */}
+            <Card className="md:col-span-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <File className="h-4 w-4 text-gray-500" />
+                  Documents soumis ({documents.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingDocuments ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                  </div>
+                ) : documents.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">Aucun document soumis</p>
+                ) : (
+                  <div className="space-y-2">
+                    {documents.map(doc => (
+                      <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+                        <div className="flex items-center gap-3">
+                          <File className="h-4 w-4 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium">{doc.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(doc.uploaded_at).toLocaleDateString("fr-FR", { 
+                                day: "numeric", 
+                                month: "short", 
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit"
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                        {doc.url && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(doc.url, "_blank")}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
