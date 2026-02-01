@@ -192,8 +192,6 @@ export function ClientTabs({
   yearTabs = [],
   onYearTabsChange,
 }: ClientTabsProps) {
-  console.log("[v0] ClientTabs RENDER for client:", initialClient?.first_name, initialClient?.last_name)
-  
   const [client, setClient] = useState<Client | null>(initialClient || null)
   const [loadingClient, setLoadingClient] = useState(!initialClient && !!clientId)
   const [revenues, setRevenues] = useState<ClientRevenue[]>([])
@@ -431,18 +429,10 @@ export function ClientTabs({
 
   useEffect(() => {
     if (client?.id) {
-      console.log("[v0] ClientTabs useEffect triggered - starting 4 queries...")
-      const startTime = performance.now()
-      
-      Promise.all([
-        loadRevenues(),
-        loadOutboxFiles(),
-        loadClientFiles(),
-        loadAnnexes()
-      ]).then(() => {
-        const endTime = performance.now()
-        console.log("[v0] ClientTabs 4 queries completed in", (endTime - startTime).toFixed(0), "ms")
-      })
+      loadRevenues()
+      loadOutboxFiles()
+      loadClientFiles()
+      loadAnnexes()
     }
   }, [client?.id])
 
@@ -488,45 +478,12 @@ export function ClientTabs({
       categories?.forEach((cat) => catMap.set(cat.id, cat.nom))
       setCategoryNames(catMap)
 
-      const revenuesWithNames = await Promise.all(
-        revenuesData.map(async (r) => {
-          let hasAnnexe = false
-
-          console.log(
-            `[v0] Checking annexe for client ${client.id}, category ${r.category_id}, sub_category_ids:`,
-            r.sub_category_ids,
-          )
-
-          if (r.sub_category_ids && r.sub_category_ids.length > 0) {
-            // Get case codes for these sub-categories
-            const { data: caseCodes } = await supabase
-              .from("case_labels")
-              .select("case_code")
-              .in("sub_category_id", r.sub_category_ids)
-
-            console.log(`[v0] Found case codes for sub-categories:`, caseCodes)
-
-            if (caseCodes && caseCodes.length > 0) {
-              const codes = caseCodes.map((c) => c.case_code)
-
-              // Check if any of these case codes have annexes
-              const { data: annexes } = await supabase.from("case_annexes").select("id").in("case_code", codes).limit(1)
-
-              console.log(`[v0] Found annexes for case codes:`, annexes)
-
-              hasAnnexe = !!annexes && annexes.length > 0
-            }
-          }
-
-          console.log(`[v0] Final hasAnnexe value for category ${r.category_id}:`, hasAnnexe)
-
-          return {
-            ...r,
-            categoryName: catMap.get(r.category_id) || `Catégorie ${r.category_id}`,
-            hasAnnexe,
-          }
-        }),
-      )
+      // Just add category names - no need to check annexes here (loadAnnexes does it)
+      const revenuesWithNames = revenuesData.map((r) => ({
+        ...r,
+        categoryName: catMap.get(r.category_id) || `Catégorie ${r.category_id}`,
+        hasAnnexe: false, // Will be set by loadAnnexes if needed
+      }))
 
       setRevenues(revenuesWithNames)
     } else {
@@ -559,11 +516,17 @@ export function ClientTabs({
       return
     }
 
-    // Get case codes for these sub-categories
-    const { data: caseCodes } = await supabase
-      .from("case_labels")
-      .select("case_code")
-      .in("sub_category_id", allSubCategoryIds)
+    // Parallel query: Get case codes AND case labels together
+    const [{ data: caseCodes }, { data: allCaseLabels }] = await Promise.all([
+      supabase
+        .from("case_labels")
+        .select("case_code")
+        .in("sub_category_id", allSubCategoryIds),
+      supabase
+        .from("case_labels")
+        .select("sub_category_id, case_code")
+        .in("sub_category_id", allSubCategoryIds)
+    ])
 
     if (!caseCodes || caseCodes.length === 0) {
       setLoadingAnnexes(false)
@@ -572,60 +535,51 @@ export function ClientTabs({
 
     const codes = [...new Set(caseCodes.map((c) => c.case_code))]
 
-    // Get annexes for these case codes
-    const { data: annexesData } = await supabase
-      .from("case_annexes")
-      .select("id, annexe_name, case_code")
-      .in("case_code", codes)
+    // Parallel query: Get annexes AND documents together
+    const allSubCatIds = [...new Set(allCaseLabels?.map((cl) => cl.sub_category_id) || [])]
+    
+    const [{ data: annexesData }, { data: allDocs }] = await Promise.all([
+      supabase
+        .from("case_annexes")
+        .select("id, annexe_name, case_code")
+        .in("case_code", codes),
+      allSubCatIds.length > 0
+        ? supabase
+            .from("documents_necessaires")
+            .select("id, sub_category_id")
+            .in("sub_category_id", allSubCatIds)
+        : Promise.resolve({ data: null })
+    ])
 
     setAnnexes(annexesData || [])
 
-    // Load completion stats for all annexes in batch
-    if (annexesData && annexesData.length > 0) {
+    // Load completion stats in one final query
+    if (annexesData && annexesData.length > 0 && allDocs && allDocs.length > 0) {
       const statsMap = new Map<number, { completed: number; total: number }>()
+      const allDocIds = allDocs.map((d) => d.id)
       
-      // Get ALL case labels for all case codes in one query
-      const { data: allCaseLabels } = await supabase
-        .from("case_labels")
-        .select("sub_category_id, case_code")
-        .in("case_code", codes)
+      // Final query: Get completed documents
+      const { data: completedDocs } = await supabase
+        .from("boite_envoi_files")
+        .select("document_id")
+        .eq("client_id", client.id)
+        .in("document_id", allDocIds)
+        .eq("status", "uploaded")
       
-      if (allCaseLabels && allCaseLabels.length > 0) {
-        const allSubCatIds = [...new Set(allCaseLabels.map((cl) => cl.sub_category_id))]
+      const completedDocIds = new Set(completedDocs?.map((d) => d.document_id) || [])
+      
+      // Calculate stats from cached data
+      for (const annexe of annexesData) {
+        const annexeSubCats = allCaseLabels
+          ?.filter((cl) => cl.case_code === annexe.case_code)
+          .map((cl) => cl.sub_category_id) || []
         
-        // Get ALL documents for these sub-categories in one query
-        const { data: allDocs } = await supabase
-          .from("documents_necessaires")
-          .select("id, sub_category_id")
-          .in("sub_category_id", allSubCatIds)
+        const annexeDocs = allDocs.filter((d) => annexeSubCats.includes(d.sub_category_id))
+        const totalDocs = annexeDocs.length
+        const completed = annexeDocs.filter((d) => completedDocIds.has(d.id)).length
         
-        if (allDocs && allDocs.length > 0) {
-          const allDocIds = allDocs.map((d) => d.id)
-          
-          // Get ALL completed documents in one query
-          const { data: completedDocs } = await supabase
-            .from("boite_envoi_files")
-            .select("document_id")
-            .eq("client_id", client.id)
-            .in("document_id", allDocIds)
-            .eq("status", "uploaded")
-          
-          const completedDocIds = new Set(completedDocs?.map((d) => d.document_id) || [])
-          
-          // Now calculate stats for each annexe from the batch data
-          for (const annexe of annexesData) {
-            const annexeSubCats = allCaseLabels
-              .filter((cl) => cl.case_code === annexe.case_code)
-              .map((cl) => cl.sub_category_id)
-            
-            const annexeDocs = allDocs.filter((d) => annexeSubCats.includes(d.sub_category_id))
-            const totalDocs = annexeDocs.length
-            const completed = annexeDocs.filter((d) => completedDocIds.has(d.id)).length
-            
-            if (totalDocs > 0) {
-              statsMap.set(annexe.id, { completed, total: totalDocs })
-            }
-          }
+        if (totalDocs > 0) {
+          statsMap.set(annexe.id, { completed, total: totalDocs })
         }
       }
       
