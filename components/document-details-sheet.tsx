@@ -781,7 +781,7 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
                         </div>
                       </div>
                       <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border border-blue-200">
                           Langue détectée :{" "}
                           {languageNames[document.ocr.detectedLanguage!] ||
                             document.ocr.detectedLanguage!.toUpperCase()}{" "}

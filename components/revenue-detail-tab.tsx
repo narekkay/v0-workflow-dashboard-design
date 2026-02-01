@@ -157,7 +157,7 @@ export function RevenueDetailTab({ revenueId, categoryName, allRevenues, onSwitc
               <Badge key={subCat.id} variant="secondary" className="flex items-center gap-1.5">
                 {subCat.nom}
                 {subCat.hasAnnexe && (
-                  <span className="inline-flex items-center justify-center h-4 w-4 rounded border border-red-600 bg-red-50 text-[10px] font-bold text-red-600">
+                  <span className="inline-flex items-center justify-center h-4 w-4 rounded border border-purple-600 bg-purple-50 text-[10px] font-bold text-purple-600">
                     A
                   </span>
                 )}
@@ -186,17 +186,17 @@ export function RevenueDetailTab({ revenueId, categoryName, allRevenues, onSwitc
                   <TableCell className="font-medium">{doc.shortname}</TableCell>
                   <TableCell>
                     {doc.status === "available" ? (
-                      <Badge variant="outline" className="gap-1 bg-green-50 text-green-700 border-green-200">
+                      <Badge variant="outline" className="gap-1 bg-green-50 text-green-700 border border-green-200">
                         <CheckCircle className="h-3 w-3" />
                         Disponible
                       </Badge>
                     ) : doc.status === "pending" ? (
-                      <Badge variant="outline" className="gap-1 bg-yellow-50 text-yellow-700 border-yellow-200">
+                      <Badge variant="outline" className="gap-1 bg-yellow-50 text-yellow-700 border border-yellow-200">
                         <Clock className="h-3 w-3" />
                         En attente
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="gap-1 bg-red-50 text-red-700 border-red-200">
+                      <Badge variant="outline" className="gap-1 bg-red-50 text-red-700 border border-red-200">
                         <XCircle className="h-3 w-3" />
                         Manquant
                       </Badge>
