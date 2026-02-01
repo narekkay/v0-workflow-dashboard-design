@@ -2,6 +2,7 @@
 
 import type React from "react" // ClientTabs component
 import { useState, useEffect } from "react"
+import { useCategoryCache } from "@/hooks/use-category-cache"
 import {
   Home,
   User,
@@ -194,6 +195,7 @@ export function ClientTabs({
 }: ClientTabsProps) {
   const [client, setClient] = useState<Client | null>(initialClient || null)
   const [loadingClient, setLoadingClient] = useState(!initialClient && !!clientId)
+  const { categories: cachedCategories } = useCategoryCache()
   const [revenues, setRevenues] = useState<ClientRevenue[]>([])
   const [categoryNames, setCategoryNames] = useState<Map<number, string>>(new Map())
   const [loadingRevenues, setLoadingRevenues] = useState(true)
@@ -531,11 +533,20 @@ export function ClientTabs({
 
     if (revenuesData.length > 0) {
       const categoryIds = [...new Set(revenuesData.map((r) => r.category_id))]
-
-      const { data: categories } = await supabase.from("categories_revenus").select("id, nom").in("id", categoryIds)
-
-      const catMap = new Map()
-      categories?.forEach((cat) => catMap.set(cat.id, cat.nom))
+      
+      // Use cached categories instead of querying database
+      let catMap = new Map<number, string>()
+      if (cachedCategories) {
+        categoryIds.forEach(id => {
+          const name = cachedCategories.get(id)
+          if (name) catMap.set(id, name)
+        })
+      } else {
+        // Fallback: load from DB if cache not ready (shouldn't happen)
+        const { data: categories } = await supabase.from("categories_revenus").select("id, nom").in("id", categoryIds)
+        categories?.forEach((cat) => catMap.set(cat.id, cat.nom))
+      }
+      
       setCategoryNames(catMap)
 
       // Just add category names - no need to check annexes here (loadAnnexes does it)
