@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Plus, Search, Users, ArrowUpDown, ArrowUp, ArrowDown, MoreVertical, Archive, PanelRight } from "lucide-react"
+import { Plus, Search, Users, ArrowUpDown, ArrowUp, ArrowDown, MoreVertical, Archive, PanelRight, Trash2 } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -105,6 +105,8 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [clientToArchive, setClientToArchive] = useState<Client | null>(null)
   const [showArchiveDialog, setShowArchiveDialog] = useState(false)
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   const handleArchiveClient = async () => {
     if (!clientToArchive) return
@@ -115,6 +117,19 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
     if (!error) {
       setShowArchiveDialog(false)
       setClientToArchive(null)
+      onClientAdded()
+    }
+  }
+
+  const handleDeleteClient = async () => {
+    if (!clientToDelete) return
+
+    const supabase = createClient()
+    const { error } = await supabase.from("clients").delete().eq("id", clientToDelete.id)
+
+    if (!error) {
+      setShowDeleteDialog(false)
+      setClientToDelete(null)
       onClientAdded()
     }
   }
@@ -431,6 +446,19 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
                                 <Archive className="mr-2 h-4 w-4" />
                                 {showArchived ? "Désarchiver" : "Archiver"}
                               </DropdownMenuItem>
+                              {showArchived && (
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setClientToDelete(client)
+                                    setShowDeleteDialog(true)
+                                  }}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Supprimer
+                                </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -463,6 +491,24 @@ export function ClientsTable({ clients, onClientSelect, onClientAdded, onAddClie
               <AlertDialogCancel>Annuler</AlertDialogCancel>
               <AlertDialogAction onClick={handleArchiveClient}>
                 {showArchived ? "Désarchiver" : "Archiver"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Delete Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Supprimer ce client définitivement ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Cette action est irréversible. Le client {clientToDelete?.first_name} {clientToDelete?.last_name} et toutes ses données seront définitivement supprimés de la base de données.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteClient} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Supprimer définitivement
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
