@@ -295,7 +295,7 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
   const ocrStateConfig: Record<string, { label: string; icon: React.ElementType; class: string }> = {
     idle: { label: "En attente", icon: Clock, class: "text-gray-500" },
     running: { label: "En cours", icon: RefreshCw, class: "text-blue-500 animate-spin" },
-    done: { label: "Terminé", icon: CheckCircle2, class: "text-green-500" },
+    done: { label: "Extrait", icon: CheckCircle2, class: "text-green-500" },
     error: { label: "Échec", icon: XCircle, class: "text-red-500" },
   }
 
@@ -303,10 +303,6 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
   const OcrIcon = ocrConfig.icon
 
   const getOcrExtractionSummary = () => {
-    if (document.status === "pending" || document.status === "error" || document.ocr.state !== "done") {
-      return null
-    }
-
     const documentName = document.name.toLowerCase()
     
     // IFU distributions
@@ -348,8 +344,8 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
       }
     }
     
-    // Relevés crédits impôt
-    if (documentName.includes("crédit") || documentName.includes("impôt")) {
+    // Relevés crédits impôt / CESU
+    if (documentName.includes("crédit") || documentName.includes("cesu") || documentName.includes("impôt")) {
       return {
         title: "RÉSUMÉ DE L'EXTRACTION",
         items: [
@@ -361,8 +357,8 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
       }
     }
     
-    // Avis d'opéré et relevé gains
-    if (documentName.includes("avis") || documentName.includes("opéré") || documentName.includes("gains")) {
+    // Avis d'opéré et relevé gains / Trade Republic
+    if (documentName.includes("avis") || documentName.includes("opéré") || documentName.includes("gains") || documentName.includes("trade republic")) {
       return {
         title: "RÉSUMÉ DE L'EXTRACTION",
         items: [
@@ -374,8 +370,8 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
       }
     }
     
-    // Relevés PER capital
-    if (documentName.includes("per") || documentName.includes("capital")) {
+    // Relevés PER capital / SwissLife
+    if (documentName.includes("per") || documentName.includes("swisslife")) {
       return {
         title: "RÉSUMÉ DE L'EXTRACTION",
         items: [
@@ -471,8 +467,8 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Statut OCR</span>
                 <div className="flex items-center gap-2">
-                  <OcrIcon className={cn("h-4 w-4", ocrConfig.class)} />
-                  <span className="text-sm">{ocrConfig.label}</span>
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-green-600 font-medium">Extrait</span>
                 </div>
               </div>
 
@@ -492,31 +488,17 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
                 </div>
               )}
 
-              {document.ocr.state === "done" && document.ocr.extracted && (
+              {extractionSummary && (
                 <>
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
                     <p className="text-sm font-semibold mb-3 text-blue-900">Résumé de l'extraction (OCR)</p>
                     <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-blue-700">Émetteur :</span>
-                        <span className="font-medium text-blue-900">Boursorama Banque</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-blue-700">Montant brut global :</span>
-                        <span className="font-medium text-blue-900">1 250,00 €</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-blue-700">Dividendes éligibles (2AB) :</span>
-                        <span className="font-medium text-blue-900">1 100,00 €</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-blue-700">Prélèvements sociaux déjà payés :</span>
-                        <span className="font-medium text-blue-900">215,00 €</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-blue-700">Crédit d'impôt :</span>
-                        <span className="font-medium text-blue-900">18,50 €</span>
-                      </div>
+                      {extractionSummary.items.map((item, index) => (
+                        <div key={index} className="flex justify-between text-sm">
+                          <span className="text-blue-700">{item.label} :</span>
+                          <span className="font-medium text-blue-900">{item.value}</span>
+                        </div>
+                      ))}
                     </div>
                     {document.ocr.confidenceScore && (
                       <div className="mt-3 pt-3 border-t border-blue-200 flex justify-between text-xs">
@@ -528,17 +510,7 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
                     )}
                   </div>
                   
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <p className="text-xs font-medium mb-2">Données brutes extraites</p>
-                    <div className="space-y-1">
-                      {Object.entries(document.ocr.extracted).map(([key, value]) => (
-                        <div key={key} className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{key}</span>
-                          <span className="font-mono">{String(value)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  
                 </>
               )}
 
@@ -592,58 +564,13 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
             </div>
           </section>
 
-          {/* Résumé de l'extraction (dynamique) */}
-          {extractionSummary && (
-            <>
-              <Separator />
-              <section>
-                <h4 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
-                  {extractionSummary.title}
-                </h4>
-                <div className="space-y-2">
-                  {extractionSummary.items.map((item, index) => (
-                    <div key={index} className="flex justify-between text-sm pl-2">
-                      <span className="text-muted-foreground">{item.label}</span>
-                      <span className="font-medium">{item.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            </>
-          )}
+          {/* Résumé de l'extraction (toujours affiché) */}
+          <>
+            <Separator />
+            
+          </>
 
-          {(document.status === "pending" || !document.ocr.extracted) && (
-            <>
-              <Separator />
-              <section>
-                <h4 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
-                  RÉSUMÉ DE L'EXTRACTION
-                </h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm pl-2">
-                    <span className="text-muted-foreground">Émetteur</span>
-                    <span className="font-medium">Boursorama Banque</span>
-                  </div>
-                  <div className="flex justify-between text-sm pl-2">
-                    <span className="text-muted-foreground">Montant brut global</span>
-                    <span className="font-medium">1 250,00 €</span>
-                  </div>
-                  <div className="flex justify-between text-sm pl-2">
-                    <span className="text-muted-foreground">Dividendes éligibles (2AB)</span>
-                    <span className="font-medium">1 100,00 €</span>
-                  </div>
-                  <div className="flex justify-between text-sm pl-2">
-                    <span className="text-muted-foreground">Prélèvements sociaux déjà payés</span>
-                    <span className="font-medium">215,00 €</span>
-                  </div>
-                  <div className="flex justify-between text-sm pl-2">
-                    <span className="text-muted-foreground">Crédit d'impôt</span>
-                    <span className="font-medium">18,50 €</span>
-                  </div>
-                </div>
-              </section>
-            </>
-          )}
+
 
           {/* Mode expert - Détails techniques */}
           {expertMode && document.ocr.rawJson && (

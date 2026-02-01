@@ -96,29 +96,49 @@ function RevenueFullPageMulti({
   const loadAnnexes = async () => {
     const supabase = createBrowserClient()
     
-    // Query case_labels joined with case_annexes to find subcategories with annexes
-    const { data, error } = await supabase
-      .from("case_labels")
-      .select("sub_category_id, case_code, case_annexes(annexe_name)")
-      .in("sub_category_id", selectedCategoryIds.length > 0 ? 
-        (await supabase
-          .from("categories_revenus_sub")
-          .select("id")
-          .in("category_id", selectedCategoryIds)
-        ).data?.map(s => s.id) || [] : [])
+    // Get all sub-categories for selected categories
+    const { data: subCats } = await supabase
+      .from("categories_revenus_sub")
+      .select("id")
+      .in("category_id", selectedCategoryIds)
     
-    if (error) {
-      console.error("Error loading annexes:", error)
-    } else if (data) {
-      // Filter subcategories that have annexes
-      const subsWithAnnexes = new Set<number>()
-      data.forEach(item => {
-        if (item.case_annexes && item.sub_category_id) {
-          subsWithAnnexes.add(item.sub_category_id)
-        }
-      })
-      setSubCategoriesWithAnnexes(subsWithAnnexes)
+    if (!subCats || subCats.length === 0) {
+      setSubCategoriesWithAnnexes(new Set())
+      return
     }
+
+    const subCatIds = subCats.map(s => s.id)
+    
+    // Get all case codes for these subcategories
+    const { data: caseLabelsData } = await supabase
+      .from("case_labels")
+      .select("sub_category_id, case_code")
+      .in("sub_category_id", subCatIds)
+    
+    if (!caseLabelsData || caseLabelsData.length === 0) {
+      setSubCategoriesWithAnnexes(new Set())
+      return
+    }
+
+    const caseCodes = [...new Set(caseLabelsData.map(cl => cl.case_code))]
+    
+    // Get all annexes for these case codes
+    const { data: annexesData } = await supabase
+      .from("case_annexes")
+      .select("case_code")
+      .in("case_code", caseCodes)
+    
+    // Build set of subcategories that have annexes
+    const annexeCodeSet = new Set(annexesData?.map(a => a.case_code) || [])
+    const subsWithAnnexes = new Set<number>()
+    
+    caseLabelsData.forEach(cl => {
+      if (annexeCodeSet.has(cl.case_code)) {
+        subsWithAnnexes.add(cl.sub_category_id)
+      }
+    })
+    
+    setSubCategoriesWithAnnexes(subsWithAnnexes)
   }
 
   const loadSubBisCategories = async () => {

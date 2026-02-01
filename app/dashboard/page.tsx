@@ -107,10 +107,11 @@ export default function HomePage() {
   }
 
   function handleClientSelect(client: Client) {
-    // If onboarding status is not "confirme", open onboarding tab for validation
-    // This includes: en_attente, soumis, en_revision
+    // If onboarding status is not "confirmed" or "confirme", open onboarding tab for validation
+    // This includes: en_attente, soumis, en_revision, pending, submitted
     const onboardingStatus = client.onboarding_status || "en_attente"
-    if (onboardingStatus !== "confirme") {
+    const isOnboardingConfirmed = onboardingStatus === "confirmed" || onboardingStatus === "confirme"
+    if (!isOnboardingConfirmed) {
       const onboardingTabId = `onboarding-${client.id}`
       const existingOnboardingTab = tabs.find(t => t.id === onboardingTabId)
       
@@ -505,34 +506,35 @@ export default function HomePage() {
                 clientId={activeTab.clientId} 
                 onBack={() => handleCloseTab(activeTab.id)}
                 onStatusChange={async () => {
-                  // Show loading state
                   const currentClientId = activeTab.clientId
                   if (!currentClientId) return
                   
-                  // Close onboarding tab
+                  // Close onboarding tab first
                   handleCloseTab(activeTab.id)
                   
-                  // Small delay for visual feedback
-                  await new Promise(resolve => setTimeout(resolve, 300))
-                  
-                  // Reload client data
+                  // Reload client data from DB to get updated status
                   await loadClientData(currentClientId)
                   
-                  // Find the client to get their name
-                  const client = clients.find(c => c.id === currentClientId)
-                  if (!client) return
+                  // Get the updated client data from clientsData map
+                  const updatedClientData = clientsData.get(currentClientId)
+                  const clientName = updatedClientData?.client 
+                    ? `${updatedClientData.client.first_name} ${updatedClientData.client.last_name}`
+                    : "Client"
                   
                   // Open regular client tab with overview
                   const newTab: Tab = {
                     id: `client-${currentClientId}`,
                     type: "client",
-                    label: `${client.first_name} ${client.last_name}`,
+                    label: clientName,
                     clientId: currentClientId,
                   }
                   
                   setTabs(prev => [...prev, newTab])
                   setActiveTabId(newTab.id)
                   setActiveClientTab("overview")
+                  
+                  // Also refresh the clients list in background
+                  loadClients()
                 }}
               />
             ) : null}

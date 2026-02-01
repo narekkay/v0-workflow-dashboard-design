@@ -234,15 +234,6 @@ export function ClientTabs({
     address: client?.address || "",
     accountant: "",
   })
-
-  // Early return if client is still loading or null
-  if (loadingClient || !client) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-      </div>
-    )
-  }
   const [editedSpouse, setEditedSpouse] = useState({
     first_name: "",
     last_name: "",
@@ -271,26 +262,31 @@ export function ClientTabs({
   const mockDocumentRequests: DocumentRequest[] = [
     {
       id: "1",
-      name: "Avis d'imposition 2023",
+      name: "IFU distributions 2024",
       lastRequestAt: "2024-01-15",
-      status: "pending",
-      requiredAction: "Attente du document",
-      isBlocking: true,
-      criticality: "blocking",
+      status: "validated",
+      isBlocking: false,
+      criticality: "important",
       origin: "auto",
-      revenueSubcategoryLabel: "Revenus fonciers",
-      impactedCases: ["4BA", "4BB", "4BC"],
-      ocr: { state: "idle" },
+      revenueSubcategoryLabel: "Revenus de capitaux mobiliers",
+      impactedCases: ["2AB", "2CK"],
+      ocr: {
+        state: "done",
+        extracted: { "Émetteur": "Boursorama Banque", "Revenus d'actions (2AB)": "1 250,00 €", "Prélèvement forfaitaire (2CK)": "160,00 €", "Crédit d'impôt": "12,40 €" },
+        confidenceScore: 0.97,
+      },
       history: [
         { date: "2024-01-15", action: "Demande créée", user: "Système" },
-        { date: "2024-01-20", action: "Relance envoyée", user: "Marie D." },
+        { date: "2024-01-18", action: "Document reçu", user: "Client" },
+        { date: "2024-01-18", action: "OCR terminé", user: "Système" },
+        { date: "2024-01-19", action: "Validé", user: "Marie D." },
       ],
     },
     {
       id: "2",
-      name: "Relevé de compte titre",
+      name: "IFU retenue libératoire 2024",
       lastRequestAt: "2024-01-10",
-      status: "received",
+      status: "validated",
       isBlocking: false,
       criticality: "important",
       origin: "auto",
@@ -298,60 +294,109 @@ export function ClientTabs({
       impactedCases: ["2TR", "2BH"],
       ocr: {
         state: "done",
-        extracted: { "Plus-values": "12 450 €", Dividendes: "3 200 €", Période: "2023" },
-        confidenceScore: 0.92,
-        rawJson: { raw: "data", confidence: 0.92, fields: ["plus_values", "dividendes"] },
+        extracted: { "Émetteur": "Fortuneo", "Produits placement taux fixe": "840,00 €", "Retenue source": "201,60 €", "Prélèvements sociaux": "144,48 €" },
+        confidenceScore: 0.95,
       },
       history: [
         { date: "2024-01-10", action: "Demande créée", user: "Système" },
-        { date: "2024-01-18", action: "Document reçu", user: "Client" },
-        { date: "2024-01-18", action: "OCR terminé", user: "Système" },
-      ],
-    },
-    {
-      id: "3",
-      name: "Attestation employeur",
-      lastRequestAt: "2024-01-12",
-      status: "error",
-      isBlocking: true,
-      criticality: "blocking",
-      origin: "manual",
-      revenueSubcategoryLabel: "Traitements et salaires",
-      impactedCases: ["1AJ", "1BJ"],
-      ocr: { state: "error" },
-      history: [
-        { date: "2024-01-12", action: "Demande créée", user: "Marie D." },
-        { date: "2024-01-22", action: "Document reçu", user: "Client" },
-        { date: "2024-01-22", action: "Échec OCR", user: "Système" },
-      ],
-    },
-    {
-      id: "4",
-      name: "Justificatif don association",
-      lastRequestAt: "2024-01-08",
-      status: "validated",
-      isBlocking: false,
-      criticality: "accessory",
-      origin: "annex",
-      revenueSubcategoryLabel: "Réductions d'impôt",
-      impactedCases: ["7UF"],
-      ocr: {
-        state: "done",
-        extracted: { Montant: "500 €", Association: "Restos du Coeur" },
-        confidenceScore: 0.98,
-      },
-      history: [
-        { date: "2024-01-08", action: "Demande créée", user: "Système" },
         { date: "2024-01-14", action: "Document reçu", user: "Client" },
         { date: "2024-01-14", action: "OCR terminé", user: "Système" },
         { date: "2024-01-15", action: "Validé", user: "Marie D." },
       ],
     },
     {
+      id: "3",
+      name: "Justificatif frais déplacement SNCF",
+      lastRequestAt: "2024-01-12",
+      status: "validated",
+      isBlocking: false,
+      criticality: "accessory",
+      origin: "manual",
+      revenueSubcategoryLabel: "Frais réels",
+      impactedCases: ["1AK"],
+      ocr: {
+        state: "done",
+        extracted: { "Type": "Frais de déplacement (SNCF)", "Date": "12/11/2025", "Montant TTC": "142,00 €", "TVA déductible": "12,90 €" },
+        confidenceScore: 0.94,
+      },
+      history: [
+        { date: "2024-01-12", action: "Demande créée", user: "Marie D." },
+        { date: "2024-01-16", action: "Document reçu", user: "Client" },
+        { date: "2024-01-16", action: "OCR terminé", user: "Système" },
+        { date: "2024-01-17", action: "Validé", user: "Marie D." },
+      ],
+    },
+    {
+      id: "4",
+      name: "Relevé crédit impôt CESU 2024",
+      lastRequestAt: "2024-01-08",
+      status: "validated",
+      isBlocking: false,
+      criticality: "important",
+      origin: "auto",
+      revenueSubcategoryLabel: "Crédits d'impôt",
+      impactedCases: ["7DB", "7DQ"],
+      ocr: {
+        state: "done",
+        extracted: { "Organisme": "URSSAF / CESU", "Nature": "Emploi d'un salarié à domicile", "Total versé 2025": "3 600,00 €", "Avantage fiscal (50%)": "1 800,00 €" },
+        confidenceScore: 0.96,
+      },
+      history: [
+        { date: "2024-01-08", action: "Demande créée", user: "Système" },
+        { date: "2024-01-12", action: "Document reçu", user: "Client" },
+        { date: "2024-01-12", action: "OCR terminé", user: "Système" },
+        { date: "2024-01-13", action: "Validé", user: "Marie D." },
+      ],
+    },
+    {
       id: "5",
+      name: "Avis d'opéré Trade Republic 2024",
+      lastRequestAt: "2024-01-06",
+      status: "validated",
+      isBlocking: false,
+      criticality: "important",
+      origin: "auto",
+      revenueSubcategoryLabel: "Plus-values mobilières",
+      impactedCases: ["3VG", "3VH"],
+      ocr: {
+        state: "done",
+        extracted: { "Plateforme": "Trade Republic", "Opération": "Vente d'actifs (ETP/Actions)", "Plus-value brute": "2 140,50 €", "Total net imposable": "2 140,50 €" },
+        confidenceScore: 0.93,
+      },
+      history: [
+        { date: "2024-01-06", action: "Demande créée", user: "Système" },
+        { date: "2024-01-10", action: "Document reçu", user: "Client" },
+        { date: "2024-01-10", action: "OCR terminé", user: "Système" },
+        { date: "2024-01-11", action: "Validé", user: "Marie D." },
+      ],
+    },
+    {
+      id: "6",
+      name: "Relevé PER capital SwissLife 2024",
+      lastRequestAt: "2024-01-04",
+      status: "validated",
+      isBlocking: false,
+      criticality: "important",
+      origin: "auto",
+      revenueSubcategoryLabel: "Épargne retraite",
+      impactedCases: ["6NS"],
+      ocr: {
+        state: "done",
+        extracted: { "Assureur": "SwissLife", "Versements déductibles (6NS)": "4 500,00 €", "Économie d'impôt": "1 350,00 €", "Solde actuel": "18 230,15 €" },
+        confidenceScore: 0.97,
+      },
+      history: [
+        { date: "2024-01-04", action: "Demande créée", user: "Système" },
+        { date: "2024-01-08", action: "Document reçu", user: "Client" },
+        { date: "2024-01-08", action: "OCR terminé", user: "Système" },
+        { date: "2024-01-09", action: "Validé", user: "Marie D." },
+      ],
+    },
+    {
+      id: "7",
       name: "UK Employment Certificate",
       lastRequestAt: "2024-01-20",
-      status: "received",
+      status: "validated",
       isBlocking: false,
       criticality: "important",
       origin: "manual",
@@ -381,6 +426,7 @@ export function ClientTabs({
         { date: "2024-01-20", action: "Demande créée", user: "Marie D." },
         { date: "2024-01-25", action: "Document reçu", user: "Client" },
         { date: "2024-01-25", action: "OCR terminé (EN détecté)", user: "Système" },
+        { date: "2024-01-26", action: "Validé", user: "Marie D." },
       ],
     },
   ]
@@ -427,12 +473,24 @@ export function ClientTabs({
 
   useEffect(() => {
     if (client?.id) {
-      loadRevenues()
-      loadOutboxFiles()
-      loadClientFiles()
-      loadAnnexes()
+      // Load all data in parallel for faster loading
+      Promise.all([
+        loadRevenues(),
+        loadOutboxFiles(),
+        loadClientFiles(),
+        loadAnnexes()
+      ])
     }
   }, [client?.id])
+
+  // Early return AFTER all hooks - this is critical for React hook rules
+  if (loadingClient || !client) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    )
+  }
 
   async function loadClient() {
     if (!clientId) return
@@ -454,6 +512,7 @@ export function ClientTabs({
   }
 
   async function loadRevenues() {
+    if (!client?.id) return
     const supabase = createBrowserClient()
 
     const { data: revenuesData, error } = await supabase
@@ -469,52 +528,50 @@ export function ClientTabs({
 
     if (revenuesData && revenuesData.length > 0) {
       const categoryIds = [...new Set(revenuesData.map((r) => r.category_id))]
+      const allSubCategoryIds = [...new Set(revenuesData.flatMap((r) => r.sub_category_ids || []))]
 
-      const { data: categories } = await supabase.from("categories_revenus").select("id, nom").in("id", categoryIds)
+      // Batch load all required data in parallel
+      const [categoriesResult, caseLabelsResult, annexesResult] = await Promise.all([
+        supabase.from("categories_revenus").select("id, nom").in("id", categoryIds),
+        allSubCategoryIds.length > 0 
+          ? supabase.from("case_labels").select("sub_category_id, case_code").in("sub_category_id", allSubCategoryIds)
+          : Promise.resolve({ data: [] }),
+        Promise.resolve({ data: [] as { case_code: string }[] }) // Will be loaded after we have case codes
+      ])
 
       const catMap = new Map()
-      categories?.forEach((cat) => catMap.set(cat.id, cat.nom))
+      categoriesResult.data?.forEach((cat) => catMap.set(cat.id, cat.nom))
       setCategoryNames(catMap)
 
-      const revenuesWithNames = await Promise.all(
-        revenuesData.map(async (r) => {
-          let hasAnnexe = false
+      // Get all unique case codes and check which have annexes
+      const allCaseCodes = [...new Set(caseLabelsResult.data?.map((cl) => cl.case_code) || [])]
+      let annexeCodesSet = new Set<string>()
+      
+      if (allCaseCodes.length > 0) {
+        const { data: annexesData } = await supabase
+          .from("case_annexes")
+          .select("case_code")
+          .in("case_code", allCaseCodes)
+        annexeCodesSet = new Set(annexesData?.map((a) => a.case_code) || [])
+      }
 
-          console.log(
-            `[v0] Checking annexe for client ${client.id}, category ${r.category_id}, sub_category_ids:`,
-            r.sub_category_ids,
-          )
+      // Build a map of sub_category_id -> hasAnnexe
+      const subCatAnnexeMap = new Map<number, boolean>()
+      caseLabelsResult.data?.forEach((cl) => {
+        if (annexeCodesSet.has(cl.case_code)) {
+          subCatAnnexeMap.set(cl.sub_category_id, true)
+        }
+      })
 
-          if (r.sub_category_ids && r.sub_category_ids.length > 0) {
-            // Get case codes for these sub-categories
-            const { data: caseCodes } = await supabase
-              .from("case_labels")
-              .select("case_code")
-              .in("sub_category_id", r.sub_category_ids)
-
-            console.log(`[v0] Found case codes for sub-categories:`, caseCodes)
-
-            if (caseCodes && caseCodes.length > 0) {
-              const codes = caseCodes.map((c) => c.case_code)
-
-              // Check if any of these case codes have annexes
-              const { data: annexes } = await supabase.from("case_annexes").select("id").in("case_code", codes).limit(1)
-
-              console.log(`[v0] Found annexes for case codes:`, annexes)
-
-              hasAnnexe = !!annexes && annexes.length > 0
-            }
-          }
-
-          console.log(`[v0] Final hasAnnexe value for category ${r.category_id}:`, hasAnnexe)
-
-          return {
-            ...r,
-            categoryName: catMap.get(r.category_id) || `Catégorie ${r.category_id}`,
-            hasAnnexe,
-          }
-        }),
-      )
+      // Map revenues with category names and annexe flags
+      const revenuesWithNames = revenuesData.map((r) => {
+        const hasAnnexe = (r.sub_category_ids || []).some((id: number) => subCatAnnexeMap.get(id))
+        return {
+          ...r,
+          categoryName: catMap.get(r.category_id) || `Catégorie ${r.category_id}`,
+          hasAnnexe,
+        }
+      })
 
       setRevenues(revenuesWithNames)
     } else {
@@ -525,6 +582,7 @@ export function ClientTabs({
   }
 
   async function loadAnnexes() {
+    if (!client?.id) return
     setLoadingAnnexes(true)
     const supabase = createBrowserClient()
 
@@ -675,8 +733,7 @@ export function ClientTabs({
       )
       .order("sent_at", { ascending: false })
 
-    console.log("[v0] Outbox files with last_requested_at:", outboxFiles)
-    console.log("[v0] Sent history:", sentHistory)
+
 
     const statusMap = new Map<number, { status: "en_attente" | "uploaded"; last_requested_at: string }>()
     outboxFiles?.forEach((file) => {
@@ -698,13 +755,6 @@ export function ClientTabs({
       const lastSentDate = historyMap.get(doc.id)
 
       const lastRequestedAt = fileData?.last_requested_at || lastSentDate
-
-      console.log(`[v0] Document ${doc.id} (${doc.shortname}):`, {
-        status: fileData?.status || null,
-        last_requested_at: lastRequestedAt,
-        from_outbox: !!fileData?.last_requested_at,
-        from_history: !!lastSentDate,
-      })
 
       return {
         id: doc.id,
@@ -808,6 +858,7 @@ export function ClientTabs({
   }
 
   async function loadOutboxFiles() {
+    if (!client?.id) return
     const supabase = createBrowserClient()
     const { data, error } = await supabase
       .from("boite_envoi_files")
@@ -824,6 +875,7 @@ export function ClientTabs({
   }
 
   async function loadClientFiles() {
+    if (!client?.id) return
     const supabase = createBrowserClient()
     
     // Load from client_files, documents, and conventions tables
@@ -3156,7 +3208,6 @@ export function ClientTabs({
               className="w-full bg-transparent"
               variant="outline"
               onClick={() => {
-                console.log("[v0] Scan button clicked")
                 // TODO: Implement scan logic
               }}
             >
@@ -3181,10 +3232,6 @@ export function ClientTabs({
             </Button>
             <Button
               onClick={() => {
-                console.log("[v0] Creating declaration:", {
-                  name: newDeclarationName,
-                  file: newDeclarationFile?.name,
-                })
                 // TODO: Implement save logic
                 setNewDeclarationModalOpen(false)
                 setNewDeclarationName("")

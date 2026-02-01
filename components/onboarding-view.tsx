@@ -41,7 +41,7 @@ import { ClientTabs } from "./client-tabs"
 interface OnboardingViewProps {
   clientId: string
   onBack?: () => void
-  onStatusChange?: () => void
+  onStatusChange?: () => void | Promise<void>
 }
 
 type OnboardingStatus = "pending" | "submitted" | "confirmed" | "en_attente" | "soumis" | "en_revision" | "confirme"
@@ -123,12 +123,13 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
       setShowConfirmDialog(false)
       setConfirmNotes("")
       
-      // Trigger tab reload with loading animation
+      // Trigger tab switch to regular client view
       if (onStatusChange) {
-        onStatusChange()
+        await onStatusChange()
       }
     } catch (error) {
       console.error("Erreur confirmation:", error)
+    } finally {
       setIsSubmitting(false)
     }
   }
