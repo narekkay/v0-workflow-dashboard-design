@@ -66,9 +66,9 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
   const [confirmNotes, setConfirmNotes] = useState("")
   const [editNotes, setEditNotes] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [documents, setDocuments] = useState<Array<{ id: string; name: string; uploaded_at: string; status: string }>>([])
+  const [documents, setDocuments] = useState<Array<{ id: string; name: string; uploaded_at: string; status: string; url?: string; type?: string }>>([])
   const [loadingDocuments, setLoadingDocuments] = useState(true)
-  const [selectedDocument, setSelectedDocument] = useState<{ id: string; name: string; uploaded_at: string; status: string } | null>(null)
+  const [selectedDocument, setSelectedDocument] = useState<{ id: string; name: string; uploaded_at: string; status: string; url?: string; type?: string } | null>(null)
   const [showDocumentViewer, setShowDocumentViewer] = useState(false)
 
   const loadClient = async () => {
@@ -92,7 +92,7 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
     const supabase = createBrowserClient()
     const { data, error } = await supabase
       .from("fichiers_onboarding")
-      .select("id, nom_fichier, uploaded_at, statut")
+      .select("id, nom_fichier, uploaded_at, statut, url_stockage, type_mime")
       .eq("client_id", clientId)
       .order("uploaded_at", { ascending: false })
 
@@ -103,7 +103,9 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
         id: d.id, 
         name: d.nom_fichier, 
         uploaded_at: d.uploaded_at,
-        status: d.statut 
+        status: d.statut,
+        url: d.url_stockage,
+        type: d.type_mime
       })))
     }
     setLoadingDocuments(false)
@@ -763,12 +765,51 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
                   </Badge>
                 </div>
               </div>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-900">
-                  <AlertCircle className="h-4 w-4 inline mr-2" />
-                  Le fichier est stocké dans la base de données. Pour visualiser le contenu, implémentez la récupération depuis la colonne <code className="bg-blue-100 px-1 rounded">url_stockage</code> de la table <code className="bg-blue-100 px-1 rounded">fichiers_onboarding</code>.
-                </p>
-              </div>
+              
+              {selectedDocument.url && selectedDocument.type ? (
+                <div className="border rounded-lg overflow-hidden bg-white">
+                  {selectedDocument.type === "application/pdf" ? (
+                    <iframe
+                      src={selectedDocument.url}
+                      className="w-full h-[500px]"
+                      title={selectedDocument.name}
+                    />
+                  ) : selectedDocument.type.startsWith("image/") ? (
+                    <img
+                      src={selectedDocument.url}
+                      alt={selectedDocument.name}
+                      className="w-full h-auto max-h-[500px] object-contain"
+                    />
+                  ) : (
+                    <div className="p-8 text-center">
+                      <File className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground">
+                        Aperçu non disponible pour ce type de fichier ({selectedDocument.type})
+                      </p>
+                      <Button
+                        variant="outline"
+                        className="mt-4"
+                        onClick={() => {
+                          const link = document.createElement('a')
+                          link.href = selectedDocument.url!
+                          link.download = selectedDocument.name
+                          link.click()
+                        }}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Télécharger
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <p className="text-sm text-amber-900">
+                    <AlertCircle className="h-4 w-4 inline mr-2" />
+                    Aucun contenu disponible pour ce document.
+                  </p>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>
