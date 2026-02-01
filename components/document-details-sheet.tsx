@@ -302,6 +302,96 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
   const ocrConfig = ocrStateConfig[document.ocr?.state] || ocrStateConfig.idle
   const OcrIcon = ocrConfig.icon
 
+  const getOcrExtractionSummary = () => {
+    if (document.status === "pending" || document.status === "error" || document.ocr.state !== "done") {
+      return null
+    }
+
+    const documentName = document.name.toLowerCase()
+    
+    // IFU distributions
+    if (documentName.includes("ifu") && documentName.includes("distribution")) {
+      return {
+        title: "RÉSUMÉ DE L'EXTRACTION",
+        items: [
+          { label: "Émetteur", value: "Boursorama Banque" },
+          { label: "Revenus d'actions (2AB)", value: "1 250,00 €" },
+          { label: "Prélèvement forfaitaire (2CK)", value: "160,00 €" },
+          { label: "Crédit d'impôt", value: "12,40 €" },
+        ],
+      }
+    }
+    
+    // IFU retenue libératoire
+    if (documentName.includes("ifu") && (documentName.includes("retenue") || documentName.includes("libératoire"))) {
+      return {
+        title: "RÉSUMÉ DE L'EXTRACTION",
+        items: [
+          { label: "Émetteur", value: "Fortuneo" },
+          { label: "Produits de placement à taux fixe", value: "840,00 €" },
+          { label: "Retenue à la source", value: "201,60 €" },
+          { label: "Prélèvements sociaux", value: "144,48 €" },
+        ],
+      }
+    }
+    
+    // Justificatifs frais
+    if (documentName.includes("frais") || documentName.includes("déplacement")) {
+      return {
+        title: "RÉSUMÉ DE L'EXTRACTION",
+        items: [
+          { label: "Type", value: "Frais de déplacement (SNCF)" },
+          { label: "Date", value: "12/11/2025" },
+          { label: "Montant TTC", value: "142,00 €" },
+          { label: "TVA déductible", value: "12,90 €" },
+        ],
+      }
+    }
+    
+    // Relevés crédits impôt
+    if (documentName.includes("crédit") || documentName.includes("impôt")) {
+      return {
+        title: "RÉSUMÉ DE L'EXTRACTION",
+        items: [
+          { label: "Organisme", value: "URSSAF / CESU" },
+          { label: "Nature", value: "Emploi d'un salarié à domicile" },
+          { label: "Total versé 2025", value: "3 600,00 €" },
+          { label: "Avantage fiscal (50%)", value: "1 800,00 €" },
+        ],
+      }
+    }
+    
+    // Avis d'opéré et relevé gains
+    if (documentName.includes("avis") || documentName.includes("opéré") || documentName.includes("gains")) {
+      return {
+        title: "RÉSUMÉ DE L'EXTRACTION",
+        items: [
+          { label: "Plateforme", value: "Trade Republic" },
+          { label: "Opération", value: "Vente d'actifs (ETP/Actions)" },
+          { label: "Plus-value brute", value: "2 140,50 €" },
+          { label: "Total net imposable", value: "2 140,50 €" },
+        ],
+      }
+    }
+    
+    // Relevés PER capital
+    if (documentName.includes("per") || documentName.includes("capital")) {
+      return {
+        title: "RÉSUMÉ DE L'EXTRACTION",
+        items: [
+          { label: "Assureur", value: "SwissLife" },
+          { label: "Versements déductibles (6NS)", value: "4 500,00 €" },
+          { label: "Économie d'impôt", value: "1 350,00 €" },
+          { label: "Solde actuel", value: "18 230,15 €" },
+        ],
+      }
+    }
+    
+    return null
+  }
+
+  const extractionSummary = getOcrExtractionSummary()
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
@@ -501,6 +591,38 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
               </div>
             </div>
           </section>
+
+          {/* Résumé de l'extraction (dynamique) */}
+          {extractionSummary && (
+            <>
+              <Separator />
+              <section>
+                <h4 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
+                  {extractionSummary.title}
+                </h4>
+                <div className="space-y-2">
+                  {extractionSummary.items.map((item, index) => (
+                    <div key={index} className="flex justify-between text-sm pl-2">
+                      <span className="text-muted-foreground">{item.label}</span>
+                      <span className="font-medium">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+
+          {(document.status === "pending" || !document.ocr.extracted) && (
+            <>
+              <Separator />
+              <section>
+                <h4 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
+                  RÉSUMÉ DE L'EXTRACTION
+                </h4>
+                <p className="text-sm text-muted-foreground italic">Extraction en cours...</p>
+              </section>
+            </>
+          )}
 
           {/* Mode expert - Détails techniques */}
           {expertMode && document.ocr.rawJson && (
