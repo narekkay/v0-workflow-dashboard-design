@@ -87,12 +87,15 @@ export default function HomePage() {
   }
 
   async function loadClientData(clientId: string) {
+    const t0 = performance.now()
     const supabase = createClient()
     const [{ data: clientData }, { data: profiles }, { data: docs }] = await Promise.all([
       supabase.from("clients").select("*").eq("id", clientId).single(),
       supabase.from("tax_profiles").select("*").eq("client_id", clientId),
       supabase.from("documents").select("*").eq("client_id", clientId),
     ])
+    const t1 = performance.now()
+    console.log(`[v0] loadClientData: ${(t1-t0).toFixed(0)}ms | profiles: ${profiles?.length || 0}, docs: ${docs?.length || 0}`)
 
     if (clientData) {
       setClientsData((prev) => {
@@ -108,6 +111,10 @@ export default function HomePage() {
   }
 
   function handleClientSelect(client: Client) {
+    const clientName = `${client.first_name} ${client.last_name}`
+    console.log(`[v0] ========== CLIENT: ${clientName} ==========`)
+    performance.mark(`client-${client.id}-start`)
+    
     // If onboarding status is not "confirme", open onboarding tab for validation
     // This includes: en_attente, soumis, en_revision
     const onboardingStatus = client.onboarding_status || "en_attente"

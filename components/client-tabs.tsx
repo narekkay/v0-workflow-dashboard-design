@@ -456,15 +456,13 @@ export function ClientTabs({
   }
 
   async function loadRevenues() {
+    const t0 = performance.now()
+    setLoadingRevenues(true)
     const supabase = createBrowserClient()
 
-    const { data: revenuesData, error } = await supabase
-      .from("client_revenues")
-      .select("*")
-      .eq("client_id", client.id)
-      .order("category_id", { ascending: true })
+    const { data: revenuesData } = await supabase.from("client_revenues").select("*").eq("client_id", client.id)
 
-    if (error) {
+    if (!revenuesData) {
       setLoadingRevenues(false)
       return
     }
@@ -490,10 +488,13 @@ export function ClientTabs({
       setRevenues(revenuesData || [])
     }
 
+    const t1 = performance.now()
+    console.log(`[v0] loadRevenues: ${(t1-t0).toFixed(0)}ms | count: ${revenuesData.length}, categories: ${categoryIds?.length || 0}`)
     setLoadingRevenues(false)
   }
 
   async function loadAnnexes() {
+    const t0 = performance.now()
     setLoadingAnnexes(true)
     const supabase = createBrowserClient()
 
@@ -586,6 +587,8 @@ export function ClientTabs({
       setAnnexeCompletionStats(statsMap)
     }
 
+    const t1 = performance.now()
+    console.log(`[v0] loadAnnexes: ${(t1-t0).toFixed(0)}ms | subCats: ${allSubCategoryIds.length}, annexes: ${annexesData?.length || 0}`)
     setLoadingAnnexes(false)
   }
 
@@ -774,6 +777,7 @@ export function ClientTabs({
   }
 
   async function loadOutboxFiles() {
+    const t0 = performance.now()
     const supabase = createBrowserClient()
     const { data, error } = await supabase
       .from("boite_envoi_files")
@@ -787,9 +791,12 @@ export function ClientTabs({
     }
 
     setOutboxFiles(data || [])
+    const t1 = performance.now()
+    console.log(`[v0] loadOutboxFiles: ${(t1-t0).toFixed(0)}ms | count: ${data?.length || 0}`)
   }
 
   async function loadClientFiles() {
+    const t0 = performance.now()
     const supabase = createBrowserClient()
     
     // Load from client_files, documents, and conventions tables
@@ -842,6 +849,8 @@ export function ClientTabs({
     ]
 
     setClientFiles(allFiles)
+    const t1 = performance.now()
+    console.log(`[v0] loadClientFiles: ${(t1-t0).toFixed(0)}ms | total files: ${allFiles.length}`)
   }
 
   async function handleDeleteOutboxFile(fileId: string) {
