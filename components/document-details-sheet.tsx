@@ -403,25 +403,53 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
               )}
 
               {document.ocr.state === "done" && document.ocr.extracted && (
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-xs font-medium mb-2">Données extraites</p>
-                  <div className="space-y-1">
-                    {Object.entries(document.ocr.extracted).map(([key, value]) => (
-                      <div key={key} className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{key}</span>
-                        <span className="font-mono">{String(value)}</span>
+                <>
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm font-semibold mb-3 text-blue-900">Résumé de l'extraction (OCR)</p>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-blue-700">Émetteur :</span>
+                        <span className="font-medium text-blue-900">Boursorama Banque</span>
                       </div>
-                    ))}
-                  </div>
-                  {document.ocr.confidenceScore && (
-                    <div className="mt-2 pt-2 border-t flex justify-between text-xs">
-                      <span className="text-muted-foreground">Confiance</span>
-                      <span className={document.ocr.confidenceScore > 0.8 ? "text-green-600" : "text-orange-600"}>
-                        {Math.round(document.ocr.confidenceScore * 100)}%
-                      </span>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-blue-700">Montant brut global :</span>
+                        <span className="font-medium text-blue-900">1 250,00 €</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-blue-700">Dividendes éligibles (2AB) :</span>
+                        <span className="font-medium text-blue-900">1 100,00 €</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-blue-700">Prélèvements sociaux déjà payés :</span>
+                        <span className="font-medium text-blue-900">215,00 €</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-blue-700">Crédit d'impôt :</span>
+                        <span className="font-medium text-blue-900">18,50 €</span>
+                      </div>
                     </div>
-                  )}
-                </div>
+                    {document.ocr.confidenceScore && (
+                      <div className="mt-3 pt-3 border-t border-blue-200 flex justify-between text-xs">
+                        <span className="text-blue-700">Confiance globale</span>
+                        <span className={document.ocr.confidenceScore > 0.8 ? "text-green-600 font-semibold" : "text-orange-600 font-semibold"}>
+                          {Math.round(document.ocr.confidenceScore * 100)}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <p className="text-xs font-medium mb-2">Données brutes extraites</p>
+                    <div className="space-y-1">
+                      {Object.entries(document.ocr.extracted).map(([key, value]) => (
+                        <div key={key} className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">{key}</span>
+                          <span className="font-mono">{String(value)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
               )}
 
               {document.ocr.state === "error" && (
