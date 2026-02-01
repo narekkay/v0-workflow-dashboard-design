@@ -1,13 +1,28 @@
 "use client"
 
 import { useState } from "react"
+import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
 import { ZoomIn, ZoomOut, Download, Maximize2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
+
+// Dynamic import for SSR safety
+const PDFViewer = dynamic(() => import("@/components/pdf-viewer").then(mod => ({ default: mod.PDFViewer })), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center py-12">
+      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <span className="ml-2 text-muted-foreground">Chargement...</span>
+    </div>
+  ),
+})
 
 interface Form2042ViewProps {
   clientId: string
   clientName: string
 }
+
+const PDF_URL = "/documents/2042_5122.pdf"
 
 export function Form2042View({ clientId, clientName }: Form2042ViewProps) {
   const [zoom, setZoom] = useState(100)
@@ -16,12 +31,12 @@ export function Form2042View({ clientId, clientName }: Form2042ViewProps) {
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 25, 50))
   const handleDownload = () => {
     const link = document.createElement('a')
-    link.href = '/documents/2042_5122.pdf'
+    link.href = PDF_URL
     link.download = '2042_5122.pdf'
     link.click()
   }
   const handleFullscreen = () => {
-    window.open('/documents/2042_5122.pdf', '_blank')
+    window.open(PDF_URL, '_blank')
   }
 
   return (
@@ -51,35 +66,7 @@ export function Form2042View({ clientId, clientName }: Form2042ViewProps) {
       
       {/* PDF Viewer */}
       <div className="flex-1 overflow-auto p-6 bg-muted/30">
-        <div 
-          className="mx-auto bg-white shadow-lg rounded-lg overflow-hidden"
-          style={{ 
-            width: `${zoom}%`,
-            maxWidth: '100%',
-            transition: 'width 0.2s ease-in-out'
-          }}
-        >
-          <object
-            data="/documents/2042_5122.pdf#toolbar=0&navpanes=0&scrollbar=1"
-            type="application/pdf"
-            className="w-full border-0"
-            style={{ height: 'calc(100vh - 180px)', minHeight: '800px' }}
-          >
-            <iframe
-              src="/documents/2042_5122.pdf"
-              className="w-full border-0"
-              style={{ height: 'calc(100vh - 180px)', minHeight: '800px' }}
-              title="Formulaire 2042"
-            >
-              <p className="p-4 text-center text-muted-foreground">
-                Votre navigateur ne supporte pas l'affichage de PDF. 
-                <a href="/documents/2042_5122.pdf" target="_blank" className="text-primary underline ml-1">
-                  Cliquez ici pour télécharger le PDF
-                </a>
-              </p>
-            </iframe>
-          </object>
-        </div>
+        <PDFViewer pdfUrl={PDF_URL} zoom={zoom} />
       </div>
     </div>
   )
