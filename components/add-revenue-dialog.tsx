@@ -223,6 +223,40 @@ function RevenueFullPageMulti({
       
       console.log("[v0] Categories saved successfully")
       
+      // Now add required documents to boite d'envoi
+      const allSelectedIds = [...allSubCategoryIds, ...allSubBisCategoryIds]
+      console.log("[v0] Finding documents for categories:", allSelectedIds)
+      
+      // Get documents associated with these subcategories
+      const { data: documents, error: docError } = await supabase
+        .from("documents_necessaires")
+        .select("id, nom")
+        .or(allSelectedIds.map(id => `sub_category_ids.cs.{${id}}`).join(","))
+      
+      if (docError) {
+        console.error("[v0] Error fetching documents:", docError)
+      } else if (documents && documents.length > 0) {
+        console.log("[v0] Found documents to add:", documents)
+        
+        // Insert documents into boite_envoi_files
+        const boiteInserts = documents.map(doc => ({
+          client_id: clientId,
+          file_name: doc.nom,
+          document_id: doc.id,
+          status: "en_attente"
+        }))
+        
+        const { error: boiteError } = await supabase
+          .from("boite_envoi_files")
+          .insert(boiteInserts)
+        
+        if (boiteError) {
+          console.error("[v0] Error adding to boite d'envoi:", boiteError)
+        } else {
+          console.log("[v0] Documents added to boite d'envoi successfully")
+        }
+      }
+      
       if (onSuccess) onSuccess()
       onClose()
     } catch (error) {
