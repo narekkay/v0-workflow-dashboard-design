@@ -536,7 +536,7 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
               <Button 
                 variant="outline"
                 className="w-full justify-start"
-                onClick={() => window.open(`/onboarding/${clientId}`, "_blank")}
+                onClick={() => window.open(`/onboarding/${client?.id}`, "_blank")}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Ouvrir le formulaire client
