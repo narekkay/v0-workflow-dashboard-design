@@ -550,7 +550,7 @@ export default function OnboardingPage() {
       case "documents":
         return uploadedFiles.length > 0
       case "summary":
-        return canSubmit
+        return formData.accuracy && formData.processing
       default:
         return false
     }
