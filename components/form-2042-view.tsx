@@ -59,12 +59,26 @@ export function Form2042View({ clientId, clientName }: Form2042ViewProps) {
             transition: 'width 0.2s ease-in-out'
           }}
         >
-          <embed
-            src="/documents/2042_5122.pdf#toolbar=0"
+          <object
+            data="/documents/2042_5122.pdf#toolbar=0&navpanes=0&scrollbar=1"
             type="application/pdf"
             className="w-full border-0"
             style={{ height: 'calc(100vh - 180px)', minHeight: '800px' }}
-          />
+          >
+            <iframe
+              src="/documents/2042_5122.pdf"
+              className="w-full border-0"
+              style={{ height: 'calc(100vh - 180px)', minHeight: '800px' }}
+              title="Formulaire 2042"
+            >
+              <p className="p-4 text-center text-muted-foreground">
+                Votre navigateur ne supporte pas l'affichage de PDF. 
+                <a href="/documents/2042_5122.pdf" target="_blank" className="text-primary underline ml-1">
+                  Cliquez ici pour télécharger le PDF
+                </a>
+              </p>
+            </iframe>
+          </object>
         </div>
       </div>
     </div>
