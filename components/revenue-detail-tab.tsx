@@ -65,36 +65,35 @@ export function RevenueDetailTab({ revenueId, categoryName, allRevenues, onSwitc
       .select("id, nom")
       .in("id", revenue.sub_category_ids)
 
-    // Check if each subcategory has an annexe
-    const subCatsWithAnnexe = await Promise.all(
-      (subCats || []).map(async (subCat) => {
-        // Get case codes for this sub-category
-        const { data: caseCodes } = await supabase
-          .from("case_labels")
-          .select("case_code")
-          .eq("sub_category_id", subCat.id)
-
-        if (caseCodes && caseCodes.length > 0) {
-          const codes = caseCodes.map((c) => c.case_code)
-          
-          // Check if any of these case codes have annexes
-          const { data: annexes } = await supabase
-            .from("case_annexes")
-            .select("id")
-            .in("case_code", codes)
-            .limit(1)
-
-          return {
-            ...subCat,
-            hasAnnexe: !!annexes && annexes.length > 0
-          }
-        }
-
-        return { ...subCat, hasAnnexe: false }
+    // Batch load annexes for all subcategories at once
+    if (subCats && subCats.length > 0) {
+      // Get all case codes for all subcategories in one query
+      const { data: allCaseLabels } = await supabase
+        .from("case_labels")
+        .select("sub_category_id, case_code")
+        .in("sub_category_id", subCats.map(s => s.id))
+      
+      // Get all annexes for all case codes in one query
+      const allCodes = [...new Set(allCaseLabels?.map(cl => cl.case_code) || [])]
+      const { data: allAnnexes } = await supabase
+        .from("case_annexes")
+        .select("case_code")
+        .in("case_code", allCodes)
+      
+      const annexeCodeSet = new Set(allAnnexes?.map(a => a.case_code) || [])
+      
+      // Map annexe info to subcategories
+      const subCatsWithAnnexe = subCats.map(subCat => {
+        const hasAnnexe = allCaseLabels?.some(cl => 
+          cl.sub_category_id === subCat.id && annexeCodeSet.has(cl.case_code)
+        ) || false
+        return { ...subCat, hasAnnexe }
       })
-    )
 
-    setSubCategories(subCatsWithAnnexe)
+      setSubCategories(subCatsWithAnnexe)
+    } else {
+      setSubCategories(subCats || [])
+    }
 
     // Load document names
     const { data: docs } = await supabase
