@@ -66,7 +66,7 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
   const [confirmNotes, setConfirmNotes] = useState("")
   const [editNotes, setEditNotes] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [documents, setDocuments] = useState<Array<{ id: string; name: string; uploaded_at: string; url?: string }>>([])
+  const [documents, setDocuments] = useState<Array<{ id: string; name: string; created_at: string; url?: string }>>([])
   const [loadingDocuments, setLoadingDocuments] = useState(true)
 
   const loadClient = async () => {
@@ -90,9 +90,9 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
     const supabase = createBrowserClient()
     const { data, error } = await supabase
       .from("client_files")
-      .select("id, file_name, uploaded_at, file_url")
+      .select("id, file_name, created_at, file_url")
       .eq("client_id", clientId)
-      .order("uploaded_at", { ascending: false })
+      .order("created_at", { ascending: false })
 
     if (error) {
       console.error("Error loading documents:", error)
@@ -100,7 +100,7 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
       setDocuments(data.map(d => ({ 
         id: d.id, 
         name: d.file_name, 
-        uploaded_at: d.uploaded_at,
+        created_at: d.created_at,
         url: d.file_url 
       })))
     }
@@ -479,7 +479,7 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
                           <div>
                             <p className="text-sm font-medium">{doc.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {new Date(doc.uploaded_at).toLocaleDateString("fr-FR", { 
+                              {new Date(doc.created_at).toLocaleDateString("fr-FR", { 
                                 day: "numeric", 
                                 month: "short", 
                                 year: "numeric",
