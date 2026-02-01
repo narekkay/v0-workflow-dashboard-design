@@ -68,6 +68,8 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [documents, setDocuments] = useState<Array<{ id: string; name: string; uploaded_at: string; status: string }>>([])
   const [loadingDocuments, setLoadingDocuments] = useState(true)
+  const [selectedDocument, setSelectedDocument] = useState<{ id: string; name: string; uploaded_at: string; status: string } | null>(null)
+  const [showDocumentViewer, setShowDocumentViewer] = useState(false)
 
   const loadClient = async () => {
     const supabase = createBrowserClient()
@@ -473,7 +475,14 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
                 ) : (
                   <div className="space-y-2">
                     {documents.map(doc => (
-                      <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+                      <div 
+                        key={doc.id} 
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 hover:bg-gray-100 cursor-pointer transition-colors"
+                        onClick={() => {
+                          setSelectedDocument(doc)
+                          setShowDocumentViewer(true)
+                        }}
+                      >
                         <div className="flex items-center gap-3">
                           <File className="h-4 w-4 text-gray-400" />
                           <div>
@@ -715,6 +724,56 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
                 <Check className="h-4 w-4 mr-2" />
               )}
               Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Document Viewer Dialog */}
+      <Dialog open={showDocumentViewer} onOpenChange={setShowDocumentViewer}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Détails du document</DialogTitle>
+            <DialogDescription>
+              Informations sur le document soumis lors de l'onboarding
+            </DialogDescription>
+          </DialogHeader>
+          {selectedDocument && (
+            <div className="space-y-4">
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div className="flex items-start gap-3">
+                  <File className="h-5 w-5 text-gray-500 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm break-words">{selectedDocument.name}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Uploadé le {new Date(selectedDocument.uploaded_at).toLocaleDateString("fr-FR", { 
+                        day: "numeric", 
+                        month: "long", 
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <span className="text-sm text-muted-foreground">Statut</span>
+                  <Badge variant={selectedDocument.status === "uploaded" ? "default" : "secondary"}>
+                    {selectedDocument.status === "uploaded" ? "Uploadé" : selectedDocument.status}
+                  </Badge>
+                </div>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-900">
+                  <AlertCircle className="h-4 w-4 inline mr-2" />
+                  Le fichier est stocké dans la base de données. Pour visualiser le contenu, implémentez la récupération depuis la colonne <code className="bg-blue-100 px-1 rounded">url_stockage</code> de la table <code className="bg-blue-100 px-1 rounded">fichiers_onboarding</code>.
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDocumentViewer(false)}>
+              Fermer
             </Button>
           </DialogFooter>
         </DialogContent>
