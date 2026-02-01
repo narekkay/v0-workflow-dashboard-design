@@ -840,7 +840,7 @@ export default function OnboardingPage() {
           </div>
           
           <Button variant="outline" className="w-full" onClick={() => window.location.href = "/dashboard"}>
-            Retour au tableau de bord
+            Revenir au tableau de bord (Vue avocat)
           </Button>
         </div>
       </div>
