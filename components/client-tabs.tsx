@@ -234,15 +234,6 @@ export function ClientTabs({
     address: client?.address || "",
     accountant: "",
   })
-
-  // Early return if client is still loading or null
-  if (loadingClient || !client) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-      </div>
-    )
-  }
   const [editedSpouse, setEditedSpouse] = useState({
     first_name: "",
     last_name: "",
@@ -427,12 +418,24 @@ export function ClientTabs({
 
   useEffect(() => {
     if (client?.id) {
-      loadRevenues()
-      loadOutboxFiles()
-      loadClientFiles()
-      loadAnnexes()
+      // Load all data in parallel for faster loading
+      Promise.all([
+        loadRevenues(),
+        loadOutboxFiles(),
+        loadClientFiles(),
+        loadAnnexes()
+      ])
     }
   }, [client?.id])
+
+  // Early return AFTER all hooks - this is critical for React hook rules
+  if (loadingClient || !client) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    )
+  }
 
   async function loadClient() {
     if (!clientId) return
@@ -454,6 +457,7 @@ export function ClientTabs({
   }
 
   async function loadRevenues() {
+    if (!client?.id) return
     const supabase = createBrowserClient()
 
     const { data: revenuesData, error } = await supabase
@@ -469,52 +473,50 @@ export function ClientTabs({
 
     if (revenuesData && revenuesData.length > 0) {
       const categoryIds = [...new Set(revenuesData.map((r) => r.category_id))]
+      const allSubCategoryIds = [...new Set(revenuesData.flatMap((r) => r.sub_category_ids || []))]
 
-      const { data: categories } = await supabase.from("categories_revenus").select("id, nom").in("id", categoryIds)
+      // Batch load all required data in parallel
+      const [categoriesResult, caseLabelsResult, annexesResult] = await Promise.all([
+        supabase.from("categories_revenus").select("id, nom").in("id", categoryIds),
+        allSubCategoryIds.length > 0 
+          ? supabase.from("case_labels").select("sub_category_id, case_code").in("sub_category_id", allSubCategoryIds)
+          : Promise.resolve({ data: [] }),
+        Promise.resolve({ data: [] as { case_code: string }[] }) // Will be loaded after we have case codes
+      ])
 
       const catMap = new Map()
-      categories?.forEach((cat) => catMap.set(cat.id, cat.nom))
+      categoriesResult.data?.forEach((cat) => catMap.set(cat.id, cat.nom))
       setCategoryNames(catMap)
 
-      const revenuesWithNames = await Promise.all(
-        revenuesData.map(async (r) => {
-          let hasAnnexe = false
+      // Get all unique case codes and check which have annexes
+      const allCaseCodes = [...new Set(caseLabelsResult.data?.map((cl) => cl.case_code) || [])]
+      let annexeCodesSet = new Set<string>()
+      
+      if (allCaseCodes.length > 0) {
+        const { data: annexesData } = await supabase
+          .from("case_annexes")
+          .select("case_code")
+          .in("case_code", allCaseCodes)
+        annexeCodesSet = new Set(annexesData?.map((a) => a.case_code) || [])
+      }
 
-          console.log(
-            `[v0] Checking annexe for client ${client.id}, category ${r.category_id}, sub_category_ids:`,
-            r.sub_category_ids,
-          )
+      // Build a map of sub_category_id -> hasAnnexe
+      const subCatAnnexeMap = new Map<number, boolean>()
+      caseLabelsResult.data?.forEach((cl) => {
+        if (annexeCodesSet.has(cl.case_code)) {
+          subCatAnnexeMap.set(cl.sub_category_id, true)
+        }
+      })
 
-          if (r.sub_category_ids && r.sub_category_ids.length > 0) {
-            // Get case codes for these sub-categories
-            const { data: caseCodes } = await supabase
-              .from("case_labels")
-              .select("case_code")
-              .in("sub_category_id", r.sub_category_ids)
-
-            console.log(`[v0] Found case codes for sub-categories:`, caseCodes)
-
-            if (caseCodes && caseCodes.length > 0) {
-              const codes = caseCodes.map((c) => c.case_code)
-
-              // Check if any of these case codes have annexes
-              const { data: annexes } = await supabase.from("case_annexes").select("id").in("case_code", codes).limit(1)
-
-              console.log(`[v0] Found annexes for case codes:`, annexes)
-
-              hasAnnexe = !!annexes && annexes.length > 0
-            }
-          }
-
-          console.log(`[v0] Final hasAnnexe value for category ${r.category_id}:`, hasAnnexe)
-
-          return {
-            ...r,
-            categoryName: catMap.get(r.category_id) || `Catégorie ${r.category_id}`,
-            hasAnnexe,
-          }
-        }),
-      )
+      // Map revenues with category names and annexe flags
+      const revenuesWithNames = revenuesData.map((r) => {
+        const hasAnnexe = (r.sub_category_ids || []).some((id: number) => subCatAnnexeMap.get(id))
+        return {
+          ...r,
+          categoryName: catMap.get(r.category_id) || `Catégorie ${r.category_id}`,
+          hasAnnexe,
+        }
+      })
 
       setRevenues(revenuesWithNames)
     } else {
@@ -525,6 +527,7 @@ export function ClientTabs({
   }
 
   async function loadAnnexes() {
+    if (!client?.id) return
     setLoadingAnnexes(true)
     const supabase = createBrowserClient()
 
@@ -675,8 +678,7 @@ export function ClientTabs({
       )
       .order("sent_at", { ascending: false })
 
-    console.log("[v0] Outbox files with last_requested_at:", outboxFiles)
-    console.log("[v0] Sent history:", sentHistory)
+
 
     const statusMap = new Map<number, { status: "en_attente" | "uploaded"; last_requested_at: string }>()
     outboxFiles?.forEach((file) => {
@@ -698,13 +700,6 @@ export function ClientTabs({
       const lastSentDate = historyMap.get(doc.id)
 
       const lastRequestedAt = fileData?.last_requested_at || lastSentDate
-
-      console.log(`[v0] Document ${doc.id} (${doc.shortname}):`, {
-        status: fileData?.status || null,
-        last_requested_at: lastRequestedAt,
-        from_outbox: !!fileData?.last_requested_at,
-        from_history: !!lastSentDate,
-      })
 
       return {
         id: doc.id,
@@ -808,6 +803,7 @@ export function ClientTabs({
   }
 
   async function loadOutboxFiles() {
+    if (!client?.id) return
     const supabase = createBrowserClient()
     const { data, error } = await supabase
       .from("boite_envoi_files")
@@ -824,6 +820,7 @@ export function ClientTabs({
   }
 
   async function loadClientFiles() {
+    if (!client?.id) return
     const supabase = createBrowserClient()
     
     // Load from client_files, documents, and conventions tables
@@ -3156,7 +3153,6 @@ export function ClientTabs({
               className="w-full bg-transparent"
               variant="outline"
               onClick={() => {
-                console.log("[v0] Scan button clicked")
                 // TODO: Implement scan logic
               }}
             >
@@ -3181,10 +3177,6 @@ export function ClientTabs({
             </Button>
             <Button
               onClick={() => {
-                console.log("[v0] Creating declaration:", {
-                  name: newDeclarationName,
-                  file: newDeclarationFile?.name,
-                })
                 // TODO: Implement save logic
                 setNewDeclarationModalOpen(false)
                 setNewDeclarationName("")
