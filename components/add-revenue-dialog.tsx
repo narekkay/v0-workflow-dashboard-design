@@ -55,10 +55,12 @@ function RevenueFullPageMulti({
   const [documents, setDocuments] = useState<any[]>([])
   const [isLoadingData, setIsLoadingData] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [subCategoriesWithAnnexes, setSubCategoriesWithAnnexes] = useState<Set<number>>(new Set())
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({})
 
   useEffect(() => {
     loadSubCategories()
+    loadAnnexes()
   }, [selectedCategoryIds])
 
   useEffect(() => {
@@ -89,6 +91,34 @@ function RevenueFullPageMulti({
       setSubCategories(data || [])
     }
     setIsLoadingData(false)
+  }
+
+  const loadAnnexes = async () => {
+    const supabase = createBrowserClient()
+    
+    // Query case_labels joined with case_annexes to find subcategories with annexes
+    const { data, error } = await supabase
+      .from("case_labels")
+      .select("sub_category_id, case_code, case_annexes(annexe_name)")
+      .in("sub_category_id", selectedCategoryIds.length > 0 ? 
+        (await supabase
+          .from("categories_revenus_sub")
+          .select("id")
+          .in("category_id", selectedCategoryIds)
+        ).data?.map(s => s.id) || [] : [])
+    
+    if (error) {
+      console.error("Error loading annexes:", error)
+    } else if (data) {
+      // Filter subcategories that have annexes
+      const subsWithAnnexes = new Set<number>()
+      data.forEach(item => {
+        if (item.case_annexes && item.sub_category_id) {
+          subsWithAnnexes.add(item.sub_category_id)
+        }
+      })
+      setSubCategoriesWithAnnexes(subsWithAnnexes)
+    }
   }
 
   const loadSubBisCategories = async () => {
@@ -330,15 +360,22 @@ function RevenueFullPageMulti({
                             >
                               <Checkbox checked={isSelected} />
                               <span className="flex-1 text-sm">{sub.nom}</span>
-                              {isSelected && hasSubBis && (
-                                <ChevronDown
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    toggleExpandSubCategory(sub.id)
-                                  }}
-                                  className={cn("h-4 w-4 transition-transform", isExpanded && "rotate-180")}
-                                />
-                              )}
+                              <div className="flex items-center gap-2">
+                                {subCategoriesWithAnnexes.has(sub.id) && (
+                                  <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-purple-600 rounded">
+                                    A
+                                  </span>
+                                )}
+                                {isSelected && hasSubBis && (
+                                  <ChevronDown
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      toggleExpandSubCategory(sub.id)
+                                    }}
+                                    className={cn("h-4 w-4 transition-transform", isExpanded && "rotate-180")}
+                                  />
+                                )}
+                              </div>
                             </div>
                             {/* Sub-bis categories collapsible */}
                             {isSelected && isExpanded && hasSubBis && (
