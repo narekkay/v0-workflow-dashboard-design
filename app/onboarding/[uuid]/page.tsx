@@ -1562,18 +1562,35 @@ export default function OnboardingPage() {
                                   {doc.note && <p className="text-xs text-gray-500">{doc.note}</p>}
                                 </div>
                               </div>
-                              <Badge 
-                                variant="secondary"
-                                className={`text-xs ${
-                                  doc.status === "received" 
-                                    ? "bg-emerald-50 text-emerald-700" 
-                                    : doc.status === "missing"
-                                    ? "bg-amber-50 text-amber-700"
-                                    : "bg-gray-100 text-gray-600"
-                                }`}
-                              >
-                                {doc.status === "received" ? "Reçu" : doc.status === "missing" ? "Manquant" : "Optionnel"}
-                              </Badge>
+                              <div className="flex items-center gap-2">
+                                <Badge
+                                  variant="secondary"
+                                  className={`text-xs ${
+                                    doc.status === "received"
+                                      ? "bg-emerald-50 text-emerald-700"
+                                      : doc.status === "missing"
+                                      ? "bg-amber-50 text-amber-700"
+                                      : "bg-gray-50 text-gray-600"
+                                  }`}
+                                >
+                                  {doc.status === "received" ? "Reçu" : doc.status === "missing" ? "Manquant" : "Optionnel"}
+                                </Badge>
+                                {doc.status === "received" && (
+                                  <button
+                                    onClick={() => {
+                                      const fileToRemove = uploadedFiles.find(f => 
+                                        doc.keywords.some(kw => 
+                                          f.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(kw.toLowerCase())
+                                        )
+                                      )
+                                      if (fileToRemove) removeFile(fileToRemove.id)
+                                    }}
+                                    className="text-gray-400 hover:text-red-500 transition-colors"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>
