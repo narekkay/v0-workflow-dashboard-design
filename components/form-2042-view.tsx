@@ -8,7 +8,8 @@ interface Form2042ViewProps {
   clientName: string
 }
 
-const PDF_URL = "/documents/2042_5122.pdf"
+// Using external Vercel Blob URL - local /public files don't work reliably in v0 runtime
+const PDF_URL = "https://blobs.vusercontent.net/blob/2042_5122-XBUm2kKsL1pGe15lIttvZ1M05Xs6sS.pdf"
 
 export function Form2042View({ clientId, clientName }: Form2042ViewProps) {
   const handleDownload = () => {
