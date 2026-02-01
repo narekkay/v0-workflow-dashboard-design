@@ -497,26 +497,12 @@ export function DocumentDetailsSheet({ document, open, onOpenChange, expertMode 
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
                     <p className="text-sm font-semibold mb-3 text-blue-900">Résumé de l'extraction (OCR)</p>
                     <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-blue-700">Émetteur :</span>
-                        <span className="font-medium text-blue-900">Boursorama Banque</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-blue-700">Montant brut global :</span>
-                        <span className="font-medium text-blue-900">1 250,00 €</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-blue-700">Dividendes éligibles (2AB) :</span>
-                        <span className="font-medium text-blue-900">1 100,00 €</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-blue-700">Prélèvements sociaux déjà payés :</span>
-                        <span className="font-medium text-blue-900">215,00 €</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-blue-700">Crédit d'impôt :</span>
-                        <span className="font-medium text-blue-900">18,50 €</span>
-                      </div>
+                      {Object.entries(document.ocr.extracted).map(([key, value]) => (
+                        <div key={key} className="flex justify-between text-sm">
+                          <span className="text-blue-700">{key} :</span>
+                          <span className="font-medium text-blue-900">{String(value)}</span>
+                        </div>
+                      ))}
                     </div>
                     {document.ocr.confidenceScore && (
                       <div className="mt-3 pt-3 border-t border-blue-200 flex justify-between text-xs">
