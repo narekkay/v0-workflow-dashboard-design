@@ -192,6 +192,8 @@ export function ClientTabs({
   yearTabs = [],
   onYearTabsChange,
 }: ClientTabsProps) {
+  console.log("[v0] ClientTabs RENDER for client:", initialClient?.first_name, initialClient?.last_name)
+  
   const [client, setClient] = useState<Client | null>(initialClient || null)
   const [loadingClient, setLoadingClient] = useState(!initialClient && !!clientId)
   const [revenues, setRevenues] = useState<ClientRevenue[]>([])
@@ -429,10 +431,18 @@ export function ClientTabs({
 
   useEffect(() => {
     if (client?.id) {
-      loadRevenues()
-      loadOutboxFiles()
-      loadClientFiles()
-      loadAnnexes()
+      console.log("[v0] ClientTabs useEffect triggered - starting 4 queries...")
+      const startTime = performance.now()
+      
+      Promise.all([
+        loadRevenues(),
+        loadOutboxFiles(),
+        loadClientFiles(),
+        loadAnnexes()
+      ]).then(() => {
+        const endTime = performance.now()
+        console.log("[v0] ClientTabs 4 queries completed in", (endTime - startTime).toFixed(0), "ms")
+      })
     }
   }, [client?.id])
 
