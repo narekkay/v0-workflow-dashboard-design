@@ -183,7 +183,27 @@ export function OnboardingView({ clientId, onBack, onStatusChange }: OnboardingV
 
   // If onboarding is confirmed, show the regular client tabs instead
   if (isOnboardingConfirmed) {
-    return <ClientTabs clientId={clientId} />
+    return (
+      <ClientTabs 
+        clientId={clientId}
+        taxProfiles={[]}
+        documents={[]}
+        onClose={() => {}}
+        onRefresh={() => {}}
+        onOpenRevenuePage={() => {}}
+        onOpenRevenueDetail={() => {}}
+        shouldOpenRevenueModal={false}
+        onRevenueModalClose={() => {}}
+        onOpen2042View={() => {}}
+        onOpenAmountEntry={() => {}}
+        activeTab="overview"
+        onTabChange={() => {}}
+        revenueTabs={[]}
+        onRevenueTabsChange={() => {}}
+        yearTabs={[]}
+        onYearTabsChange={() => {}}
+      />
+    )
   }
 
   // Helper function to display yes/no
