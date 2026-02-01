@@ -321,7 +321,7 @@ export default function HomePage() {
         />
       ) : (
         <div className="flex flex-1 flex-col">
-          <div className="flex items-center gap-0.5 border-b bg-gradient-to-b from-background to-muted/20 px-3 shadow-sm">
+          <div className="flex items-center gap-1 border-b bg-background px-2">
             {tabs.map((tab, index) => (
               <div
                 key={tab.id}
@@ -330,12 +330,12 @@ export default function HomePage() {
                 onDragOver={(e) => handleDragOver(e, index)}
                 onDrop={(e) => handleDrop(e, index)}
                 onDragEnd={handleDragEnd}
-                className={`group relative flex cursor-pointer items-center gap-2 px-4 py-3.5 text-sm font-medium transition-all duration-200 rounded-t-lg ${
+                className={`group flex cursor-pointer items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-all duration-200 ${
                   draggedTabIndex === index ? "opacity-50 scale-95" : "opacity-100 scale-100"
                 } ${dragOverIndex === index && draggedTabIndex !== index ? "border-l-4 border-l-blue-500" : ""} ${
                   activeTabId === tab.id
-                    ? "bg-background text-foreground shadow-sm border-t-2 border-t-primary"
-                    : "text-muted-foreground hover:bg-background/50 hover:text-foreground"
+                    ? "border-primary bg-muted/50 text-foreground"
+                    : "border-transparent text-muted-foreground hover:bg-muted/30 hover:text-foreground"
                 }`}
                 onClick={() => setActiveTabId(tab.id)}
               >
@@ -345,17 +345,14 @@ export default function HomePage() {
                     e.stopPropagation()
                     handleCloseTab(tab.id)
                   }}
-                  className="rounded-md opacity-0 group-hover:opacity-100 hover:bg-muted transition-all p-0.5"
+                  className="rounded-sm opacity-0 group-hover:opacity-100 hover:bg-muted transition-all"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-3 w-3" />
                 </button>
-                {activeTabId === tab.id && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-                )}
               </div>
             ))}
 
-            <div className="ml-auto pr-1 flex items-center gap-1.5">
+            <div className="ml-auto pr-2 flex items-center gap-2">
               <NotificationsDropdown 
                 onNotificationClick={(notif) => {
                   if (notif.notification_type === "onboarding_filled" && notif.related_client_id) {
@@ -388,7 +385,7 @@ export default function HomePage() {
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-background">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
                     <Settings className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>

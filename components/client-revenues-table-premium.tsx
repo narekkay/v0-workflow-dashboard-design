@@ -192,8 +192,8 @@ export function ClientRevenuesTablePremium({ clientId }: ClientRevenuesTablePrem
 
   if (actions.length === 0) {
     return (
-      <Card className="border shadow-sm rounded-2xl overflow-hidden">
-        <CardHeader className="border-b bg-gradient-to-br from-green-50 to-white pb-4">
+      <Card className="border shadow-sm rounded-2xl overflow-hidden pt-0">
+        <CardHeader className="border-b bg-gradient-to-br from-green-50 to-white pb-4 pt-6">
           <div className="flex items-center justify-between mx-3.5">
             <div>
               <CardTitle className="text-lg font-semibold">Actions prioritaires</CardTitle>
