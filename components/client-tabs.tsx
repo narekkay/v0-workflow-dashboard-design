@@ -154,7 +154,7 @@ interface ClientTabsProps {
   onOpenRevenueDetail?: (revenueId: string, categoryName: string) => void
   shouldOpenRevenueModal?: boolean
   onRevenueModalClose?: () => void
-  onOpen2042View?: (clientId: string, clientName: string) => void
+  onOpen2042View?: (clientId: string, clientName: string, formType?: "2042" | "2042C" | "IFU" | "IFI") => void
   onOpenAmountEntry?: (clientId: string, clientName: string, categoryId: number, categoryName: string) => void
   activeTab?: string
   onTabChange?: (tabId: string) => void
@@ -1957,21 +1957,21 @@ export function ClientTabs({
                         <Badge 
                           variant="secondary" 
                           className="bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
-                          onClick={() => handleOpenYearTab(2025)}
+                          onClick={() => onOpen2042View?.(client.id, `${client.first_name} ${client.last_name}`, "2042C")}
                         >
                           2042 C
                         </Badge>
                         <Badge 
                           variant="secondary" 
                           className="bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
-                          onClick={() => handleOpenYearTab(2025)}
+                          onClick={() => onOpen2042View?.(client.id, `${client.first_name} ${client.last_name}`, "IFU")}
                         >
                           IFU
                         </Badge>
                         <Badge 
                           variant="secondary" 
                           className="bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
-                          onClick={() => handleOpenYearTab(2025)}
+                          onClick={() => onOpen2042View?.(client.id, `${client.first_name} ${client.last_name}`, "IFI")}
                         >
                           IFI
                         </Badge>
@@ -2017,7 +2017,7 @@ export function ClientTabs({
                         <Badge 
                           variant="secondary" 
                           className="bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
-                          onClick={() => handleOpenYearTab(2024)}
+                          onClick={() => onOpen2042View?.(client.id, `${client.first_name} ${client.last_name}`, "2042C")}
                         >
                           2042 C
                         </Badge>
