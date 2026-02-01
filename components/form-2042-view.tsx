@@ -59,11 +59,11 @@ export function Form2042View({ clientId, clientName }: Form2042ViewProps) {
             transition: 'width 0.2s ease-in-out'
           }}
         >
-          <iframe
-            src="/documents/2042_5122.pdf"
+          <embed
+            src="/documents/2042_5122.pdf#toolbar=0"
+            type="application/pdf"
             className="w-full border-0"
             style={{ height: 'calc(100vh - 180px)', minHeight: '800px' }}
-            title="Formulaire 2042"
           />
         </div>
       </div>
