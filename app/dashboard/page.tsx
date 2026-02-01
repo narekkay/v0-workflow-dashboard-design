@@ -42,8 +42,8 @@ interface Tab {
 
 export default function HomePage() {
   const [clients, setClients] = useState<Client[]>([])
-  const [tabs, setTabs] = useState<Tab[]>([{ id: "view-clients", type: "view", label: "Clients", view: "clients" }])
-  const [activeTabId, setActiveTabId] = useState("view-clients")
+  const [tabs, setTabs] = useState<Tab[]>([{ id: "view-dashboard", type: "view", label: "Tableau de bord", view: "dashboard" }])
+  const [activeTabId, setActiveTabId] = useState("view-dashboard")
   const [clientsData, setClientsData] = useState<
     Map<string, { client: Client; taxProfiles: TaxProfile[]; documents: Document[] }>
   >(new Map())
@@ -157,7 +157,7 @@ export default function HomePage() {
       if (tabIndex > 0) {
         setActiveTabId(newTabs[tabIndex - 1].id)
       } else {
-        setActiveTabId(newTabs[0]?.id || "view-clients")
+        setActiveTabId(newTabs[0]?.id || "view-dashboard")
       }
     }
   }
