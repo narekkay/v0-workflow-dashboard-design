@@ -1389,7 +1389,11 @@ onSuccess={() => {
                     <div className="flex items-start justify-between">
                       <div>
                         <CardTitle>Déclarations</CardTitle>
-                        
+                        {client.onboarding_status === "soumis" && (
+                          <Badge variant="outline" className="mt-1 border-orange-500 text-orange-600 bg-orange-50">
+                            Confirmation requise
+                          </Badge>
+                        )}
                       </div>
                       <Button size="sm" onClick={() => setNewDeclarationModalOpen(true)}>
                         <Plus className="h-4 w-4 mr-1" />
