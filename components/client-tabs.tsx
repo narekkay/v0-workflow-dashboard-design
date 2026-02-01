@@ -568,41 +568,51 @@ export function ClientTabs({
 
     setAnnexes(annexesData || [])
 
-    // Load completion stats for each annexe
+    // Load completion stats for all annexes in batch
     if (annexesData && annexesData.length > 0) {
       const statsMap = new Map<number, { completed: number; total: number }>()
       
-      for (const annexe of annexesData) {
-        // Get sub-categories for this annexe's case_code
-        const { data: caseLabelsData } = await supabase
-          .from("case_labels")
-          .select("sub_category_id")
-          .eq("case_code", annexe.case_code)
+      // Get ALL case labels for all case codes in one query
+      const { data: allCaseLabels } = await supabase
+        .from("case_labels")
+        .select("sub_category_id, case_code")
+        .in("case_code", codes)
+      
+      if (allCaseLabels && allCaseLabels.length > 0) {
+        const allSubCatIds = [...new Set(allCaseLabels.map((cl) => cl.sub_category_id))]
         
-        if (caseLabelsData && caseLabelsData.length > 0) {
-          const subCatIds = caseLabelsData.map((cl) => cl.sub_category_id)
+        // Get ALL documents for these sub-categories in one query
+        const { data: allDocs } = await supabase
+          .from("documents_necessaires")
+          .select("id, sub_category_id")
+          .in("sub_category_id", allSubCatIds)
+        
+        if (allDocs && allDocs.length > 0) {
+          const allDocIds = allDocs.map((d) => d.id)
           
-          // Get total documents for these sub-categories
-          const { data: docsData } = await supabase
-            .from("documents_necessaires")
-            .select("id")
-            .in("sub_category_id", subCatIds)
+          // Get ALL completed documents in one query
+          const { data: completedDocs } = await supabase
+            .from("boite_envoi_files")
+            .select("document_id")
+            .eq("client_id", client.id)
+            .in("document_id", allDocIds)
+            .eq("status", "uploaded")
           
-          const totalDocs = docsData?.length || 0
+          const completedDocIds = new Set(completedDocs?.map((d) => d.document_id) || [])
           
-          if (totalDocs > 0) {
-            const docIds = docsData.map((d) => d.id)
+          // Now calculate stats for each annexe from the batch data
+          for (const annexe of annexesData) {
+            const annexeSubCats = allCaseLabels
+              .filter((cl) => cl.case_code === annexe.case_code)
+              .map((cl) => cl.sub_category_id)
             
-            // Get completed documents from boite_envoi_files where status is "uploaded"
-            const { data: completedData } = await supabase
-              .from("boite_envoi_files")
-              .select("id")
-              .eq("client_id", client.id)
-              .in("document_id", docIds)
-              .eq("status", "uploaded")
+            const annexeDocs = allDocs.filter((d) => annexeSubCats.includes(d.sub_category_id))
+            const totalDocs = annexeDocs.length
+            const completed = annexeDocs.filter((d) => completedDocIds.has(d.id)).length
             
-            const completedDocs = completedData?.length || 0
-            statsMap.set(annexe.id, { completed: completedDocs, total: totalDocs })
+            if (totalDocs > 0) {
+              statsMap.set(annexe.id, { completed, total: totalDocs })
+            }
           }
         }
       }
