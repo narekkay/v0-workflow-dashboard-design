@@ -65,53 +65,59 @@ export function NotificationsDropdown({ notifications, onNotificationClick, onCl
   
   useEffect(() => {
     const fetchNotifications = async () => {
-      const supabase = createBrowserClient()
-      
-      const { data, error } = await supabase
-        .from("notifications")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(10)
-      
-      if (error) {
-        console.error("[v0] Error fetching notifications:", error)
-        setLoading(false)
-        return
-      }
-      
-      if (data) {
-        // Fetch client names for notifications with related_client_id
-        const clientIds = data.filter(n => n.related_client_id).map(n => n.related_client_id)
-        const clientsMap = new Map<string, string>()
+      try {
+        const supabase = createBrowserClient()
         
-        if (clientIds.length > 0) {
-          const { data: clientsData } = await supabase
-            .from("clients")
-            .select("id, first_name, last_name")
-            .in("id", clientIds)
-          
-          if (clientsData) {
-            clientsData.forEach(client => {
-              clientsMap.set(client.id, `${client.first_name} ${client.last_name}`)
-            })
-          }
+        const { data, error } = await supabase
+          .from("notifications")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(10)
+        
+        if (error) {
+          console.error("[v0] Error fetching notifications:", error)
+          setLoading(false)
+          return
         }
         
-        const mappedNotifications: Notification[] = data.map(notif => ({
-          id: notif.id,
-          type: notif.alert_type as NotificationType,
-          title: notif.title,
-          message: notif.content,
-          timestamp: new Date(notif.created_at),
-          read: notif.read_status,
-          notification_type: notif.notification_type,
-          related_client_id: notif.related_client_id,
-          client_name: notif.related_client_id ? clientsMap.get(notif.related_client_id) : undefined,
-        }))
-        setNotifs(mappedNotifications)
+        if (data) {
+          // Fetch client names for notifications with related_client_id
+          const clientIds = data.filter(n => n.related_client_id).map(n => n.related_client_id)
+          const clientsMap = new Map<string, string>()
+          
+          if (clientIds.length > 0) {
+            const { data: clientsData } = await supabase
+              .from("clients")
+              .select("id, first_name, last_name")
+              .in("id", clientIds)
+            
+            if (clientsData) {
+              clientsData.forEach(client => {
+                clientsMap.set(client.id, `${client.first_name} ${client.last_name}`)
+              })
+            }
+          }
+          
+          const mappedNotifications: Notification[] = data.map(notif => ({
+            id: notif.id,
+            type: notif.alert_type as NotificationType,
+            title: notif.title,
+            message: notif.content,
+            timestamp: new Date(notif.created_at),
+            read: notif.read_status,
+            notification_type: notif.notification_type,
+            related_client_id: notif.related_client_id,
+            client_name: notif.related_client_id ? clientsMap.get(notif.related_client_id) : undefined,
+          }))
+          setNotifs(mappedNotifications)
+        }
+        
+        setLoading(false)
+      } catch (err) {
+        console.error("[v0] Error fetching notifications:", err)
+        // Keep default notifications on error
+        setLoading(false)
       }
-      
-      setLoading(false)
     }
     
     fetchNotifications()
