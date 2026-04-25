@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button"
 import { NotificationsDropdown } from "@/components/notifications-dropdown"
 import { OnboardingView } from "@/components/onboarding-view"
 import { IntegrationsView } from "@/components/integrations-view"
+import { ControleView } from "@/components/controle-view"
 
 type View = "clients" | "documents" | "settings" | "archives" | "dashboard" | "integrations"
 
@@ -34,7 +35,7 @@ const clientBaseTabs: ClientTab[] = [
 
 interface Tab {
   id: string
-  type: "view" | "client" | "form2042" | "add-client" | "onboarding"
+  type: "view" | "client" | "form2042" | "add-client" | "onboarding" | "controle"
   label: string
   view?: View
   clientId?: string
@@ -300,6 +301,23 @@ export default function HomePage() {
             ? clientsData.get(activeTab.clientId)?.client.onboarding_form_completed ?? false
             : true
         }
+        onOpenControle={(isClientView || isOnboardingView) ? () => {
+          const tabId = `controle-${activeTab.clientId}`
+          const existing = tabs.find(t => t.id === tabId)
+          if (existing) {
+            setActiveTabId(existing.id)
+          } else {
+            const newTab: Tab = {
+              id: tabId,
+              type: "controle",
+              label: `Contrôle · ${currentClientName}`,
+              clientId: activeTab.clientId,
+            }
+            setTabs(prev => [...prev, newTab])
+            setActiveTabId(newTab.id)
+          }
+        } : undefined}
+        isControleActive={activeTab?.type === "controle"}
       />
       {amountEntryView ? (
         <RevenueAmountEntry
@@ -399,7 +417,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <main className={`flex-1 overflow-y-auto ${activeTab?.type === "client" ? "bg-slate-50" : "bg-muted/20"}`}>
+          <main className={`flex-1 overflow-hidden flex flex-col ${activeTab?.type === "client" ? "bg-slate-50" : activeTab?.type === "controle" ? "bg-[#fafaf7]" : "bg-muted/20"}`}>
             {loading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
@@ -510,6 +528,8 @@ export default function HomePage() {
                 }}
                 onCancel={() => handleCloseTab(activeTab.id)}
               />
+            ) : activeTab?.type === "controle" ? (
+              <ControleView />
             ) : activeTab?.type === "onboarding" && activeTab.clientId ? (
               <OnboardingView 
                 clientId={activeTab.clientId} 
