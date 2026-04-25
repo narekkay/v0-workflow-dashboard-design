@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutDashboardIcon,Users, FileText, ChevronLeft, ChevronRight, ChevronDown, Home, User, FolderOpen, Share2, Trash2, X, LayoutDashboard, LogOut, ExternalLink, Plug } from "lucide-react"
+import { LayoutDashboardIcon,Users, FileText, ChevronLeft, ChevronRight, ChevronDown, Home, User, FolderOpen, Share2, Trash2, X, LayoutDashboard, LogOut, ExternalLink, Plug, ShieldAlert } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -43,6 +43,8 @@ interface SidebarProps {
   clientId?: string
   conventionSigned?: boolean
   onboardingCompleted?: boolean
+  onOpenControle?: () => void
+  isControleActive?: boolean
 }
 
 export function Sidebar({ 
@@ -58,6 +60,8 @@ export function Sidebar({
   clientId,
   conventionSigned = true,
   onboardingCompleted = true,
+  onOpenControle,
+  isControleActive = false,
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [declaratifOpen, setDeclaratifOpen] = useState(true)
@@ -285,8 +289,34 @@ export function Sidebar({
                   <ChevronDown className={cn("h-4 w-4 text-sidebar-foreground/60 transition-transform", contentieuxOpen && "rotate-180")} />
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <div className="px-3 py-4 text-sm text-muted-foreground italic">
-                    Aucun contentieux en cours
+                  <div className="space-y-1 mt-1">
+                    {onOpenControle && (
+                      <button
+                        onClick={onOpenControle}
+                        className={cn(
+                          "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors relative",
+                          isControleActive
+                            ? "text-[#5a4ab7] font-medium"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                        )}
+                        style={isControleActive ? { background: "#f3f1eb" } : undefined}
+                      >
+                        {isControleActive && (
+                          <span
+                            className="absolute left-0 top-1 bottom-1 w-0.5 rounded-r"
+                            style={{ background: "#5a4ab7" }}
+                            aria-hidden
+                          />
+                        )}
+                        <ShieldAlert className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">Contrôle de procédure</span>
+                      </button>
+                    )}
+                    {!onOpenControle && (
+                      <div className="px-3 py-4 text-sm text-muted-foreground italic">
+                        Aucun contentieux en cours
+                      </div>
+                    )}
                   </div>
                 </CollapsibleContent>
               </Collapsible>
